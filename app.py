@@ -80,5 +80,6 @@ else:
         
         total = prod['Base_Price'] + sum(selected_atts_prices)
         st.write("---")
-        st.success(f"### 📑 Grand Total: {total:,.0f} MMK")
+        st.success(f"### 📑 Grand Total: {total:,.0f} Kyats")
+
 
