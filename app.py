@@ -66,7 +66,7 @@ else:
 
     if selected_model != "-- ရွေးချယ်ရန် --":
         prod = data[selected_model]
-        st.markdown(f"### 💰 Base Price: **{prod['Base_Price']:,.0f}** Ks")
+        st.markdown(f"### 💰 Base Price: **{prod['Base_Price']:,.0f}** MMK")
         
         att_dict = prod['Attachments']
         selected_atts_prices = []
@@ -75,9 +75,10 @@ else:
             st.write("---")
             st.write("🔧 **Attachments ပေါင်းထည့်ရန်:**")
             for att, price in att_dict.items():
-                if st.checkbox(f"{att} (+{price:,.0f} Ks)", key=f"{selected_model}_{att}"):
+                if st.checkbox(f"{att} (+{price:,.0f} MMK)", key=f"{selected_model}_{att}"):
                     selected_atts_prices.append(price)
         
         total = prod['Base_Price'] + sum(selected_atts_prices)
         st.write("---")
-        st.success(f"### 📑 Grand Total: {total:,.0f} Kyats")
+        st.success(f"### 📑 Grand Total: {total:,.0f} MMK")
+
