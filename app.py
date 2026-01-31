@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="KMM Kubota Official Catalog", page_icon="🚜", layout="wide")
+st.set_page_config(page_title="Welcome to KMM Kubota Produce/Service", page_icon="🚜", layout="wide")
 
 # --- CONFIG ---
 CORRECT_PASSWORD = "kmm111" 
@@ -126,6 +126,7 @@ if data:
                 st.write("ကျွန်ုပ်တို့၏ အရောင်းပြခန်းများတွင် စမ်းသပ်မောင်းနှင်ကြည့်ရှုနိုင်ပါသည်။")
 
 st.markdown("<br><hr><center><small>© 2024 KMM Kubota | All Rights Reserved</small></center>", unsafe_allow_html=True)
+
 
 
 
