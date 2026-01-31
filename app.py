@@ -53,7 +53,7 @@ if data:
     if selected_model:
         prod = data[selected_model]
         # Base Price ပြသခြင်း
-        st.markdown(f"### 💰 Base Price: **{prod['Base_Price']:,.0f}** KMM")
+        st.markdown(f"### 💰 Base Price: **{prod['Base_Price']:,.0f}** MMK")
         
         st.write("---")
         att_dict = prod['Attachments']
@@ -68,11 +68,11 @@ if data:
                 
                 if is_selected:
                     # ရွေးချယ်ပြီးပါက ဈေးနှုန်းကို အစိမ်းရောင် (Bold) ဖြင့်ပြရန်
-                    st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp; 💹 {att} Price: <span style='color: #28a745; font-weight: bold;'>+{price:,.0f} KMM</span> (Added)", unsafe_allow_html=True)
+                    st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp; 💹 {att} Price: <span style='color: #28a745; font-weight: bold;'>+{price:,.0f} MMK</span> (Added)", unsafe_allow_html=True)
                     selected_atts_prices.append(price)
                 else:
                     # မရွေးရသေးပါက ဈေးနှုန်းကို မီးခိုးရောင် သို့မဟုတ် အဖြူရောင်ဘောင်ထဲတွင်ပြရန်
-                    st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp; 🏷️ {att} Price: <span style='color: #666;'>+{price:,.0f} KMM</span>", unsafe_allow_html=True)
+                    st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp; 🏷️ {att} Price: <span style='color: #666;'>+{price:,.0f} MMK</span>", unsafe_allow_html=True)
         
         total = prod['Base_Price'] + sum(selected_atts_prices)
         st.write("---")
@@ -81,6 +81,7 @@ if data:
         st.success(f"## 📄 Grand Total: {total:,.0f} Kyats")
 
 st.markdown("<br><hr><center><small>© 2024 KMM Kubota</small></center>", unsafe_allow_html=True)
+
 
 
 
