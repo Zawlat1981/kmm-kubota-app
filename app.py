@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # Google Sheet Link
-sheet_id = "1tJv_LdIn6Aol-p3zOa0D1pD_67z878-3K9K9K9K9K9" # <--- လူကြီးမင်းရဲ့ Sheet ID ကို ဒီမှာ ပြန်ထည့်ပါ
+sheet_id = "1QqQvPKH7G0hqqhd_0V6cP40Htl8qdFEZ6nHBVe_53_g" # <--- လူကြီးမင်းရဲ့ Sheet ID ကို ဒီမှာ ပြန်ထည့်ပါ
 url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv"
 
 st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜")
@@ -52,6 +52,7 @@ try:
 
 except Exception as e:
     st.error(f"Error: Google Sheet ထဲက Column ခေါင်းစဉ်တွေ မှန်မမှန် ပြန်စစ်ပေးပါဗျာ။ ({e})")
+
 
 
 
