@@ -1,57 +1,85 @@
 import streamlit as st
 import pandas as pd
 
-# Google Sheet Link
-sheet_id = "1QqQvPKH7G0hqqhd_0V6cP40Htl8qdFEZ6nHBVe_53_g" # <--- လူကြီးမင်းရဲ့ Sheet ID ကို ဒီမှာ ပြန်ထည့်ပါ
-url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv"
+st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout="centered")
 
-st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜")
+# Google Sheet ID
+SHEET_ID = "1QqQvPKH7G0hqqhd_0V6cP40Htl8qdFEZ6nHBVe_53_g"
+SHEET_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
 
-st.title("🚜 KMM Kubota Price List")
+@st.cache_data(ttl=60)
+def load_data():
+    try:
+        df = pd.read_csv(SHEET_URL, header=None)
+        temp_products = {}
+        current_headers = {}
 
-try:
-    # Google Sheet ဖတ်ခြင်း (Header က Row 1 မှာ ရှိတယ်လို့ ယူဆပါတယ်)
-    df = pd.read_csv(url)
-    
-    # Model အမည်မပါတဲ့ Row တွေကို ဖယ်ထုတ်ခြင်း
-    df = df.dropna(subset=['Model'])
-    df = df[df['Model'] != '0'] # '0' လို့ ရေးထားတဲ့ Row တွေကို ဖယ်ထုတ်ခြင်း
-    
-    # Model ရွေးချယ်ခြင်း
-    model_list = df['Model'].tolist()
-    selected_model = st.selectbox("Product Model ကိုရွေးပါ -", model_list)
-    
-    # ရွေးချယ်ထားသော Model ၏ Row ကို ရှာခြင်း
-    model_row = df[df['Model'] == selected_model].iloc[0]
-    
-    # Base Price ပြသခြင်း
-    base_price = float(model_row['Base Price'])
-    st.subheader(f"💰 Base Price: {base_price:,.0f} Ks")
-    st.write("---")
-    
-    # Attachment Columns များကို ရှာဖွေခြင်း (Column နာမည်မှာ '_Price' ပါတာတွေကို ယူပါမယ်)
-    attachment_cols = [col for col in df.columns if '_Price' in col]
-    
-    st.write("🔗 **Attachments ပေါင်းထည့်ရန်:**")
-    total_attachment_price = 0
-    
-    # Attachment တစ်ခုချင်းစီအတွက် Checkbox လေးတွေ လုပ်ခြင်း
-    for col in attachment_cols:
-        price_val = model_row[col]
-        
-        # ဈေးနှုန်းက 0 ထက်ကြီးမှသာ Website မှာ ပေါ်အောင်လုပ်ခြင်း
-        if pd.notnull(price_val) and float(price_val) > 0:
-            display_name = col.replace('_Price', '') # '_Price' ဆိုတဲ့ စာသားကို ဖယ်ပြီး နာမည်ပဲပြရန်
-            if st.checkbox(f"{display_name} (+{float(price_val):,.0f} Ks)"):
-                total_attachment_price += float(price_val)
+        for index, row in df.iterrows():
+            model_cell = str(row[0]).strip()
+            
+            # Header Row ကို ခွဲခြားခြင်း
+            if "Model" in model_cell or "_Price" in str(row[2]):
+                current_headers = {} # Header အဟောင်းကို ဖျက်ပြီး အသစ်ပြန်မှတ်ပါ
+                for col_idx, cell_val in enumerate(row):
+                    val = str(cell_val).strip()
+                    if val and val != "nan" and col_idx > 1:
+                        current_headers[col_idx] = val.replace("_Price", "").replace("Price", "").strip()
+                continue
+
+            # Data Row (Model အမည်ပါသော Row)
+            if model_cell and model_cell not in ["nan", "0", "0.0", ""]:
+                try:
+                    price_val = str(row[1]).replace(',', '').strip()
+                    base_p = float(price_val) if price_val != "" else 0
+                except: base_p = 0
                 
-    # စုစုပေါင်းတွက်ချက်ခြင်း
-    grand_total = base_price + total_attachment_price
-    st.write("---")
-    st.success(f"📄 **Grand Total: {grand_total:,.0f} Kyats**")
+                if base_p > 0:
+                    temp_products[model_cell] = {"Base_Price": base_p, "Attachments": {}}
+                    for col_idx, cell_val in enumerate(row):
+                        if col_idx in current_headers:
+                            try:
+                                clean_val = str(cell_val).replace(',', '').strip()
+                                att_price = float(clean_val)
+                                # ဈေးနှုန်း 0 ထက်ကြီးသော Attachment ကိုသာ ထည့်ပါ
+                                if att_price > 0:
+                                    header_name = current_headers[col_idx]
+                                    temp_products[model_cell]["Attachments"][header_name] = att_price
+                            except: continue
+        return temp_products
+    except: return {}
 
-except Exception as e:
-    st.error(f"Error: Google Sheet ထဲက Column ခေါင်းစဉ်တွေ မှန်မမှန် ပြန်စစ်ပေးပါဗျာ။ ({e})")
+# --- UI ပိုင်း ---
+st.markdown("<h1 style='text-align: center;'>🚜 KMM Kubota Price List</h1>", unsafe_allow_html=True)
+
+data = load_data()
+
+if data:
+    model_list = list(data.keys())
+    selected_model = st.selectbox("Product Model ကိုရွေးပါ -", model_list)
+
+    if selected_model:
+        prod = data[selected_model]
+        st.markdown(f"## 💰 Base Price: {prod['Base_Price']:,.0f} Ks")
+        
+        st.write("---")
+        att_dict = prod['Attachments']
+        selected_atts_prices = []
+        
+        if att_dict:
+            st.write("🔗 **Attachments ပေါင်းထည့်ရန်:**")
+            for att, price in att_dict.items():
+                # တစ်ခုချင်းစီအတွက် Checkbox ပြခြင်း
+                if st.checkbox(f"{att} (+{price:,.0f} Ks)", key=f"calc_{selected_model}_{att}"):
+                    selected_atts_prices.append(price)
+        else:
+            st.info("ဤ Model အတွက် ထပ်တိုး Attachment များ မရှိပါ။")
+            
+        total = prod['Base_Price'] + sum(selected_atts_prices)
+        st.write("---")
+        st.success(f"### 📑 Grand Total: {total:,.0f} Kyats")
+
+st.markdown("<br><hr><center><small>© 2024 KMM Kubota</small></center>", unsafe_allow_html=True)
+
 
 
 
