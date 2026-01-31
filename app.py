@@ -75,7 +75,7 @@ if data:
     selected_model = st.sidebar.selectbox("Product Model ကိုရွေးပါ -", model_list)
 
     st.sidebar.write("---")
-    show_price_mode = st.sidebar.checkbox("💰 Show Prices & Calculate (Staff Only)")
+    show_price_mode = st.sidebar.checkbox("💰 Show Prices & Calculate (sale Staff Only)")
 
     if selected_model:
         prod = data[selected_model]
@@ -120,11 +120,12 @@ if data:
                         st.session_state["authenticated"] = False
                         st.rerun()
             else:
-                st.info("ℹ️ ဈေးနှုန်းနှင့် တွက်ချက်မှုများ သိရှိလိုပါက Sidebar ရှိ 'Show Prices' ကို နှိပ်ပါ။")
+                st.info("ℹ️ ဈေးနှုန်းနှင့် တွက်ချက်မှုများ သိရှိလိုပါက 'Show Prices' ကို နှိပ်ပါ။")
                 st.write("---")
                 st.write(f"**Selected Model:** {selected_model}")
                 st.write("ကျွန်ုပ်တို့၏ အရောင်းပြခန်းများတွင် စမ်းသပ်မောင်းနှင်ကြည့်ရှုနိုင်ပါသည်။")
 
 st.markdown("<br><hr><center><small>© 2024 KMM Kubota | All Rights Reserved</small></center>", unsafe_allow_html=True)
+
 
 
