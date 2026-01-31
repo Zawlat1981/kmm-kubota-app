@@ -13,26 +13,20 @@ def load_data():
         df = pd.read_csv(SHEET_URL, header=None)
         temp_products = {}
         current_headers = {}
-
         for index, row in df.iterrows():
             model_cell = str(row[0]).strip()
-            
-            # Header Row ကို ခွဲခြားခြင်း
             if "Model" in model_cell or "_Price" in str(row[2]):
-                current_headers = {} # Header အဟောင်းကို ဖျက်ပြီး အသစ်ပြန်မှတ်ပါ
+                current_headers = {}
                 for col_idx, cell_val in enumerate(row):
                     val = str(cell_val).strip()
                     if val and val != "nan" and col_idx > 1:
                         current_headers[col_idx] = val.replace("_Price", "").replace("Price", "").strip()
                 continue
-
-            # Data Row (Model အမည်ပါသော Row)
             if model_cell and model_cell not in ["nan", "0", "0.0", ""]:
                 try:
                     price_val = str(row[1]).replace(',', '').strip()
                     base_p = float(price_val) if price_val != "" else 0
                 except: base_p = 0
-                
                 if base_p > 0:
                     temp_products[model_cell] = {"Base_Price": base_p, "Attachments": {}}
                     for col_idx, cell_val in enumerate(row):
@@ -40,7 +34,6 @@ def load_data():
                             try:
                                 clean_val = str(cell_val).replace(',', '').strip()
                                 att_price = float(clean_val)
-                                # ဈေးနှုန်း 0 ထက်ကြီးသော Attachment ကိုသာ ထည့်ပါ
                                 if att_price > 0:
                                     header_name = current_headers[col_idx]
                                     temp_products[model_cell]["Attachments"][header_name] = att_price
@@ -48,8 +41,8 @@ def load_data():
         return temp_products
     except: return {}
 
-# --- UI ပိုင်း ---
-st.markdown("<h1 style='text-align: center;'>🚜 KMM Kubota Price List</h1>", unsafe_allow_html=True)
+# --- UI ---
+st.markdown("<h1 style='text-align: center; color: #333;'>🚜 KMM Kubota Price List</h1>", unsafe_allow_html=True)
 
 data = load_data()
 
@@ -59,26 +52,36 @@ if data:
 
     if selected_model:
         prod = data[selected_model]
-        st.markdown(f"## 💰 Base Price: {prod['Base_Price']:,.0f} Ks")
+        # Base Price ပြသခြင်း
+        st.markdown(f"### 💰 Base Price: **{prod['Base_Price']:,.0f}** Ks")
         
         st.write("---")
         att_dict = prod['Attachments']
         selected_atts_prices = []
         
         if att_dict:
-            st.write("🔗 **Attachments ပေါင်းထည့်ရန်:**")
+            st.markdown("🔗 **Attachments (ဈေးနှုန်းကိုနှိပ်၍ ပေါင်းထည့်ပါ):**")
             for att, price in att_dict.items():
-                # တစ်ခုချင်းစီအတွက် Checkbox ပြခြင်း
-                if st.checkbox(f"{att} (+{price:,.0f} Ks)", key=f"calc_{selected_model}_{att}"):
+                # Checkbox ကို သုံးသော်လည်း စာသားအရောင်ကို ခွဲခြားရန် Logic
+                # Checkbox state ကို စစ်ဆေးခြင်း
+                is_selected = st.checkbox(f"➕ {att}", key=f"final_{selected_model}_{att}")
+                
+                if is_selected:
+                    # ရွေးချယ်ပြီးပါက ဈေးနှုန်းကို အစိမ်းရောင် (Bold) ဖြင့်ပြရန်
+                    st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp; 💹 {att} Price: <span style='color: #28a745; font-weight: bold;'>+{price:,.0f} Ks</span> (Added)", unsafe_allow_html=True)
                     selected_atts_prices.append(price)
-        else:
-            st.info("ဤ Model အတွက် ထပ်တိုး Attachment များ မရှိပါ။")
-            
+                else:
+                    # မရွေးရသေးပါက ဈေးနှုန်းကို မီးခိုးရောင် သို့မဟုတ် အဖြူရောင်ဘောင်ထဲတွင်ပြရန်
+                    st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp; 🏷️ {att} Price: <span style='color: #666;'>+{price:,.0f} Ks</span>", unsafe_allow_html=True)
+        
         total = prod['Base_Price'] + sum(selected_atts_prices)
         st.write("---")
-        st.success(f"### 📑 Grand Total: {total:,.0f} Kyats")
+        
+        # Grand Total အကွက် (လူကြီးမင်းပို့ထားသည့်ပုံစံအတိုင်း အစိမ်းရောင် Highlight)
+        st.success(f"## 📄 Grand Total: {total:,.0f} Kyats")
 
 st.markdown("<br><hr><center><small>© 2024 KMM Kubota</small></center>", unsafe_allow_html=True)
+
 
 
 
