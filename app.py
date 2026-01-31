@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="Welcome to KMM Kubota Products/Service", page_icon="🚜", layout="wide")
+st.set_page_config(page_title="KMM Kubota Official Page", page_icon="🚜", layout="wide")
 
 # --- CONFIG ---
 CORRECT_PASSWORD = "kmm111" 
@@ -45,7 +45,7 @@ def load_data():
     except: return {}, {}
 
 # --- UI START ---
-st.markdown("<h1 style='text-align: center; color: #FF6600;'>🚜 KMM Kubota Product Catalog</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: #FF6600;'>🚜 Welcome to KMM Kubota Product/Service</h1>", unsafe_allow_html=True)
 
 # --- SIDEBAR: CONTACT INFO (PASSWORD မလိုပါ) ---
 st.sidebar.header("📞 Contact Centers")
@@ -126,6 +126,7 @@ if data:
                 st.write("ကျွန်ုပ်တို့၏ အရောင်းပြခန်းများတွင် စမ်းသပ်မောင်းနှင်ကြည့်ရှုနိုင်ပါသည်။")
 
 st.markdown("<br><hr><center><small>© 2024 KMM Kubota | All Rights Reserved</small></center>", unsafe_allow_html=True)
+
 
 
 
