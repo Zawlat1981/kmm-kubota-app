@@ -13,20 +13,29 @@ def load_data():
         df = pd.read_csv(SHEET_URL, header=None)
         temp_products = {}
         current_headers = {}
+        
         for index, row in df.iterrows():
             model_cell = str(row[0]).strip()
-            if "Model" in model_cell or "_Price" in str(row[2]):
+            
+            # ခေါင်းစဉ် (Header) ကို ရှာဖွေခြင်း (Row 1 သို့မဟုတ် Row 4 အတွက်)
+            # Row 4 မှာ "DH225E_Price" ရှိနေတာကို ဖမ်းယူဖို့
+            if "Model" in model_cell or any("_Price" in str(cell) for cell in row):
                 current_headers = {}
                 for col_idx, cell_val in enumerate(row):
                     val = str(cell_val).strip()
                     if val and val != "nan" and col_idx > 1:
-                        current_headers[col_idx] = val.replace("_Price", "").replace("Price", "").strip()
+                        # "_Price" သို့မဟုတ် "Price" ကို ဖယ်ထုတ်ပြီး Attachment နာမည်ယူခြင်း
+                        header_name = val.replace("_Price", "").replace("Price", "").strip()
+                        current_headers[col_idx] = header_name
                 continue
-            if model_cell and model_cell not in ["nan", "0", "0.0", ""]:
+            
+            # Model အမည် ရှိမရှိ စစ်ဆေးခြင်း
+            if model_cell and model_cell not in ["nan", "0", "0.0", "", "Model"]:
                 try:
                     price_val = str(row[1]).replace(',', '').strip()
                     base_p = float(price_val) if price_val != "" else 0
                 except: base_p = 0
+                
                 if base_p > 0:
                     temp_products[model_cell] = {"Base_Price": base_p, "Attachments": {}}
                     for col_idx, cell_val in enumerate(row):
@@ -34,12 +43,15 @@ def load_data():
                             try:
                                 clean_val = str(cell_val).replace(',', '').strip()
                                 att_price = float(clean_val)
+                                # ဈေးနှုန်း 0 ထက်ကြီးမှ Attachment စာရင်းထဲ ထည့်မယ်
                                 if att_price > 0:
                                     header_name = current_headers[col_idx]
                                     temp_products[model_cell]["Attachments"][header_name] = att_price
                             except: continue
         return temp_products
-    except: return {}
+    except Exception as e:
+        st.error(f"Error loading data: {e}")
+        return {}  
 
 # --- UI ---
 st.markdown("<h1 style='text-align: center; color: #333;'>🚜 KMM Kubota Price List</h1>", unsafe_allow_html=True)
@@ -81,6 +93,7 @@ if data:
         st.success(f"## 📄 Grand Total: {total:,.0f} Kyats")
 
 st.markdown("<br><hr><center><small>© 2024 KMM Kubota</small></center>", unsafe_allow_html=True)
+
 
 
 
