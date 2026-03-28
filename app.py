@@ -3,23 +3,21 @@ import pandas as pd
 
 st.set_page_config(page_title="Multi-Brand Tractor Price List", page_icon="🚜", layout="centered")
 
-# Google Sheet ID (သင့်ရဲ့ ID အဟောင်းအတိုင်းထားပါတယ်)
+# Google Sheet ID
 SHEET_ID = "1QqQvPKH7G0hqqhd_0V6cP40Htl8qdFEZ6nHBVe_53_g"
 
 # --- Sidebar အတွက် ကုမ္ပဏီရွေးချယ်မှု ---
 st.sidebar.header("🚜 Brand Selection")
 selected_brand = st.sidebar.selectbox(
     "အမှတ်တံဆိပ် ရွေးချယ်ပါ -", 
-    ["Kubota", "Yanmar", "Win Shwe Wah (2nd)", "John Deere", "Other Brands"]
+    ["Kubota", "Yanmar", "Win Shwe Wah (2nd)", "John Deere", "New Holland", "YTO", "Dongfeng", "Mahindra", "Yamabisi"]
 )
 
 # ကုမ္ပဏီအလိုက် Sheet Tab နာမည်ကို သတ်မှတ်မယ်
-# (မှတ်ချက် - Google Sheet ထဲမှာ ဒီအတိုင်း Tab နာမည်လေးတွေ ပေးထားဖို့ လိုပါမယ်)
 sheet_name = selected_brand
 
 @st.cache_data(ttl=60)
 def load_data(tab_name):
-    # CSV link ကို Tab နာမည်အလိုက် ပြောင်းဖတ်မယ်
     url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={tab_name}"
     try:
         df = pd.read_csv(url, header=None)
@@ -29,6 +27,7 @@ def load_data(tab_name):
         for index, row in df.iterrows():
             model_cell = str(row[0]).strip()
             
+            # Header line ရှာဖွေခြင်း (_Price ပါတာကို ရှာမယ်)
             if any("_Price" in str(cell) for cell in row):
                 current_headers = {}
                 for col_idx, cell_val in enumerate(row):
@@ -37,6 +36,7 @@ def load_data(tab_name):
                         current_headers[col_idx] = val.replace("_Price", "").replace("Price", "").strip()
                 continue 
             
+            # Model နဲ့ Price ဖတ်ခြင်း
             if model_cell and model_cell not in ["nan", "0", "0.0", "", "Model"]:
                 try:
                     price_val = str(row[1]).replace(',', '').strip()
@@ -56,13 +56,11 @@ def load_data(tab_name):
                             except: continue
         return temp_products
     except Exception as e:
-        st.error(f"Error loading {tab_name} data: {e}")
         return {}   
 
 # --- UI Display ---
 st.markdown(f"<h1 style='text-align: center; color: #333;'>🚜 {selected_brand} Price List</h1>", unsafe_allow_html=True)
 
-# ရွေးချယ်ထားတဲ့ ကုမ္ပဏီရဲ့ Data ကိုပဲ Load လုပ်မယ်
 data = load_data(sheet_name)
 
 if data:
