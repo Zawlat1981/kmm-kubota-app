@@ -10,7 +10,7 @@ SHEET_ID = "1QqQvPKH7G0hqqhd_0V6cP40Htl8qdFEZ6nHBVe_53_g"
 st.sidebar.header("🚜 Brand Selection")
 selected_brand = st.sidebar.selectbox(
     "အမှတ်တံဆိပ် ရွေးချယ်ပါ -", 
-    ["Kubota", "Yanmar", "Win Shwe Wah (2nd)", "John Deere", "New Holland", "YTO", "Dongfeng", "Mahindra", "Yamabisi", "Sonalika"]
+    ["Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", "YTO", "Dongfeng", "Mahindra", "Yamabisi", "Sonalika"]
 )
 
 # ကုမ္ပဏီအလိုက် Sheet Tab နာမည်ကို သတ်မှတ်မယ်
