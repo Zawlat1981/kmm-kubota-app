@@ -38,7 +38,7 @@ def load_data(tab_name):
                 continue 
 
             model_cell = str(row[0]).strip()
-            if model_cell and model_cell not in ["nan", "0", "0.0", "", "Model"]:
+            if model_cell in ["nan", "0", "0.0", "", "Model"]:
                 try:
                     price_val = str(row[1]).replace(',', '').strip()
                     base_p = float(price_val) if price_val != "" else 0
