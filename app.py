@@ -25,48 +25,60 @@ def load_data(tab_name):
         image_col_idx = -1 
 
         for index, row in df.iterrows():
-            # Header ရှာဖွေခြင်း (Model သို့မဟုတ် Image_Link ပါဝင်သော row ကို header အဖြစ်ယူမည်)
+            # စာသားများကို သန့်စင်ရန်
             row_values = [str(cell).strip() for cell in row]
+            
+            # ၁။ Header (ခေါင်းစဉ်) ရှာဖွေခြင်း
             if "Model" in row_values or "Image_Link" in row_values:
                 for col_idx, cell_val in enumerate(row):
                     val = str(cell_val).strip()
                     if "Image_Link" in val:
                         image_col_idx = col_idx
-                    # _Price ပါတာရော၊ သာမန် Attachment ဈေးနှုန်းပါတာရောကို သိမ်းမယ်
-                    if val and val != "nan" and col_idx > 1:
+                    # Attachment ခေါင်းစဉ်များကို သိမ်းဆည်းခြင်း
+                    if val and val != "nan" and col_idx > 1 and "Image_Link" not in val:
                         current_headers[col_idx] = val.replace("_Price", "").replace("Price", "").strip()
                 continue 
 
+            # ၂။ ဒေတာဖတ်ခြင်း (Model အမည်ကို စစ်ဆေးခြင်း)
             model_cell = str(row[0]).strip()
+            
+            # Model နေရာမှာ 0 ဖြစ်နေရင် ဒါမှမဟုတ် အလွတ်ဖြစ်နေရင် ကျော်သွားမယ်
             if model_cell in ["nan", "0", "0.0", "", "Model"]:
-                try:
-                    price_val = str(row[1]).replace(',', '').strip()
-                    base_p = float(price_val) if price_val != "" else 0
-                except: base_p = 0
-                
-                # ပုံ Link ကို Column ကနေ ဆွဲယူမယ်
-                img_url = str(row[image_col_idx]).strip() if image_col_idx != -1 else ""
+                continue 
 
-                if base_p > 0:
-                    # 'Image' key ထဲမှာ ပုံ link ကို သိမ်းမယ်
-                    temp_products[model_cell] = {"Base_Price": base_p, "Image": img_url, "Attachments": {}}
-                    for col_idx, cell_val in enumerate(row):
-                        if col_idx in current_headers:
-                            try:
-                                clean_val = str(cell_val).replace(',', '').strip()
-                                att_price = float(clean_val)
-                                if att_price > 0:
-                                    temp_products[model_cell]["Attachments"][current_headers[col_idx]] = att_price
-                            except: continue
+            # ၃။ Base Price ဖတ်ခြင်း
+            try:
+                price_val = str(row[1]).replace(',', '').strip()
+                base_p = float(price_val) if price_val != "" else 0
+            except:
+                base_p = 0
+            
+            # ၄။ ပုံ Link ကို ဆွဲယူခြင်း
+            img_url = ""
+            if image_col_idx != -1:
+                img_url = str(row[image_col_idx]).strip()
+
+            # ဒေတာများကို Dictionary ထဲသို့ ထည့်သွင်းခြင်း
+            if base_p > 0:
+                temp_products[model_cell] = {"Base_Price": base_p, "Image": img_url, "Attachments": {}}
+                for col_idx, cell_val in enumerate(row):
+                    if col_idx in current_headers:
+                        try:
+                            clean_val = str(cell_val).replace(',', '').strip()
+                            att_price = float(clean_val)
+                            if att_price > 0:
+                                temp_products[model_cell]["Attachments"][current_headers[col_idx]] = att_price
+                        except:
+                            continue
         return temp_products
-    except: return {}
+    except Exception as e:
+        return {}
 
-# --- 👇 ဒီနေရာမှာ load_data ကို ခေါ်ပေးဖို့ လိုပါတယ် 👇 ---
+# ဒေတာများကို စတင် Load လုပ်ခြင်း
 data = load_data(sheet_name)
 
-# --- UI Display ---
+# --- UI Display အပိုင်း ---
 if data:
-    # ခေါင်းစဉ်ကို အလယ်မှာပြမယ်
     st.markdown(f"<h1 style='text-align: center; color: #333;'>🚜 {selected_brand} Price List</h1>", unsafe_allow_html=True)
     
     model_list = list(data.keys())
@@ -75,9 +87,10 @@ if data:
     if selected_model:
         prod = data[selected_model]
         
-        # မော်ဒယ်ပုံကို အရင်ပြမယ်
-        if prod['Image'] and prod['Image'] != "nan" and prod['Image'] != "":
-            st.image(prod['Image'], caption=f"{selected_brand} {selected_model}", use_container_width=True)
+        # မော်ဒယ်ပုံကို ပြသခြင်း
+        img_url = prod['Image']
+        if img_url and img_url != "nan" and img_url != "0" and img_url.startswith("http"):
+            st.image(img_url, caption=f"{selected_brand} {selected_model}", use_container_width=True)
         
         st.markdown(f"### 💰 Base Price: **{prod['Base_Price']:,.0f}** MMK")
         st.write("---")
@@ -99,7 +112,7 @@ if data:
         st.write("---")
         st.success(f"## 📄 Grand Total: {total:,.0f} Kyats")
 else:
-    st.warning(f"Google Sheet ထဲမှာ '{sheet_name}' ဆိုတဲ့ Tab ကို မတွေ့သေးပါဘူး။ Tab အသစ်ဆောက်ပြီး အချက်အလက်ဖြည့်ပေးပါခင်ဗျာ။")
+    st.warning(f"Google Sheet ထဲမှာ '{sheet_name}' ဆိုတဲ့ Tab ကို မတွေ့သေးပါဘူး (သို့မဟုတ်) ဒေတာဖတ်လို့ မရဖြစ်နေပါတယ်။ Tab အသစ်ဆောက်ပြီး အချက်အလက်ဖြည့်ပေးပါခင်ဗျာ။")
 
 st.markdown(f"<br><hr><center><small>© 2026 KMM {selected_brand}</small></center>", unsafe_allow_html=True)
 
