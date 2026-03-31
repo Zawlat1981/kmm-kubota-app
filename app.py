@@ -25,13 +25,15 @@ def load_data(tab_name):
         image_col_idx = -1 
 
         for index, row in df.iterrows():
-            # Header ထဲမှာ Image_Link column ပါလား စစ်မယ်
-            if any("_Price" in str(cell) for cell in row):
+            # Header ရှာဖွေခြင်း (Model သို့မဟုတ် Image_Link ပါဝင်သော row ကို header အဖြစ်ယူမည်)
+            row_values = [str(cell).strip() for cell in row]
+            if "Model" in row_values or "Image_Link" in row_values:
                 for col_idx, cell_val in enumerate(row):
                     val = str(cell_val).strip()
                     if "Image_Link" in val:
                         image_col_idx = col_idx
-                    if val and val != "nan" and col_idx > 1 and "_Price" in val:
+                    # _Price ပါတာရော၊ သာမန် Attachment ဈေးနှုန်းပါတာရောကို သိမ်းမယ်
+                    if val and val != "nan" and col_idx > 1:
                         current_headers[col_idx] = val.replace("_Price", "").replace("Price", "").strip()
                 continue 
 
