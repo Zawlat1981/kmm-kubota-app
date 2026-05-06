@@ -25,35 +25,46 @@ def load_data(tab_name):
         image_col_idx = -1 
 
         for index, row in df.iterrows():
+            # Row ထဲက တန်ဖိုးတွေကို စာသားအဖြစ် ပြောင်းပြီး အလွတ်တွေကို ဖယ်မယ်
             row_values = [str(cell).strip() for cell in row]
             
+            # ၁။ Header Row ကို ရှာခြင်း (Model သို့မဟုတ် Image_Link ပါရင် Header လို့ သတ်မှတ်မယ်)
             if "Model" in row_values or "Image_Link" in row_values:
-                current_headers = {} 
+                current_headers = {} # Header အသစ်တွေ့ရင် အရင်ဟာတွေကို အကုန် Reset လုပ်မယ်
                 for col_idx, cell_val in enumerate(row):
                     val = str(cell_val).strip()
                     if "Image_Link" in val:
                         image_col_idx = col_idx
+                    # Column 2 ကစပြီး ကျန်တဲ့ ခေါင်းစဉ်တွေကို သိမ်းမယ်
                     if val and val != "nan" and col_idx > 1 and "Image_Link" not in val and "Base Price" not in val:
                         current_headers[col_idx] = val.replace("_Price", "").replace("Price", "").strip()
-                continue 
+                continue # Header row ဖြစ်တဲ့အတွက် အောက်က model data ဖတ်တဲ့အပိုင်းကို မသွားဘဲ နောက် Row ကို ဆက်သွားမယ်
 
+            # ၂။ Model Row ဖတ်ခြင်း
             model_cell = str(row[0]).strip()
-            if model_cell in ["nan", "0", "0.0", "", "Model", "None"]:
+            
+            # Model အမည်က အလွတ်ဖြစ်နေရင် ဒါမှမဟုတ် Header စာသား ဖြစ်နေရင် ကျော်သွားမယ်
+            if model_cell in ["nan", "0", "0.0", "", "Model", "None", "nan"]:
                 continue 
 
+            # ၃။ Base Price ဖတ်ခြင်း
             try:
                 price_val = str(row[1]).replace(',', '').strip()
+                # အကယ်၍ Base Price က ကိန်းဂဏန်းမဟုတ်ရင် ဒါဟာ model row မဟုတ်နိုင်ဘူး
                 base_p = float(price_val) if price_val != "" else 0
             except:
-                base_p = 0
+                continue # Price ဖတ်မရရင် ဒီ row ကို ကျော်မယ်
             
+            # ၄။ ပုံ Link ကို ဆွဲယူခြင်း
             img_url = ""
             if image_col_idx != -1 and image_col_idx < len(row):
                 img_url = str(row[image_col_idx]).strip()
 
+            # ၅။ Data သိမ်းဆည်းခြင်း (Base Price ရှိမှသာ သိမ်းမယ်)
             if base_p > 0:
                 temp_products[model_cell] = {"Base_Price": base_p, "Image": img_url, "Attachments": {}}
                 for col_idx, cell_val in enumerate(row):
+                    # လက်ရှိ Row နဲ့ သက်ဆိုင်တဲ့ (နောက်ဆုံးတွေ့ထားတဲ့) Header ရှိမှသာ ထည့်မယ်
                     if col_idx in current_headers:
                         try:
                             clean_val = str(cell_val).replace(',', '').strip()
