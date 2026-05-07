@@ -1,120 +1,90 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="Multi-Brand Tractor Price List", page_icon="🚜", layout="centered")
+st.set_page_config(page_title="KMM Equipment Calculator", page_icon="🚜", layout="centered")
 
-# Google Sheet ID
+# Google Sheet အချက်အလက်
 SHEET_ID = "1QqQvPKH7G0hqqhd_0V6cP40Htl8qdFEZ6nHBVe_53_g"
-
-# --- Sidebar ---
-st.sidebar.header("🚜 Brand Selection")
-selected_brand = st.sidebar.selectbox(
-    "အမှတ်တံဆိပ် ရွေးချယ်ပါ -", 
-    ["Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", "YTO", "Dongfeng", "Mahindra", "Yamabisi", "Sonalika"]
-)
-
-sheet_name = selected_brand
+# သင် အခု အသစ်ပြင်ထားတဲ့ Tab နာမည်ကို ဒီမှာ ထည့်ပေးပါ (ဥပမာ - Sheet1 သို့မဟုတ် Attachments)
+ATTACHMENT_SHEET = "Sheet1" 
 
 @st.cache_data(ttl=60)
-def load_data(tab_name):
-    url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={tab_name}"
+def get_data():
+    url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={ATTACHMENT_SHEET}"
     try:
-        df = pd.read_csv(url, header=None)
-        temp_products = {}
-        current_headers = {} 
-        image_col_idx = -1 
-
-        for index, row in df.iterrows():
-            # Row ထဲက တန်ဖိုးတွေကို စာသားအဖြစ် ပြောင်းပြီး အလွတ်တွေကို ဖယ်မယ်
-            row_values = [str(cell).strip() for cell in row]
-            
-            # ၁။ Header Row ကို ရှာခြင်း (Model သို့မဟုတ် Image_Link ပါရင် Header လို့ သတ်မှတ်မယ်)
-            if "Model" in row_values or "Image_Link" in row_values:
-                current_headers = {} # Header အသစ်တွေ့ရင် အရင်ဟာတွေကို အကုန် Reset လုပ်မယ်
-                for col_idx, cell_val in enumerate(row):
-                    val = str(cell_val).strip()
-                    if "Image_Link" in val:
-                        image_col_idx = col_idx
-                    # Column 2 ကစပြီး ကျန်တဲ့ ခေါင်းစဉ်တွေကို သိမ်းမယ်
-                    if val and val != "nan" and col_idx > 1 and "Image_Link" not in val and "Base Price" not in val:
-                        current_headers[col_idx] = val.replace("_Price", "").replace("Price", "").strip()
-                continue # Header row ဖြစ်တဲ့အတွက် အောက်က model data ဖတ်တဲ့အပိုင်းကို မသွားဘဲ နောက် Row ကို ဆက်သွားမယ်
-
-            # ၂။ Model Row ဖတ်ခြင်း
-            model_cell = str(row[0]).strip()
-            
-            # Model အမည်က အလွတ်ဖြစ်နေရင် ဒါမှမဟုတ် Header စာသား ဖြစ်နေရင် ကျော်သွားမယ်
-            if model_cell in ["nan", "0", "0.0", "", "Model", "None", "nan"]:
-                continue 
-
-            # ၃။ Base Price ဖတ်ခြင်း
-            try:
-                price_val = str(row[1]).replace(',', '').strip()
-                # အကယ်၍ Base Price က ကိန်းဂဏန်းမဟုတ်ရင် ဒါဟာ model row မဟုတ်နိုင်ဘူး
-                base_p = float(price_val) if price_val != "" else 0
-            except:
-                continue # Price ဖတ်မရရင် ဒီ row ကို ကျော်မယ်
-            
-            # ၄။ ပုံ Link ကို ဆွဲယူခြင်း
-            img_url = ""
-            if image_col_idx != -1 and image_col_idx < len(row):
-                img_url = str(row[image_col_idx]).strip()
-
-            # ၅။ Data သိမ်းဆည်းခြင်း (Base Price ရှိမှသာ သိမ်းမယ်)
-            if base_p > 0:
-                temp_products[model_cell] = {"Base_Price": base_p, "Image": img_url, "Attachments": {}}
-                for col_idx, cell_val in enumerate(row):
-                    # လက်ရှိ Row နဲ့ သက်ဆိုင်တဲ့ (နောက်ဆုံးတွေ့ထားတဲ့) Header ရှိမှသာ ထည့်မယ်
-                    if col_idx in current_headers:
-                        try:
-                            clean_val = str(cell_val).replace(',', '').strip()
-                            att_price = float(clean_val)
-                            if att_price > 0:
-                                header_name = current_headers[col_idx]
-                                temp_products[model_cell]["Attachments"][header_name] = att_price
-                        except:
-                            continue
-        return temp_products
+        df = pd.read_csv(url, header=0)
+        df = df.fillna(0)
+        return df
     except Exception as e:
-        return {}
+        st.error(f"Google Sheet ဖတ်လို့မရပါ: {e}")
+        return pd.DataFrame()
 
-# --- ဤနေရာမှစ၍ Function အပြင်ဘက်တွင် ရှိရပါမည် ---
-data = load_data(sheet_name)
+df = get_data()
 
-if data:
-    st.markdown(f"<h1 style='text-align: center; color: #333;'>🚜 {selected_brand} Price List</h1>", unsafe_allow_html=True)
+if not df.empty:
+    st.markdown("<h2 style='text-align: center; color: #333;'>🚜 Equipment & Attachments Calculator</h2>", unsafe_allow_html=True)
     
-    model_list = list(data.keys())
-    selected_model = st.selectbox(f"{selected_brand} မော်ဒယ်ကို ရွေးပါ -", model_list)
+    # ၁။ မော်ဒယ် ရွေးချယ်ခြင်း
+    model_col = 'Model1' # Excel ထဲက Column ခေါင်းစဉ်အတိုင်း
+    models = sorted(df[model_col].unique().astype(str).tolist())
+    models = [m for m in models if m not in ["0", "0.0", "nan", "Model1"]]
+    
+    selected_model = st.selectbox("စက်မော်ဒယ် ရွေးချယ်ပါ (Tractor/Excavator/Combine) -", models)
+    filtered_df = df[df[model_col] == selected_model]
 
-    if selected_model:
-        prod = data[selected_model]
-        
-        img_url = prod['Image']
-        if img_url and img_url != "nan" and img_url.startswith("http"):
-            st.image(img_url, caption=f"{selected_brand} {selected_model}", use_container_width=True)
-        
-        st.markdown(f"### 💰 Base Price: **{prod['Base_Price']:,.0f}** MMK")
-        st.write("---")
-        
-        att_dict = prod['Attachments']
-        selected_atts_prices = []
-        
-        if att_dict:
-            st.markdown("🔗 **Attachments:**")
-            for att, price in att_dict.items():
-                is_selected = st.checkbox(f"➕ {att} (+{price:,.0f} MMK)", key=f"{selected_brand}_{selected_model}_{att}")
-                if is_selected:
-                    selected_atts_prices.append(price)
-        
-        total = prod['Base_Price'] + sum(selected_atts_prices)
-        st.write("---")
-        st.success(f"## 📄 Grand Total: {total:,.0f} Kyats")
+    selected_prices = []
+    st.write("---")
+    st.subheader(f"🛠 {selected_model} အတွက် နောက်တွဲများ")
+
+    # Dropdown Function
+    def create_select(label, m_col, p_col):
+        if m_col in filtered_df.columns and p_col in filtered_df.columns:
+            items = filtered_df[[m_col, p_col]].drop_duplicates()
+            options = []
+            for _, row in items.iterrows():
+                name = str(row[m_col]).strip()
+                price = row[p_col]
+                if name not in ["0", "0.0", "nan"]:
+                    options.append({"label": f"{name} (+{price:,.0f} MMK)", "price": float(price)})
+            
+            if options:
+                choice = st.selectbox(f"{label} ရွေးချယ်ရန် -", ["မယူပါ"] + [o["label"] for o in options])
+                if choice != "မယူပါ":
+                    return next(item["price"] for item in options if item["label"] == choice)
+        return 0
+
+    # ၂။ အမျိုးအစားအလိုက် Column ခွဲပြသခြင်း
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.info("🚜 Tractor & Harvester")
+        selected_prices.append(create_select("Rotary", "Rotary_Model1", "Rotary_Price"))
+        selected_prices.append(create_select("Harrow", "Harrow_Model1", "Harrow_Price"))
+        selected_prices.append(create_select("Plow", "Plow_Model1", "Plow_Price"))
+        selected_prices.append(create_select("Bean Kit", "BEANKIT_Model1", "BEANKIT_Price"))
+        selected_prices.append(create_select("Corn Kit", "CORNKIT_Model1", "CORNKIT_Price"))
+
+    with col2:
+        st.info("🏗 Excavator & Others")
+        selected_prices.append(create_select("EHB01 Breaker", "EHB01_Model1", "EHB01_Price"))
+        selected_prices.append(create_select("EHB03 Breaker", "EHB03_Model1", "EHB03_Price"))
+        selected_prices.append(create_select("EHB05 Breaker", "EHB05_Model1", "EHB05_Price"))
+        selected_prices.append(create_select("Sowing Machine", "SOWINGMACHINE_Model1", "SOWINGMACHINE_Price"))
+        selected_prices.append(create_select("Semi-Auto Sowing", "SEMI-AUTOSOWINGMAACHINE_Model1", "SEMI-AUTOSOWINGMAACHINE_Price"))
+        selected_prices.append(create_select("MATV2", "MATV2_Model1", "MATV2_Price"))
+
+    # ၃။ စုစုပေါင်းတွက်ချက်ခြင်း
+    grand_total_att = sum(selected_prices)
+    st.write("---")
+    if grand_total_att > 0:
+        st.success(f"### 📄 ရွေးချယ်ထားသော နောက်တွဲစုစုပေါင်း: {grand_total_att:,.0f} MMK")
+    else:
+        st.write("နောက်တွဲများကို ရွေးချယ်တွက်ချက်နိုင်ပါသည်။")
+
 else:
-    st.warning(f"Google Sheet ထဲမှာ '{sheet_name}' ဆိုတဲ့ Tab ကို မတွေ့သေးပါဘူး။")
+    st.warning("Data load လုပ်၍မရဖြစ်နေပါသည်။ Google Sheet ကို စစ်ဆေးပေးပါ။")
 
-st.markdown(f"<br><hr><center><small>© 2026 KMM {selected_brand}</small></center>", unsafe_allow_html=True)
-
+st.markdown("<br><hr><center><small>© 2026 KMM Equipment Calculator</small></center>", unsafe_allow_html=True)
 
 
 
