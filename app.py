@@ -34,16 +34,34 @@ def load_data(tab_name):
 df_tractor, df_attach = load_data(selected_brand)
 
 if not df_tractor.empty:
-    # ၂။ ခေါင်းစဉ်ကို "KMM Kubota Price List" ဟု ပြောင်းလဲခြင်း
+    # ၁။ ခေါင်းစဉ်
     st.markdown("<h1 style='text-align: center; color: #ff6600;'>🚜 KMM Kubota Price List</h1>", unsafe_allow_html=True)
-    st.markdown(f"<p style='text-align: center; color: #555; font-weight: bold;'>({selected_brand} Brand)</p>", unsafe_allow_html=True)
-    st.write("---")
+
+    # ၂။ နိုင်ငံအမည် သတ်မှတ်ခြင်း (တစ်ကြိမ်ပဲ ရေးဖို့ လိုပါတယ်)
+    if selected_brand in ["John-Deere", "New-Holland", "Mahindra", "Sonalika"]:
+        origin = "Indian"
+    elif selected_brand in ["YTO", "Yamabisi", "DongFeng"]:
+        origin = "China"
+    elif selected_brand == "Kubota":
+        origin = "Japan/Thailand"
+    elif selected_brand == "Yanmar":
+        origin = "Japan"
+    else:
+        origin = ""
+
+    # ၃။ စာသားကို ပြသခြင်း (Brand အမည် နှင့် နိုင်ငံ)
+    display_text = f"({selected_brand} Brand - {origin})" if origin else f"({selected_brand} Brand)"
+    st.markdown(f"<p style='text-align: center; color: #555; font-weight: bold;'>{display_text}</p>", unsafe_allow_html=True)
     
-    # ၃။ စက်မော်ဒယ် ရွေးချယ်ခြင်း
+    st.write("---") # မျဉ်းတားလေးတစ်ခု ထည့်လိုက်ရင် ပိုကြည့်ကောင်းပါတယ်
+
+    # ၄။ စက်မော်ဒယ် ရွေးချယ်ခြင်း
     model_list = df_tractor.iloc[:, 0].astype(str).tolist()
     model_list = [m for m in model_list if m not in ["0", "0.0", "nan", "Model"]]
     
     selected_model = st.selectbox(f"{selected_brand} မော်ဒယ်ကို ရွေးပါ -", model_list)
+    
+    # ... (ကျန်တဲ့ code အပိုင်းတွေ ဆက်သွားပါမယ်) ...
     
     t_info = df_tractor[df_tractor.iloc[:, 0] == selected_model].iloc[0]
     
