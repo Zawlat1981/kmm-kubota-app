@@ -14,20 +14,22 @@ selected_brand = st.sidebar.selectbox(
     ["Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika", "Yamabisi", "DongFeng"]
 )
 
+# နောက်တွဲများအတွက် သီးသန့် Tab နာမည် (မူလအတိုင်း တစ်ခုတည်းသုံးခြင်း)
+ATTACHMENT_SHEET = "Attachments_List"
+
 @st.cache_data(ttl=60)
 def load_data(tab_name):
     base_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet="
-    attachment_tab = f"{tab_name}_Attachments"
     
     try:
         # ရွေးထားတဲ့ Brand ရဲ့ စက်ပစ္စည်းစာရင်းကို ဖတ်မယ်
         df_tractor = pd.read_csv(base_url + tab_name).fillna(0)
-        # နောက်တွဲစာရင်းကို ဖတ်မယ်
-        df_attach = pd.read_csv(base_url + attachment_tab).fillna(0)
+        # နောက်တွဲစာရင်းကို (သီးသန့် sheet တစ်ခုတည်းမှ) ဖတ်မယ်
+        df_attach = pd.read_csv(base_url + ATTACHMENT_SHEET).fillna(0)
         return df_tractor, df_attach
     except Exception as e:
-        st.error(f"Error: '{attachment_tab}'")
-        st.error(f"ကျေးဇူးပြု၍ Google Sheet ထဲတွင် '{tab_name}' နှင့် '{attachment_tab}' ဆိုသော Tab အမည်များ ရှိမရှိ စစ်ဆေးပါ")
+        st.error(f"Data Load Error: {e}")
+        st.error(f"ကျေးဇူးပြု၍ Google Sheet ထဲတွင် '{tab_name}' နှင့် '{ATTACHMENT_SHEET}' Tab အမည်များ မှန်မမှန် စစ်ဆေးပါ")
         return pd.DataFrame(), pd.DataFrame()
 
 # ဒေတာများကို Load လုပ်ခြင်း
@@ -37,7 +39,7 @@ if not df_tractor.empty:
     # ၁။ ခေါင်းစဉ်
     st.markdown("<h1 style='text-align: center; color: #ff6600;'>🚜 KMM Kubota Price List</h1>", unsafe_allow_html=True)
 
-    # ၂။ နိုင်ငံအမည် သတ်မှတ်ခြင်း (တစ်ကြိမ်ပဲ ရေးဖို့ လိုပါတယ်)
+    # ၂။ နိုင်ငံအမည် သတ်မှတ်ခြင်း
     if selected_brand in ["John-Deere", "New-Holland", "Mahindra", "Sonalika"]:
         origin = "Indian"
     elif selected_brand in ["YTO", "Yamabisi", "DongFeng"]:
@@ -53,7 +55,7 @@ if not df_tractor.empty:
     display_text = f"({selected_brand} Brand - {origin})" if origin else f"({selected_brand} Brand)"
     st.markdown(f"<p style='text-align: center; color: #555; font-weight: bold;'>{display_text}</p>", unsafe_allow_html=True)
     
-    st.write("---") # မျဉ်းတားလေးတစ်ခု ထည့်လိုက်ရင် ပိုကြည့်ကောင်းပါတယ်
+    st.write("---") 
 
     # ၄။ စက်မော်ဒယ် ရွေးချယ်ခြင်း
     model_list = df_tractor.iloc[:, 0].astype(str).tolist()
@@ -61,9 +63,8 @@ if not df_tractor.empty:
     
     selected_model = st.selectbox(f"{selected_brand} မော်ဒယ်ကို ရွေးပါ -", model_list)
     
-    # ... (ကျန်တဲ့ code အပိုင်းတွေ ဆက်သွားပါမယ်) ...
-    
-    t_info = df_tractor[df_tractor.iloc[:, 0] == selected_model].iloc[0]
+    # ရွေးထားတဲ့ မော်ဒယ်ရဲ့ အချက်အလက်ကို ယူခြင်း
+    t_info = df_tractor[df_tractor.iloc[:, 0].astype(str) == selected_model].iloc[0]
     
     # ဈေးနှုန်းနှင့် ပုံ
     try:
@@ -91,7 +92,13 @@ if not df_tractor.empty:
             options = []
             for _, row in items.iterrows():
                 if str(row[m_col]) not in ["0", "0.0", "nan"]:
-                    options.append({"label": f"{row[m_col]} (+{float(row[p_col]):,.0f} MMK)", "price": float(row[p_col])})
+                    try:
+                        # ကော်မာပါခဲ့ရင် ဖယ်ပြီးမှ float ပြောင်းမယ်
+                        p_val = str(row[p_col]).replace(',', '').strip()
+                        p = float(p_val)
+                        options.append({"label": f"{row[m_col]} (+{p:,.0f} MMK)", "price": p})
+                    except:
+                        continue
             if options:
                 c = st.selectbox(f"{label}:", ["မယူပါ"] + [o["label"] for o in options])
                 if c != "မယူပါ":
@@ -117,7 +124,7 @@ if not df_tractor.empty:
     st.success(f"## 📄 စုစုပေါင်းကျသင့်ငွေ: {grand_total:,.0f} MMK")
     st.info(f"စက်ဈေး: {base_price:,.0f} + နောက်တွဲ: {selected_att_total:,.0f}")
 else:
-    st.warning(f"Google Sheet ထဲမှာ '{selected_brand}' ဆိုတဲ့ Tab ကို မတွေ့ပါဘူး။ Tab အမည်ကို ပြန်စစ်ပေးပါ။")
+    st.warning(f"Google Sheet ထဲမှာ '{selected_brand}' ဆိုတဲ့ Tab ကို မတွေ့ပါဘူး။")
 
 st.markdown("<br><hr><center><small>© 2026 KMM Service Co., Ltd.</small></center>", unsafe_allow_html=True)
 
