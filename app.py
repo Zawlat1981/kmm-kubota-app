@@ -14,20 +14,20 @@ selected_brand = st.sidebar.selectbox(
     ["Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika", "Yamabisi", "DongFeng"]
 )
 
-# နောက်တွဲများအတွက် သီးသန့် Tab နာမည်
-ATTACHMENT_SHEET = "Attachments_List"
-
 @st.cache_data(ttl=60)
 def load_data(tab_name):
     base_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet="
+    attachment_tab = f"{tab_name}_Attachments"
+    
     try:
         # ရွေးထားတဲ့ Brand ရဲ့ စက်ပစ္စည်းစာရင်းကို ဖတ်မယ်
         df_tractor = pd.read_csv(base_url + tab_name).fillna(0)
         # နောက်တွဲစာရင်းကို ဖတ်မယ်
-        df_attach = pd.read_csv(base_url + ATTACHMENT_SHEET).fillna(0)
+        df_attach = pd.read_csv(base_url + attachment_tab).fillna(0)
         return df_tractor, df_attach
     except Exception as e:
-        st.error(f"Data Load Error: {e}")
+        st.error(f"Error: '{attachment_tab}'")
+        st.error(f"ကျေးဇူးပြု၍ Google Sheet ထဲတွင် '{tab_name}' နှင့် '{attachment_tab}' ဆိုသော Tab အမည်များ ရှိမရှိ စစ်ဆေးပါ")
         return pd.DataFrame(), pd.DataFrame()
 
 # ဒေတာများကို Load လုပ်ခြင်း
