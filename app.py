@@ -15,7 +15,7 @@ selected_brand = st.sidebar.selectbox(
 )
 
 # နောက်တွဲများအတွက် သီးသန့် Tab နာမည် (မူလအတိုင်း တစ်ခုတည်းသုံးခြင်း)
-ATTACHMENT_SHEET = "Attachments_List"
+ATTACHMENT_SHEET = "Attachments_Kubota"
 
 @st.cache_data(ttl=60)
 def load_data(tab_name):
