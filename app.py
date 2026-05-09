@@ -21,16 +21,26 @@ ATTACHMENT_SHEET = "Attachments_Kubota"
 def load_data(tab_name):
     base_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet="
     
+    # ၁။ စက်ဈေးနှုန်းစာရင်း (Main Tractor Sheet) ကို အရင်ဖတ်မယ်
     try:
-        # ရွေးထားတဲ့ Brand ရဲ့ စက်ပစ္စည်းစာရင်းကို ဖတ်မယ်
         df_tractor = pd.read_csv(base_url + tab_name).fillna(0)
-        # နောက်တွဲစာရင်းကို (သီးသန့် sheet တစ်ခုတည်းမှ) ဖတ်မယ်
-        df_attach = pd.read_csv(base_url + ATTACHMENT_SHEET).fillna(0)
-        return df_tractor, df_attach
     except Exception as e:
-        st.error(f"Data Load Error: {e}")
-        st.error(f"ကျေးဇူးပြု၍ Google Sheet ထဲတွင် '{tab_name}' နှင့် '{ATTACHMENT_SHEET}' Tab အမည်များ မှန်မမှန် စစ်ဆေးပါ")
-        return pd.DataFrame(), pd.DataFrame()
+        st.error(f"Error: {tab_name} Sheet ကို ရှာမတွေ့ပါ")
+        df_tractor = pd.DataFrame()
+
+    # ၂။ နောက်တွဲစာရင်း (Attachment Sheet) ကို ဖတ်မယ်
+    df_attach = pd.DataFrame() # အရင်ဆုံး အလွတ်တစ်ခု ကြေညာထားမယ်
+    
+    # Kubota သို့မဟုတ် Yanmar ဖြစ်မှသာ Attachment ကို ဖတ်မယ်
+    if tab_name in ["Kubota", "Yanmar"]:
+        attachment_tab = f"Attachments_{tab_name}"
+        try:
+            df_attach = pd.read_csv(base_url + attachment_tab).fillna(0)
+        except:
+            # တကယ်လို့ Sheet မရှိရင် ဘာမှမလုပ်ဘဲ ကျော်သွားမယ်
+            pass
+            
+    return df_tractor, df_attach
 
 # ဒေတာများကို Load လုပ်ခြင်း
 df_tractor, df_attach = load_data(selected_brand)
