@@ -92,41 +92,47 @@ if not df_tractor.empty:
 
     # ၄။ နောက်တွဲများ ရွေးချယ်ရန်
     st.subheader("🛠 နောက်တွဲများ ရွေးချယ်ရန်")
-    filtered_att = df_attach[df_attach.iloc[:, 0].astype(str) == selected_model]
     
     selected_att_total = 0
-    
-    def add_att_ui(label, m_col, p_col):
-        if m_col in df_attach.columns:
-            items = filtered_att[[m_col, p_col]].drop_duplicates()
-            options = []
-            for _, row in items.iterrows():
-                if str(row[m_col]) not in ["0", "0.0", "nan"]:
-                    try:
-                        # ကော်မာပါခဲ့ရင် ဖယ်ပြီးမှ float ပြောင်းမယ်
-                        p_val = str(row[p_col]).replace(',', '').strip()
-                        p = float(p_val)
-                        options.append({"label": f"{row[m_col]} (+{p:,.0f} MMK)", "price": p})
-                    except:
-                        continue
-            if options:
-                c = st.selectbox(f"{label}:", ["မယူပါ"] + [o["label"] for o in options])
-                if c != "မယူပါ":
-                    return next(item["price"] for item in options if item["label"] == c)
-        return 0
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.caption("🚜 Tractor Implements")
-        selected_att_total += add_att_ui("Rotary", "Rotary_Model1", "Rotary_Price")
-        selected_att_total += add_att_ui("Disc Harrow", "Harrow_Model1", "Harrow_Price")
-        selected_att_total += add_att_ui("Disc Plow", "Plow_Model1", "Plow_Price")
-        selected_att_total += add_att_ui("Combine Harvester Attach", "Combine_Model1", "Combine_Price")
+    # နောက်တွဲစာရင်း (df_attach) ရှိမှသာ ကျန်တာတွေကို ဆက်လုပ်မယ်
+    if not df_attach.empty:
+        filtered_att = df_attach[df_attach.iloc[:, 0].astype(str) == selected_model]
+        
+        def add_att_ui(label, m_col, p_col):
+            if m_col in df_attach.columns:
+                # ရွေးထားတဲ့ Model နဲ့ ဆိုင်တဲ့ ပစ္စည်းတွေပဲ စစ်ထုတ်မယ်
+                items = filtered_att[[m_col, p_col]].drop_duplicates()
+                options = []
+                for _, row in items.iterrows():
+                    if str(row[m_col]) not in ["0", "0.0", "nan"]:
+                        try:
+                            p_val = str(row[p_col]).replace(',', '').strip()
+                            p = float(p_val)
+                            options.append({"label": f"{row[m_col]} (+{p:,.0f} MMK)", "price": p})
+                        except:
+                            continue
+                if options:
+                    c = st.selectbox(f"{label}:", ["မယူပါ"] + [o["label"] for o in options])
+                    if c != "မယူပါ":
+                        return next(item["price"] for item in options if item["label"] == c)
+            return 0
 
-    with col2:
-        st.caption("🏗 Excavator & Others")
-        selected_att_total += add_att_ui("Hydraulic Breaker", "Breaker_Model1", "Breaker_Price")
-        selected_att_total += add_att_ui("Sowing/Transplanter", "Transplanter_Model1", "Transplanter_Price")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.caption("🚜 Tractor Implements")
+            selected_att_total += add_att_ui("Rotary", "Rotary_Model1", "Rotary_Price")
+            selected_att_total += add_att_ui("Disc Harrow", "Harrow_Model1", "Harrow_Price")
+            selected_att_total += add_att_ui("Disc Plow", "Plow_Model1", "Plow_Price")
+            selected_att_total += add_att_ui("Combine Harvester Attach", "Combine_Model1", "Combine_Price")
+
+        with col2:
+            st.caption("🏗 Excavator & Others")
+            selected_att_total += add_att_ui("Hydraulic Breaker", "Breaker_Model1", "Breaker_Price")
+            selected_att_total += add_att_ui("Sowing/Transplanter", "Transplanter_Model1", "Transplanter_Price")
+    else:
+        # နောက်တွဲစာရင်း မရှိသေးရင် ဒီစာသားလေး ပြပေးမယ်
+        st.info("ဤ Brand အတွက် နောက်တွဲပစ္စည်းစာရင်း မရှိသေးပါ။")
 
     # ၅။ စုစုပေါင်း
     grand_total = base_price + selected_att_total
