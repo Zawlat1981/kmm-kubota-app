@@ -105,7 +105,7 @@ if menu_choice == "Brand Selection":
 # ၂။ COMPETITOR ACTIVITIES MENU (FIXED)
 # ==========================================
 elif menu_choice == "Competitor Activities":
-    st.markdown("<h1 style='text-align: center; color: #0066cc;'>📊 Market Updates</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; color: #0066cc;'>📊 Competitor News Updates</h1>", unsafe_allow_html=True)
     st.write("---")
     
     sheet_name = "Competitor%20Activities"
