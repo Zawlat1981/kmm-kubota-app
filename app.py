@@ -133,32 +133,37 @@ if menu_choice == "Brand Selection":
 # ၂။ COMPETITOR ACTIVITIES MENU
 # ==========================================
 elif menu_choice == "Competitor Activities":
-    st.markdown("<h1 style='text-align: center; color: #0066cc;'>📊 Competitor Activities</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; color: #0066cc;'>📊 Market Updates</h1>", unsafe_allow_html=True)
     st.write("---")
     
-    # Competitor Sheet URL
     sheet_name = "Competitor%20Activities"
     comp_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={sheet_name}"
     
     try:
-        df_comp = pd.read_csv(comp_url)
-        # Date column ကို အသုံးပြု၍ အသစ်ဆုံးကို အပေါ်တင်ရန် စီခြင်း
+        # None တွေကို ဖယ်ဖို့အတွက် dropna သုံးပါမယ်
+        df_comp = pd.read_csv(comp_url).dropna(subset=['Date'])
         df_comp = df_comp.sort_values(by='Date', ascending=False)
         
-        st.dataframe(
-            df_comp,
-            column_config={
-                "Date": st.column_config.DateColumn("ရက်စွဲ"),
-                "Company": "ကုမ္ပဏီ",
-                "Content": st.column_config.TextColumn("အကြောင်းအရာ", width="large"),
-                "Promo": "ပရိုမိုးရှင်း/ဈေးနှုန်း",
-                "Link": st.column_config.LinkColumn("Link", display_text="Facebook တွင်ကြည့်ရန်")
-            },
-            hide_index=True,
-            use_container_width=True
-        )
+        # ဇယားအစား တစ်ခုချင်းစီကို Card ပုံစံနဲ့ ပြပါမယ်
+        for index, row in df_comp.iterrows():
+            with st.container(border=True): # သတင်းတစ်ပုဒ်ချင်းစီကို ဘောင်ခတ်ပြမယ်
+                col_a, col_b = st.columns([2, 1])
+                with col_a:
+                    st.subheader(f"🏢 {row['Company']}")
+                with col_b:
+                    st.caption(f"📅 {row['Date']}")
+                
+                st.write(f"**Description:** \n{row['Content']}")
+                
+                if str(row['Promo']) != '0':
+                    st.info(f"💡 {row['Promo']}")
+                
+                if str(row['Link']).startswith("http"):
+                    st.link_button("Facebook မှာ အသေးစိတ်ကြည့်ရန်", row['Link'])
+            st.write("") # အကွာအဝေးလေး ခြားပေးတာပါ
+            
     except Exception as e:
-        st.error("သတင်းအချက်အလက်များကို ခေါ်ယူ၍မရပါ။ Google Sheet Tab နာမည် မှန်၊ မမှန် စစ်ဆေးပေးပါ။")
+        st.error("ဒေတာဖတ်ရာတွင် အခက်အခဲရှိနေပါသည်။")
 
 st.markdown("<br><hr><center><small>© 2026 KMM Service Co., Ltd.</small></center>", unsafe_allow_html=True)
 
