@@ -155,7 +155,7 @@ elif menu_choice == "Competitor News Updates":
                     if fb_link.startswith("http"):
                         with btn_col1:
                             st.link_button("🔵 Facebook", fb_link, use_container_width=True)
-                    tt_link = str(news.get('titok', '')).strip()
+                    tt_link = str(news.get('tiktok', '')).strip()
                     if tt_link.startswith("http"):
                         with btn_col2:
                             st.link_button("⚫ TikTok", tt_link, use_container_width=True)
