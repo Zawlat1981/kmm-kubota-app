@@ -39,42 +39,34 @@ def load_data(tab_name):
     return df_tractor, df_attach
 
 # ==========================================
-# ၁။ BRAND SELECTION MENU (စျေးနှုန်းကြည့်ရန်)
+# ၁။ BRAND SELECTION MENU
 # ==========================================
 if menu_choice == "Brand Selection":
     df_tractor, df_attach = load_data(selected_brand)
-
     if not df_tractor.empty:
         st.markdown("<h1 style='text-align: center; color: #ff6600;'>🚜 KMM Kubota Price List</h1>", unsafe_allow_html=True)
-        
+        # (Brand Selection Logic...)
         if selected_brand in ["John-Deere", "New-Holland", "Mahindra", "Sonalika"]: origin = "Indian"
         elif selected_brand in ["YTO", "Yamabisi", "DongFeng"]: origin = "China"
         elif selected_brand == "Kubota": origin = "Japan/Thailand"
         elif selected_brand == "Yanmar": origin = "Japan"
         else: origin = ""
-
         display_text = f"({selected_brand} Brand - {origin})" if origin else f"({selected_brand} Brand)"
         st.markdown(f"<p style='text-align: center; color: #555; font-weight: bold;'>{display_text}</p>", unsafe_allow_html=True)
         st.write("---") 
-
         model_list = df_tractor.iloc[:, 0].astype(str).tolist()
         model_list = [m for m in model_list if m not in ["0", "0.0", "nan", "Model"]]
         selected_model = st.selectbox(f"{selected_brand} မော်ဒယ်ကို ရွေးပါ -", model_list)
-        
         t_info = df_tractor[df_tractor.iloc[:, 0].astype(str) == selected_model].iloc[0]
-        
         try:
             raw_p = str(t_info.iloc[1]).replace(',', '').strip()
             base_price = float(raw_p) if raw_p != "" else 0
         except: base_price = 0
         img_url = str(t_info.iloc[2])
-
         if img_url and img_url.startswith("http"):
             st.image(img_url, use_container_width=True)
-
         st.markdown(f"### 💰 စက်ဈေးနှုန်း: **{base_price:,.0f}** MMK")
         st.write("---")
-
         st.subheader("🛠 နောက်တွဲများ ရွေးချယ်ရန်")
         selected_att_total = 0
         if not df_attach.empty:
@@ -104,69 +96,66 @@ if menu_choice == "Brand Selection":
                 selected_att_total += add_att_ui("Combine", "Combine_Model1", "Combine_Price")
                 selected_att_total += add_att_ui("Breaker", "Breaker_Model1", "Breaker_Price")
                 selected_att_total += add_att_ui("Sowing", "Transplanter_Model1", "Transplanter_Price")
-        
         grand_total = base_price + selected_att_total
         st.success(f"## 📄 စုစုပေါင်း: {grand_total:,.0f} MMK")
     else:
         st.warning("Sheet Not Found")
 
 # ==========================================
-# ၂။ COMPETITOR ACTIVITIES MENU (သတင်းကြည့်ရန်)
+# ၂။ COMPETITOR ACTIVITIES MENU (FIXED)
 # ==========================================
 elif menu_choice == "Competitor Activities":
     st.markdown("<h1 style='text-align: center; color: #0066cc;'>📊 Market Updates</h1>", unsafe_allow_html=True)
     st.write("---")
     
-    comp_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Competitor%20Activities"
+    sheet_name = "Competitor%20Activities"
+    comp_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={sheet_name}"
     
     try:
-        # ဒေတာဖတ်ပြီး အလွတ်များကို ဖြည့်စွက်ပါ
         df_comp = pd.read_csv(comp_url).fillna('')
         
-        # စာကြောင်းခြားထားသမျှကို တစ်ခုတည်းဖြစ်အောင် ပြန်ပေါင်းမည့် Logic
+        # နာမည်တွေမှာ Space ပါနေရင် ဖယ်ထုတ်ပေးဖို့ (အရေးကြီးသည်)
+        df_comp.columns = df_comp.columns.str.strip()
+        
         current_data = []
         temp_row = None
 
         for _, row in df_comp.iterrows():
-            # Date ပါလာလျှင် သတင်းအသစ်တစ်ခုအဖြစ် သတ်မှတ်သည်
-            if str(row['Date']).strip() != '':
+            # Date Column ရှိမရှိ အရင်စစ်ပါမယ်
+            if 'Date' in df_comp.columns and str(row['Date']).strip() != '':
                 if temp_row is not None:
                     current_data.append(temp_row)
                 temp_row = row.to_dict()
             else:
-                # Date မပါလျှင် အပေါ်ကသတင်း၏ စာသားအဆက်အဖြစ် ပေါင်းထည့်သည်
-                if temp_row is not None and str(row['Content']).strip() != '':
-                    temp_row['Content'] = str(temp_row['Content']) + "\n" + str(row['Content'])
+                if temp_row is not None and 'Content' in row:
+                    temp_row['Content'] = str(temp_row.get('Content', '')) + "\n" + str(row['Content'])
         
-        # နောက်ဆုံးသတင်းကို ထည့်သွင်းခြင်း
         if temp_row is not None:
             current_data.append(temp_row)
 
-        # သတင်းများကို Card ပုံစံဖြင့် ပြသခြင်း
         if not current_data:
             st.info("ယနေ့အတွက် သတင်းအချက်အလက်များ မရှိသေးပါ။")
         else:
-            # ရက်စွဲအလိုက် အသစ်ဆုံးကို အပေါ်တင်ရန် (Sorting)
-            current_data.sort(key=lambda x: str(x['Date']), reverse=True)
-
+            # ဇယားမဟုတ်ဘဲ Card ပုံစံဖြင့်ပြသခြင်း
             for news in current_data:
                 with st.container(border=True):
                     col_a, col_b = st.columns([2, 1])
                     with col_a:
-                        st.subheader(f"🏢 {news['Company']}")
+                        # Company နာမည်မရှိရင် 'Unknown' လို့ပြမယ်
+                        st.subheader(f"🏢 {news.get('Company', 'N/A')}")
                     with col_b:
-                        st.caption(f"📅 {news['Date']}")
+                        st.caption(f"📅 {news.get('Date', 'N/A')}")
                     
                     st.write("**Description:**")
-                    st.write(news['Content'])
+                    st.write(news.get('Content', ''))
                     
-                    # Promo ရှိမှသာ ပြမည်
-                    if str(news['Promo']).strip() not in ['', '0']:
-                        st.info(f"💡 {news['Promo']}")
+                    promo = str(news.get('Promo', '')).strip()
+                    if promo not in ['', '0']:
+                        st.info(f"💡 {promo}")
                     
-                    # Facebook Link ရှိမှသာ ပြမည်
-                    if str(news['Link']).startswith("http"):
-                        st.link_button("Facebook တွင်ကြည့်ရန်", news['Link'])
+                    link = str(news.get('Link', ''))
+                    if link.startswith("http"):
+                        st.link_button("Facebook တွင်ကြည့်ရန်", link)
                 st.write("") 
             
     except Exception as e:
