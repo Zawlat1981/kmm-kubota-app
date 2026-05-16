@@ -7,16 +7,16 @@ st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout=
 # Google Sheet ID
 SHEET_ID = "1QqQvPKH7G0hqqhd_0V6cP40Htl8qdFEZ6nHBVe_53_g"
 
-# --- Sidebar Menu Navigation ---
+# --- Sidebar Menu ---
 with st.sidebar:
     st.markdown("## 🚜 KMM Service")
-    menu_choice = st.radio("သွားလိုရာကို ရွေးပါ -", ["Brand Selection", "Competitor Activities"])
+    menu_choice = st.radio("သွားလိုရာကို ရွေးချယ်ပါ (กรุณาเลือกเมนู) -", ["Brand Selection", "Competitor News Updates"])
     st.write("---")
     
     if menu_choice == "Brand Selection":
         st.header("🔍 Filter")
         selected_brand = st.selectbox(
-            "အမှတ်တံဆိပ် ရွေးချယ်ပါ -", 
+            "အမှတ်တံဆိပ် ရွေးချယ်ပါ (กรุณาเลือกยี่ห้อ) -", 
             ["Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika", "Yamabisi", "DongFeng"]
         )
 
@@ -45,19 +45,22 @@ if menu_choice == "Brand Selection":
     df_tractor, df_attach = load_data(selected_brand)
     if not df_tractor.empty:
         st.markdown("<h1 style='text-align: center; color: #ff6600;'>🚜 KMM Kubota Price List</h1>", unsafe_allow_html=True)
-        # (Brand Selection Logic...)
+        
         if selected_brand in ["John-Deere", "New-Holland", "Mahindra", "Sonalika"]: origin = "Indian"
         elif selected_brand in ["YTO", "Yamabisi", "DongFeng"]: origin = "China"
         elif selected_brand == "Kubota": origin = "Japan/Thailand"
         elif selected_brand == "Yanmar": origin = "Japan"
         else: origin = ""
+        
         display_text = f"({selected_brand} Brand - {origin})" if origin else f"({selected_brand} Brand)"
         st.markdown(f"<p style='text-align: center; color: #555; font-weight: bold;'>{display_text}</p>", unsafe_allow_html=True)
         st.write("---") 
+
         model_list = df_tractor.iloc[:, 0].astype(str).tolist()
         model_list = [m for m in model_list if m not in ["0", "0.0", "nan", "Model"]]
         selected_model = st.selectbox(f"{selected_brand} မော်ဒယ်ကို ရွေးပါ -", model_list)
         t_info = df_tractor[df_tractor.iloc[:, 0].astype(str) == selected_model].iloc[0]
+        
         try:
             raw_p = str(t_info.iloc[1]).replace(',', '').strip()
             base_price = float(raw_p) if raw_p != "" else 0
@@ -67,6 +70,7 @@ if menu_choice == "Brand Selection":
             st.image(img_url, use_container_width=True)
         st.markdown(f"### 💰 စက်ဈေးနှုန်း: **{base_price:,.0f}** MMK")
         st.write("---")
+        
         st.subheader("🛠 နောက်တွဲများ ရွေးချယ်ရန်")
         selected_att_total = 0
         if not df_attach.empty:
@@ -96,52 +100,44 @@ if menu_choice == "Brand Selection":
                 selected_att_total += add_att_ui("Combine", "Combine_Model1", "Combine_Price")
                 selected_att_total += add_att_ui("Breaker", "Breaker_Model1", "Breaker_Price")
                 selected_att_total += add_att_ui("Sowing", "Transplanter_Model1", "Transplanter_Price")
+        
         grand_total = base_price + selected_att_total
         st.success(f"## 📄 စုစုပေါင်း: {grand_total:,.0f} MMK")
     else:
         st.warning("Sheet Not Found")
 
 # ==========================================
-# ၂။ COMPETITOR ACTIVITIES MENU (FIXED)
+# ၂။ COMPETITOR NEWS UPDATES MENU
 # ==========================================
-elif menu_choice == "Competitor Activities":
-    st.markdown("<h1 style='text-align: center; color: #0066cc;'>📊 Competitor News Updates</h1>", unsafe_allow_html=True)
+elif menu_choice == "Competitor News Updates":
+    st.markdown("<h1 style='text-align: center; color: #0066cc;'>📊 Market Updates</h1>", unsafe_allow_html=True)
     st.write("---")
-    
-    sheet_name = "Competitor%20Activities"
-    comp_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={sheet_name}"
+    comp_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Competitor%20News%20Updates"
     
     try:
         df_comp = pd.read_csv(comp_url).fillna('')
-        
-        # နာမည်တွေမှာ Space ပါနေရင် ဖယ်ထုတ်ပေးဖို့ (အရေးကြီးသည်)
         df_comp.columns = df_comp.columns.str.strip()
         
         current_data = []
         temp_row = None
-
         for _, row in df_comp.iterrows():
-            # Date Column ရှိမရှိ အရင်စစ်ပါမယ်
-            if 'Date' in df_comp.columns and str(row['Date']).strip() != '':
+            if str(row['Date']).strip() != '':
                 if temp_row is not None:
                     current_data.append(temp_row)
                 temp_row = row.to_dict()
             else:
-                if temp_row is not None and 'Content' in row:
-                    temp_row['Content'] = str(temp_row.get('Content', '')) + "\n" + str(row['Content'])
+                if temp_row is not None and str(row.get('Content', '')).strip() != '':
+                    temp_row['Content'] = str(temp_row.get('Content', '')) + "\n" + str(row.get('Content', ''))
         
         if temp_row is not None:
             current_data.append(temp_row)
 
-        if not current_data:
-            st.info("ယနေ့အတွက် သတင်းအချက်အလက်များ မရှိသေးပါ။")
-        else:
-            # ဇယားမဟုတ်ဘဲ Card ပုံစံဖြင့်ပြသခြင်း
+        if current_data:
+            current_data.sort(key=lambda x: str(x['Date']), reverse=True)
             for news in current_data:
                 with st.container(border=True):
                     col_a, col_b = st.columns([2, 1])
                     with col_a:
-                        # Company နာမည်မရှိရင် 'Unknown' လို့ပြမယ်
                         st.subheader(f"🏢 {news.get('Company', 'N/A')}")
                     with col_b:
                         st.caption(f"📅 {news.get('Date', 'N/A')}")
@@ -153,13 +149,20 @@ elif menu_choice == "Competitor Activities":
                     if promo not in ['', '0']:
                         st.info(f"💡 {promo}")
                     
-                    link = str(news.get('Link', ''))
-                    if link.startswith("http"):
-                        st.link_button("Facebook တွင်ကြည့်ရန်", link)
+                    st.write("---")
+                    btn_col1, btn_col2 = st.columns(2)
+                    fb_link = str(news.get('facebook', '')).strip()
+                    if fb_link.startswith("http"):
+                        with btn_col1:
+                            st.link_button("🔵 Facebook", fb_link, use_container_width=True)
+                    tt_link = str(news.get('titok', '')).strip()
+                    if tt_link.startswith("http"):
+                        with btn_col2:
+                            st.link_button("⚫ TikTok", tt_link, use_container_width=True)
                 st.write("") 
             
     except Exception as e:
-        st.error(f"ဒေတာဖတ်ရာတွင် အမှားအယွင်းရှိနေပါသည်: {e}")
+        st.error(f"Error loading data: {e}")
 
 st.markdown("<br><hr><center><small>© 2026 KMM Service Co., Ltd.</small></center>", unsafe_allow_html=True)
 
