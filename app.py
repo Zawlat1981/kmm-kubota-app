@@ -110,7 +110,7 @@ if menu_choice == "Brand Selection":
 # ၂။ COMPETITOR NEWS UPDATES MENU
 # ==========================================
 elif menu_choice == "Competitor News Updates":
-    st.markdown("<h1 style='text-align: center; color: #0066cc;'>📊 Market Updates</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; color: #0066cc;'>📊 Competitor News Updates & News Myanmar</h1>", unsafe_allow_html=True)
     st.write("---")
     comp_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Competitor%20News%20Updates"
     
