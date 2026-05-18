@@ -107,7 +107,7 @@ if menu_choice == "Brand Selection":
         st.warning("Sheet Not Found")
 
 # ==========================================
-# ၂။ COMPETITOR NEWS UPDATES MENU (Date-Driven Grouping Version)
+# ၂။ COMPETITOR NEWS UPDATES MENU (Perfect Grouping Version)
 # ==========================================
 elif menu_choice == "Competitor News Updates":
     st.markdown("<h1 style='text-align: center; color: #0066cc;'>📊 Competitor News Updates & News Myanmar</h1>", unsafe_allow_html=True)
@@ -121,9 +121,9 @@ elif menu_choice == "Competitor News Updates":
         df_comp = pd.read_csv(comp_url).fillna('')
         df_comp.columns = [str(c).strip().lower() for c in df_comp.columns]
         
-        # 1. ဒေတာများကို ရယူပြီး လက်ရှိ Date အလိုက် Group ဖွဲ့၍ သတင်းများကို စုစည်းမည်
-        grouped_data = {}  # Format: {'2026-05-18': [news1, news2], '2026-05-16': [...]}
+        grouped_data = {}  # Format: {'2026-05-18': [news1, news2]}
         current_date = "No Date"
+        current_company = "Unknown Company"
         
         for _, row in df_comp.iterrows():
             r_date = str(row.get('date', '')).strip()
@@ -134,33 +134,37 @@ elif menu_choice == "Competitor News Updates":
             if r_date == '' and r_company == '' and r_content == '':
                 continue
                 
-            # Date အသစ်တွေ့လျှင် လက်ရှိ Date အဖြစ် ပြောင်းလဲသတ်မှတ်မည်
+            # Date အသစ်တွေ့လျှင် မှတ်သားမည်
             if r_date != '':
                 current_date = r_date
+            
+            # Company အသစ်တွေ့လျှင် မှတ်သားမည်၊ အလွတ်ဖြစ်နေပါက အပေါ်က Company နာမည်ကို ဆက်သုံးမည်
+            if r_company != '':
+                current_company = r_company
                 
-            # သတင်းအချက်အလက်များကို Dictionary အဖြစ် တည်ဆောက်မည်
+            # သတင်းအချက်အလက်များကို စုစည်းမှုတစ်ခု ပြုလုပ်ခြင်း
             news_item = {
-                'company': r_company if r_company != '' else '💵 Exchange Rate / News',
+                'company': current_company,
                 'content': r_content,
                 'promo': str(row.get('promo', '')).strip(),
                 'facebook': str(row.get('facebook', '')).strip(),
                 'tiktok': str(row.get('tiktok', '')).strip()
             }
             
-            # သက်ဆိုင်ရာ Date အုပ်စုအောက်သို့ ထည့်သွင်းမည်
-            if current_date not in grouped_data:
-                grouped_data[current_date] = []
-            grouped_data[current_date].append(news_item)
+            # တကယ်လို့ သတင်းစာသား (Content) ပါလာရင် သက်ဆိုင်ရာ Date အုပ်စုထဲ ထည့်မည်
+            if r_content != '':
+                if current_date not in grouped_data:
+                    grouped_data[current_date] = []
+                grouped_data[current_date].append(news_item)
             
         if grouped_data:
-            # 2. ရက်စွဲအလိုက် အသစ်ဆုံး Date ကို အပေါ်ဆုံးတွင် ထားရန် Sort လုပ်မည်
+            # ရက်စွဲအလိုက် အသစ်ဆုံး Date ကို ထိပ်ဆုံးတွင် ထားရန် Sort လုပ်မည်
             sorted_dates = sorted(grouped_data.keys(), reverse=True)
             
             for date_key in sorted_dates:
-                # နေ့ရက်အလိုက် ခေါင်းစဉ်ကြီးကို ထင်ထင်ရှားရှား ပြသမည်
-                st.markdown(f"<h2 style='color: #ff6600; background-color: #f0f7ff; padding: 10px; border-radius: 5px;'>📅 ရက်စွဲ: {date_key}</h2>", unsafe_allow_html=True)
+                # နေ့ရက်အလိုက် ခေါင်းစဉ်ကြီး
+                st.markdown(f"<h2 style='color: #ff6600; background-color: #f0f7ff; padding: 10px; border-radius: 5px;'>📅 Date: {date_key}</h2>", unsafe_allow_html=True)
                 
-                # ထိုနေ့ရက်အောက်ရှိ သတင်းအားလုံးကို ပတ်လမ်း (Loop) ပတ်၍ ပြသမည်
                 for news in grouped_data[date_key]:
                     with st.container(border=True):
                         st.subheader(f"🏢 {news['company']}")
@@ -171,7 +175,7 @@ elif menu_choice == "Competitor News Updates":
                         if promo not in ['', '0']:
                             st.info(f"💡 {promo}")
                         
-                        # Facebook နှင့် TikTok ခလုတ်များ
+                        # ခလုတ်များ ပြသခြင်း
                         fb_link = news['facebook']
                         tt_link = news['tiktok']
                         if fb_link.startswith("http") or tt_link.startswith("http"):
@@ -183,7 +187,7 @@ elif menu_choice == "Competitor News Updates":
                             if tt_link.startswith("http"):
                                 with btn_col2:
                                     st.link_button("⚫ TikTok", tt_link, use_container_width=True)
-                st.write("<br>", unsafe_allow_html=True) # ရက်စွဲတစ်ခုစီအကြား ခြားရန်
+                st.write("<br>", unsafe_allow_html=True)
                 
     except Exception as e:
         st.error(f"Error loading data: {e}")
