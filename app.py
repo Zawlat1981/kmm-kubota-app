@@ -107,7 +107,7 @@ if menu_choice == "Brand Selection":
         st.warning("Sheet Not Found")
 
 # ==========================================
-# ၂။ COMPETITOR NEWS UPDATES MENU
+# ၂။ COMPETITOR NEWS UPDATES MENU (ပိုမိုစိတ်ချရသော Version သစ်)
 # ==========================================
 elif menu_choice == "Competitor News Updates":
     st.markdown("<h1 style='text-align: center; color: #0066cc;'>📊 Competitor News Updates & News Myanmar</h1>", unsafe_allow_html=True)
@@ -116,24 +116,39 @@ elif menu_choice == "Competitor News Updates":
     
     try:
         df_comp = pd.read_csv(comp_url).fillna('')
-        df_comp.columns = df_comp.columns.str.strip()
+        df_comp.columns = [str(c).strip() for c in df_comp.columns]
         
         current_data = []
         temp_row = None
+        
         for _, row in df_comp.iterrows():
-            if str(row['Date']).strip() != '':
+            # အကယ်၍ Date ရော Company ရော Content ရော အကုန်လွတ်နေရင် ကျော်သွားမယ်
+            if str(row.get('Date','')).strip() == '' and str(row.get('Company','')).strip() == '' and str(row.get('Content','')).strip() == '':
+                continue
+                
+            # Date ပါလာရင် သတင်းအသစ်တစ်ခုအနေနဲ့ စမှတ်မှတ်မယ်
+            if str(row.get('Date', '')).strip() != '':
                 if temp_row is not None:
                     current_data.append(temp_row)
                 temp_row = row.to_dict()
             else:
-                if temp_row is not None and str(row.get('Content', '')).strip() != '':
-                    temp_row['Content'] = str(temp_row.get('Content', '')) + "\n" + str(row.get('Content', ''))
+                # Date မပါဘဲ Content ပဲပါလာရင် အပေါ်ကသတင်းနဲ့ ပေါင်းမယ်၊ အပေါ်မှာ သတင်းမရှိသေးရင် သီးသန့်ယူမယ်
+                if temp_row is not None:
+                    if str(row.get('Content', '')).strip() != '':
+                        temp_row['Content'] = str(temp_row.get('Content', '')) + "\n" + str(row.get('Content', ''))
+                else:
+                    # အပေါ်ဆုံးအတန်းတွေမှာ Date မပါခဲ့ရင်လည်း ဒေတာမပျောက်အောင် သိမ်းမယ်
+                    temp_row = row.to_dict()
+                    temp_row['Date'] = 'Exchange Rate / Info' # ယာယီ Date ပေးလိုက်ခြင်း
+                    temp_row['Company'] = str(row.get('Company', '')) if str(row.get('Company', '')) != '' else 'Notice'
         
         if temp_row is not None:
             current_data.append(temp_row)
 
         if current_data:
-            current_data.sort(key=lambda x: str(x['Date']), reverse=True)
+            # Date မရှိတဲ့အရာတွေပါရင် Sort လုပ်ရတာ အဆင်ပြေအောင် String ပြောင်းစစ်မယ်
+            current_data.sort(key=lambda x: str(x.get('Date', '')), reverse=True)
+            
             for news in current_data:
                 with st.container(border=True):
                     col_a, col_b = st.columns([2, 1])
