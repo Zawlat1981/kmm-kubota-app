@@ -62,14 +62,15 @@ def fetch_notion_news_with_images():
     url = f"https://api.notion.com/v1/databases/{DATABASE_ID}/query"
     
     try:
-        res = requests.post(url, headers=NOTION_HEADERS).json()
+        # Notion Filter စနစ်ကို လုံးဝဖြုတ်ပြီး ဒေတာအားလုံးကို အကြမ်းဆွဲထုတ်ခိုင်းခြင်း
+        res = requests.post(url, headers=NOTION_HEADERS, json={}).json()
         notion_items = []
         
         for page in res.get("results", []):
             page_id = page["id"]
             props = page.get("properties", {})
             
-            # ၁။ ခေါင်းစဉ် (Title) ယူခြင်း - မည်သည့် နာမည်ဖြစ်ဖြစ် Title Type ကို အော်တိုရှာမည်
+            # ၁။ ခေါင်းစဉ် (Title) ယူခြင်း
             item_title = "No Title"
             for p_name, p_val in props.items():
                 if p_val.get("type") == "title":
@@ -78,7 +79,7 @@ def fetch_notion_news_with_images():
                         item_title = title_list[0].get("text", {}).get("content", "No Title")
                     break
             
-            # ၂။ ရက်စွဲ (Date) ယူခြင်း - မည်သည့် နာမည်ဖြစ်ဖြစ် Date Type ကို အော်တိုရှာမည်
+            # ၂။ ရက်စွဲ (Date) ယူခြင်း
             item_date = "No Date"
             for p_name, p_val in props.items():
                 if p_val.get("type") == "date" and p_val.get("date"):
@@ -93,6 +94,7 @@ def fetch_notion_news_with_images():
             item_img_url = ""
             
             for block in blocks_res.get("results", []):
+                # တိုက်ရိုက် Upload တင်ထားသောပုံ သို့မဟုတ် လင့်ခ်ဖြင့်တင်ထားသောပုံကို ဖတ်ခြင်း
                 if block["type"] == "image":
                     img_data = block["image"]
                     if img_data["type"] == "file":
@@ -100,12 +102,10 @@ def fetch_notion_news_with_images():
                     elif img_data["type"] == "external":
                         item_img_url = img_data["external"]["url"]
                 
+                # စာသား block မျိုးစုံကို ဖတ်ပေးရန်
                 elif block["type"] == "paragraph":
                     text_list = block["paragraph"]["rich_text"]
-                    if text_list:
-                        item_content_th += text_list[0]["text"]["content"] + "\n"
-                
-                # အကယ်၍ စာသားကို Heading သို့မဟုတ် တခြား Block နဲ့ ရေးထားခဲ့ရင်လည်း ဖတ်ပေးရန်
+                    if text_list: item_content_th += text_list[0]["text"]["content"] + "\n"
                 elif block["type"] == "heading_1":
                     text_list = block["heading_1"]["rich_text"]
                     if text_list: item_content_th += text_list[0]["text"]["content"] + "\n"
@@ -123,7 +123,7 @@ def fetch_notion_news_with_images():
                 "image": item_img_url
             })
             
-        # ရက်စွဲအလိုက် အသစ်ဆုံးကို ထိပ်ဆုံးကပြရန် Python ဘက်မှ Sort ပြန်လုပ်ခြင်း
+        # ရက်စွဲအလိုက် အသစ်ဆုံးကို ထိပ်ဆုံးကပြရန် Sort လုပ်ခြင်း
         notion_items.sort(key=lambda x: x['date'], reverse=True)
         return notion_items
     except Exception as e:
@@ -215,7 +215,7 @@ elif menu_choice == "Competitor News Updates":
         for news in notion_news_list:
             st.markdown(f"<h4 style='color: #ff6600; background-color: #f0f7ff; padding: 8px; border-radius: 5px;'>📅 Date: {news['date']}</h4>", unsafe_allow_html=True)
             with st.container(border=True):
-                st.subheader(f"{news['title']}")
+                st.subheader(f"🏢 {news['title']}")
                 
                 # ပုံရှိလျှင် တိုက်ရိုက်ဆွဲပြမည်
                 if news['image']:
