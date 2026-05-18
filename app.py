@@ -107,79 +107,84 @@ if menu_choice == "Brand Selection":
         st.warning("Sheet Not Found")
 
 # ==========================================
-# ၂။ COMPETITOR NEWS UPDATES MENU (ဒေတာအမြဲတမ်း ချက်ချင်း Update ဖြစ်စေမည့် Version)
+# ၂။ COMPETITOR NEWS UPDATES MENU (Date-Driven Grouping Version)
 # ==========================================
 elif menu_choice == "Competitor News Updates":
     st.markdown("<h1 style='text-align: center; color: #0066cc;'>📊 Competitor News Updates & News Myanmar</h1>", unsafe_allow_html=True)
     st.write("---")
     
-    # ပြင်ဆင်ရန်- ဒေတာအမြဲတမ်း ချက်ချင်း Fresh ဖြစ်အောင် Google Sheets URL ကို Cache Busting လုပ်ခြင်း
     import time
     timestamp = int(time.time())
     comp_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Competitor%20News%20Updates&cache_bust={timestamp}"
     
     try:
         df_comp = pd.read_csv(comp_url).fillna('')
-        df_comp.columns = [str(c).strip() for c in df_comp.columns]
+        df_comp.columns = [str(c).strip().lower() for c in df_comp.columns]
         
-        current_data = []
-        temp_row = None
+        # 1. ဒေတာများကို ရယူပြီး လက်ရှိ Date အလိုက် Group ဖွဲ့၍ သတင်းများကို စုစည်းမည်
+        grouped_data = {}  # Format: {'2026-05-18': [news1, news2], '2026-05-16': [...]}
+        current_date = "No Date"
         
         for _, row in df_comp.iterrows():
-            # အကယ်၍ Date ရော Company ရော Content ရော အကုန်လွတ်နေရင် ကျော်သွားမယ်
-            if str(row.get('Date','')).strip() == '' and str(row.get('Company','')).strip() == '' and str(row.get('Content','')).strip() == '':
+            r_date = str(row.get('date', '')).strip()
+            r_company = str(row.get('company', '')).strip()
+            r_content = str(row.get('content', '')).strip()
+            
+            # အကယ်၍ အရေးကြီးသော ကော်လံအားလုံး လွတ်နေပါက ကျော်သွားမည်
+            if r_date == '' and r_company == '' and r_content == '':
                 continue
                 
-            # Date ပါလာရင် သတင်းအသစ်တစ်ခုအနေနဲ့ စမှတ်မှတ်မယ်
-            if str(row.get('Date', '')).strip() != '':
-                if temp_row is not None:
-                    current_data.append(temp_row)
-                temp_row = row.to_dict()
-            else:
-                # Date မပါဘဲ Content ပဲပါလာရင် အပေါ်ကသတင်းနဲ့ ပေါင်းမယ်
-                if temp_row is not None:
-                    if str(row.get('Content', '')).strip() != '':
-                        temp_row['Content'] = str(temp_row.get('Content', '')) + "\n" + str(row.get('Content', ''))
-                else:
-                    # အပေါ်ဆုံးအတန်းတွေမှာ Date မပါခဲ့ရင်လည်း ဒေတာမပျောက်အောင် သိမ်းမယ်
-                    temp_row = row.to_dict()
-                    temp_row['Date'] = 'Exchange Rate / Info'
-                    temp_row['Company'] = str(row.get('Company', '')) if str(row.get('Company', '')) != '' else 'Notice'
-        
-        if temp_row is not None:
-            current_data.append(temp_row)
-
-        if current_data:
-            # ရက်စွဲအလိုက် အသစ်ဆုံးကို အပေါ်ကနေ ပြသရန် (Sort)
-            current_data.sort(key=lambda x: str(x.get('Date', '')), reverse=True)
+            # Date အသစ်တွေ့လျှင် လက်ရှိ Date အဖြစ် ပြောင်းလဲသတ်မှတ်မည်
+            if r_date != '':
+                current_date = r_date
+                
+            # သတင်းအချက်အလက်များကို Dictionary အဖြစ် တည်ဆောက်မည်
+            news_item = {
+                'company': r_company if r_company != '' else '💵 Exchange Rate / News',
+                'content': r_content,
+                'promo': str(row.get('promo', '')).strip(),
+                'facebook': str(row.get('facebook', '')).strip(),
+                'tiktok': str(row.get('tiktok', '')).strip()
+            }
             
-            for news in current_data:
-                with st.container(border=True):
-                    col_a, col_b = st.columns([2, 1])
-                    with col_a:
-                        st.subheader(f"🏢 {news.get('Company', 'N/A')}")
-                    with col_b:
-                        st.caption(f"📅 {news.get('Date', 'N/A')}")
-                    
-                    st.write("**Description:**")
-                    st.write(news.get('Content', ''))
-                    
-                    promo = str(news.get('Promo', '')).strip()
-                    if promo not in ['', '0']:
-                        st.info(f"💡 {promo}")
-                    
-                    st.write("---")
-                    btn_col1, btn_col2 = st.columns(2)
-                    fb_link = str(news.get('facebook', '')).strip()
-                    if fb_link.startswith("http"):
-                        with btn_col1:
-                            st.link_button("🔵 Facebook", fb_link, use_container_width=True)
-                    tt_link = str(news.get('tiktok', '')).strip()
-                    if tt_link.startswith("http"):
-                        with btn_col2:
-                            st.link_button("⚫ TikTok", tt_link, use_container_width=True)
-                st.write("") 
+            # သက်ဆိုင်ရာ Date အုပ်စုအောက်သို့ ထည့်သွင်းမည်
+            if current_date not in grouped_data:
+                grouped_data[current_date] = []
+            grouped_data[current_date].append(news_item)
             
+        if grouped_data:
+            # 2. ရက်စွဲအလိုက် အသစ်ဆုံး Date ကို အပေါ်ဆုံးတွင် ထားရန် Sort လုပ်မည်
+            sorted_dates = sorted(grouped_data.keys(), reverse=True)
+            
+            for date_key in sorted_dates:
+                # နေ့ရက်အလိုက် ခေါင်းစဉ်ကြီးကို ထင်ထင်ရှားရှား ပြသမည်
+                st.markdown(f"<h2 style='color: #ff6600; background-color: #f0f7ff; padding: 10px; border-radius: 5px;'>📅 ရက်စွဲ: {date_key}</h2>", unsafe_allow_html=True)
+                
+                # ထိုနေ့ရက်အောက်ရှိ သတင်းအားလုံးကို ပတ်လမ်း (Loop) ပတ်၍ ပြသမည်
+                for news in grouped_data[date_key]:
+                    with st.container(border=True):
+                        st.subheader(f"🏢 {news['company']}")
+                        st.write("**Description:**")
+                        st.write(news['content'])
+                        
+                        promo = news['promo']
+                        if promo not in ['', '0']:
+                            st.info(f"💡 {promo}")
+                        
+                        # Facebook နှင့် TikTok ခလုတ်များ
+                        fb_link = news['facebook']
+                        tt_link = news['tiktok']
+                        if fb_link.startswith("http") or tt_link.startswith("http"):
+                            st.write("---")
+                            btn_col1, btn_col2 = st.columns(2)
+                            if fb_link.startswith("http"):
+                                with btn_col1:
+                                    st.link_button("🔵 Facebook", fb_link, use_container_width=True)
+                            if tt_link.startswith("http"):
+                                with btn_col2:
+                                    st.link_button("⚫ TikTok", tt_link, use_container_width=True)
+                st.write("<br>", unsafe_allow_html=True) # ရက်စွဲတစ်ခုစီအကြား ခြားရန်
+                
     except Exception as e:
         st.error(f"Error loading data: {e}")
 
