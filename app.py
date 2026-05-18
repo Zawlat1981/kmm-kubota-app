@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import requests
 import time
-from datetime import datetime
 
 # ==========================================
 # ၁။ PAGE CONFIG & CONSTANTS
@@ -58,11 +57,11 @@ def load_data(tab_name):
     return df_tractor, df_attach
 
 def fetch_notion_news_with_images():
-    """ Notion ထဲက ဒေတာများကို ပိုမိုစိတ်ချရသော လမ်းကြောင်းဖြင့် လှမ်းဆွဲထုတ်ပေးမည့် Function """
+    """ Notion ထဲက မည်သည့် Property ပုံစံမျိုးမဆို ဇွတ်ဆွဲထုတ်ပေးမည့် အဆင့်မြင့်ဆုံးဗားရှင်း """
     url = f"https://api.notion.com/v1/databases/{DATABASE_ID}/query"
     
     try:
-        # Notion Filter စနစ်ကို လုံးဝဖြုတ်ပြီး ဒေတာအားလုံးကို အကြမ်းဆွဲထုတ်ခိုင်းခြင်း
+        # ဒေတာအားလုံးကို အကန့်အသတ်မရှိ ဆွဲထုတ်ခိုင်းခြင်း
         res = requests.post(url, headers=NOTION_HEADERS, json={}).json()
         notion_items = []
         
@@ -70,23 +69,29 @@ def fetch_notion_news_with_images():
             page_id = page["id"]
             props = page.get("properties", {})
             
-            # ၁။ ခေါင်းစဉ် (Title) ယူခြင်း
+            # ၁။ ခေါင်းစဉ် (Title) ကို ဘယ်နာမည်နဲ့ပဲဖြစ်ဖြစ် ဆွဲထုတ်မည်
             item_title = "No Title"
-            for p_name, p_val in props.items():
+            for p_val in props.values():
                 if p_val.get("type") == "title":
                     title_list = p_val.get("title", [])
                     if title_list:
                         item_title = title_list[0].get("text", {}).get("content", "No Title")
                     break
             
-            # ၂။ ရက်စွဲ (Date) ယူခြင်း
+            # ၂။ ရက်စွဲ (Date) ကို ကော်လံနာမည်မရွေးဘဲ အော်တိုရှာမည် (မပါရင် ယနေ့ရက်စွဲပြမည်)
             item_date = "No Date"
-            for p_name, p_val in props.items():
+            for p_val in props.values():
                 if p_val.get("type") == "date" and p_val.get("date"):
                     item_date = p_val["date"].get("start", "No Date")
                     break
             
-            # ၃။ စာမျက်နှာအထဲက 'စာသား' နှင့် 'တိုက်ရိုက်တင်ထားသောပုံ' ကို ဝင်ဖတ်ခြင်း
+            # တကယ်လို့ ကော်လံထဲမှာ Date လုံးဝရှာမတွေ့ရင် Created Time ကနေ ရက်စွဲပြောင်းယူမည်
+            if item_date == "No Date" or not item_date:
+                created_time = page.get("created_time", "")
+                if created_time:
+                    item_date = created_time.split("T")[0]
+            
+            # ၃။ Page Body ထဲက စာသားနှင့် ပုံများကို ဝင်ဖတ်ခြင်း
             blocks_url = f"https://api.notion.com/v1/blocks/{page_id}/children"
             blocks_res = requests.get(blocks_url, headers=NOTION_HEADERS).json()
             
@@ -94,7 +99,7 @@ def fetch_notion_news_with_images():
             item_img_url = ""
             
             for block in blocks_res.get("results", []):
-                # တိုက်ရိုက် Upload တင်ထားသောပုံ သို့မဟုတ် လင့်ခ်ဖြင့်တင်ထားသောပုံကို ဖတ်ခြင်း
+                # ပုံများကို ဖတ်ခြင်း
                 if block["type"] == "image":
                     img_data = block["image"]
                     if img_data["type"] == "file":
@@ -102,7 +107,7 @@ def fetch_notion_news_with_images():
                     elif img_data["type"] == "external":
                         item_img_url = img_data["external"]["url"]
                 
-                # စာသား block မျိုးစုံကို ဖတ်ပေးရန်
+                # စာသား block ပုံစံမျိုးစုံ (Paragraph, Headings) အကုန်ဖတ်မည်
                 elif block["type"] == "paragraph":
                     text_list = block["paragraph"]["rich_text"]
                     if text_list: item_content_th += text_list[0]["text"]["content"] + "\n"
@@ -117,13 +122,13 @@ def fetch_notion_news_with_images():
                     if text_list: item_content_th += text_list[0]["text"]["content"] + "\n"
             
             notion_items.append({
-                "date": item_date,
+                "date": item_date if item_date else "No Date",
                 "title": item_title,
                 "content_th": item_content_th.strip(),
                 "image": item_img_url
             })
             
-        # ရက်စွဲအလိုက် အသစ်ဆုံးကို ထိပ်ဆုံးကပြရန် Sort လုပ်ခြင်း
+        # ရက်စွဲအလိုက်Sort လုပ်ခြင်း
         notion_items.sort(key=lambda x: x['date'], reverse=True)
         return notion_items
     except Exception as e:
