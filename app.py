@@ -107,12 +107,16 @@ if menu_choice == "Brand Selection":
         st.warning("Sheet Not Found")
 
 # ==========================================
-# ၂။ COMPETITOR NEWS UPDATES MENU (ပိုမိုစိတ်ချရသော Version သစ်)
+# ၂။ COMPETITOR NEWS UPDATES MENU (ဒေတာအမြဲတမ်း ချက်ချင်း Update ဖြစ်စေမည့် Version)
 # ==========================================
 elif menu_choice == "Competitor News Updates":
     st.markdown("<h1 style='text-align: center; color: #0066cc;'>📊 Competitor News Updates & News Myanmar</h1>", unsafe_allow_html=True)
     st.write("---")
-    comp_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Competitor%20News%20Updates"
+    
+    # ပြင်ဆင်ရန်- ဒေတာအမြဲတမ်း ချက်ချင်း Fresh ဖြစ်အောင် Google Sheets URL ကို Cache Busting လုပ်ခြင်း
+    import time
+    timestamp = int(time.time())
+    comp_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Competitor%20News%20Updates&cache_bust={timestamp}"
     
     try:
         df_comp = pd.read_csv(comp_url).fillna('')
@@ -132,21 +136,21 @@ elif menu_choice == "Competitor News Updates":
                     current_data.append(temp_row)
                 temp_row = row.to_dict()
             else:
-                # Date မပါဘဲ Content ပဲပါလာရင် အပေါ်ကသတင်းနဲ့ ပေါင်းမယ်၊ အပေါ်မှာ သတင်းမရှိသေးရင် သီးသန့်ယူမယ်
+                # Date မပါဘဲ Content ပဲပါလာရင် အပေါ်ကသတင်းနဲ့ ပေါင်းမယ်
                 if temp_row is not None:
                     if str(row.get('Content', '')).strip() != '':
                         temp_row['Content'] = str(temp_row.get('Content', '')) + "\n" + str(row.get('Content', ''))
                 else:
                     # အပေါ်ဆုံးအတန်းတွေမှာ Date မပါခဲ့ရင်လည်း ဒေတာမပျောက်အောင် သိမ်းမယ်
                     temp_row = row.to_dict()
-                    temp_row['Date'] = 'Exchange Rate / Info' # ယာယီ Date ပေးလိုက်ခြင်း
+                    temp_row['Date'] = 'Exchange Rate / Info'
                     temp_row['Company'] = str(row.get('Company', '')) if str(row.get('Company', '')) != '' else 'Notice'
         
         if temp_row is not None:
             current_data.append(temp_row)
 
         if current_data:
-            # Date မရှိတဲ့အရာတွေပါရင် Sort လုပ်ရတာ အဆင်ပြေအောင် String ပြောင်းစစ်မယ်
+            # ရက်စွဲအလိုက် အသစ်ဆုံးကို အပေါ်ကနေ ပြသရန် (Sort)
             current_data.sort(key=lambda x: str(x.get('Date', '')), reverse=True)
             
             for news in current_data:
