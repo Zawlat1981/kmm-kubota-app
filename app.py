@@ -58,31 +58,32 @@ def load_data(tab_name):
     return df_tractor, df_attach
 
 def fetch_notion_news_with_images():
-    """ Notion ထဲ တိုက်ရိုက်တင်ထားတဲ့ ပုံတွေရော၊ စာတွေကိုပါ တိုက်ရိုက်ဆွဲထုတ်ပေးမည့် Function """
+    """ Notion ထဲက ဒေတာများကို ပိုမိုစိတ်ချရသော လမ်းကြောင်းဖြင့် လှမ်းဆွဲထုတ်ပေးမည့် Function """
     url = f"https://api.notion.com/v1/databases/{DATABASE_ID}/query"
     
-    # ရက်စွဲအလိုက် အသစ်ဆုံးကို ထိပ်ဆုံးကပြရန်
-    payload = {
-        "sorts": [
-            {"property": "Date", "direction": "descending"}
-        ]
-    }
-    
     try:
-        res = requests.post(url, headers=NOTION_HEADERS, json=payload).json()
+        res = requests.post(url, headers=NOTION_HEADERS).json()
         notion_items = []
         
         for page in res.get("results", []):
             page_id = page["id"]
             props = page.get("properties", {})
             
-            # ၁။ ရက်စွဲယူခြင်း
-            date_val = props.get("Date", {}).get("date")
-            item_date = date_val.get("start", "No Date") if date_val else "No Date"
+            # ၁။ ခေါင်းစဉ် (Title) ယူခြင်း - မည်သည့် နာမည်ဖြစ်ဖြစ် Title Type ကို အော်တိုရှာမည်
+            item_title = "No Title"
+            for p_name, p_val in props.items():
+                if p_val.get("type") == "title":
+                    title_list = p_val.get("title", [])
+                    if title_list:
+                        item_title = title_list[0].get("text", {}).get("content", "No Title")
+                    break
             
-            # ၂။ ခေါင်းစဉ် (ဗမာလို) ယူခြင်း
-            title_list = props.get("Name", {}).get("title", [])
-            item_title = title_list[0].get("text", {}).get("content", "No Title") if title_list else "No Title"
+            # ၂။ ရက်စွဲ (Date) ယူခြင်း - မည်သည့် နာမည်ဖြစ်ဖြစ် Date Type ကို အော်တိုရှာမည်
+            item_date = "No Date"
+            for p_name, p_val in props.items():
+                if p_val.get("type") == "date" and p_val.get("date"):
+                    item_date = p_val["date"].get("start", "No Date")
+                    break
             
             # ၃။ စာမျက်နှာအထဲက 'စာသား' နှင့် 'တိုက်ရိုက်တင်ထားသောပုံ' ကို ဝင်ဖတ်ခြင်း
             blocks_url = f"https://api.notion.com/v1/blocks/{page_id}/children"
@@ -92,19 +93,28 @@ def fetch_notion_news_with_images():
             item_img_url = ""
             
             for block in blocks_res.get("results", []):
-                # Notion ထဲ တိုက်ရိုက် Upload တင်ထားသောပုံများကို ဖတ်ခြင်း
                 if block["type"] == "image":
                     img_data = block["image"]
-                    if img_data["type"] == "file":  # တိုက်ရိုက် Upload တင်ထားသောပုံဖြစ်လျှင်
+                    if img_data["type"] == "file":
                         item_img_url = img_data["file"]["url"]
-                    elif img_data["type"] == "external": # အကယ်၍ လင့်ခ်နဲ့ချိတ်ထားရင်လည်း ဖတ်ပေးမည်
+                    elif img_data["type"] == "external":
                         item_img_url = img_data["external"]["url"]
                 
-                # စာသားများကို ဖတ်ခြင်း
                 elif block["type"] == "paragraph":
                     text_list = block["paragraph"]["rich_text"]
                     if text_list:
                         item_content_th += text_list[0]["text"]["content"] + "\n"
+                
+                # အကယ်၍ စာသားကို Heading သို့မဟုတ် တခြား Block နဲ့ ရေးထားခဲ့ရင်လည်း ဖတ်ပေးရန်
+                elif block["type"] == "heading_1":
+                    text_list = block["heading_1"]["rich_text"]
+                    if text_list: item_content_th += text_list[0]["text"]["content"] + "\n"
+                elif block["type"] == "heading_2":
+                    text_list = block["heading_2"]["rich_text"]
+                    if text_list: item_content_th += text_list[0]["text"]["content"] + "\n"
+                elif block["type"] == "heading_3":
+                    text_list = block["heading_3"]["rich_text"]
+                    if text_list: item_content_th += text_list[0]["text"]["content"] + "\n"
             
             notion_items.append({
                 "date": item_date,
@@ -112,6 +122,9 @@ def fetch_notion_news_with_images():
                 "content_th": item_content_th.strip(),
                 "image": item_img_url
             })
+            
+        # ရက်စွဲအလိုက် အသစ်ဆုံးကို ထိပ်ဆုံးကပြရန် Python ဘက်မှ Sort ပြန်လုပ်ခြင်း
+        notion_items.sort(key=lambda x: x['date'], reverse=True)
         return notion_items
     except Exception as e:
         return []
@@ -194,33 +207,28 @@ elif menu_choice == "Competitor News Updates":
     st.info("💡 အကြံပြုချက် - သတင်းအသစ်နှင့် ပုံများကို ကိုယ်တိုင် Notion App/Web ထဲမှာပဲ စိတ်ကြိုက် သွားရောက်ထည့်သွင်းပေးပါ။ အောက်တွင် အော်တို ပုံနှင့်တကွ ထွက်ပေါ်လာပါလိမ့်မည်။")
     st.write("<br>", unsafe_allow_html=True)
     
-    # Notion Database ထဲက သတင်းများကို ပုံများနှင့်တကွ လှမ်းဆွဲထုတ်ခြင်း
-    with st.spinner("Notion ပြက္ခဒိန်ထဲမှ ပုံများနှင့် သတင်းများကို တိုက်ရိုက်ဆွဲထုတ်နေပါသည်..."):
+    # Notion Database ထဲက သတင်းများကို လှမ်းဆွဲထုတ်ခြင်း
+    with st.spinner("Notion ထဲမှ ပုံများနှင့် သတင်းများကို တိုက်ရိုက်ဆွဲထုတ်နေပါသည်..."):
         notion_news_list = fetch_notion_news_with_images()
         
     if notion_news_list:
         for news in notion_news_list:
-            # ရက်စွဲပြသခြင်း
             st.markdown(f"<h4 style='color: #ff6600; background-color: #f0f7ff; padding: 8px; border-radius: 5px;'>📅 Date: {news['date']}</h4>", unsafe_allow_html=True)
-            
             with st.container(border=True):
-                # ခေါင်းစဉ်ကြီး (ဗမာလို)
-                st.subheader(f"🏢 {news['title']}")
+                st.subheader(f"{news['title']}")
                 
-                # အစ်ကို Notion ထဲမှာ တိုက်ရိုက်တင်ထားခဲ့တဲ့ ဓာတ်ပုံကို တိုက်ရိုက်ဆွဲပြခြင်း
+                # ပုံရှိလျှင် တိုက်ရိုက်ဆွဲပြမည်
                 if news['image']:
                     st.image(news['image'], use_container_width=True)
                     
-                # ထိုင်းလို သတင်းအကျဉ်းချုပ်
-                st.write("**รายละเอียด (ထိုင်းလို အကျဉ်းချုပ်):**")
-                st.write(news['content_th'])
-                
+                if news['content_th']:
+                    st.write("**รายละเอียด (ထိုင်းလို အကျဉ်းချုပ်):**")
+                    st.info(news['content_th'])
             st.write("<br>", unsafe_allow_html=True)
     else:
         st.info("Notion ပြက္ခဒိန်ထဲမှာ ပြစရာ သတင်းမရှိသေးပါဘူးဗျာ။")
 
 st.markdown("<br><hr><center><small>© 2026 KMM Service Co., Ltd.</small></center>", unsafe_allow_html=True)
-
 
 
 
