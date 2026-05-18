@@ -1,29 +1,13 @@
 import streamlit as st
 import pandas as pd
-import requests
-import time
 
-# ==========================================
-# ၁။ PAGE CONFIG & CONSTANTS
-# ==========================================
+# ၁။ Page Config
 st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout="centered")
 
-# Google Sheet ID (ထွန်စက်ဈေးနှုန်းအတွက်)
+# Google Sheet ID
 SHEET_ID = "1QqQvPKH7G0hqqhd_0V6cP40Htl8qdFEZ6nHBVe_53_g"
 
-# Notion Configuration
-NOTION_TOKEN = "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"
-DATABASE_ID = "2e19e825888681b38bd4cc8fc5233ceb"
-
-NOTION_HEADERS = {
-    "Authorization": f"Bearer {NOTION_TOKEN}",
-    "Content-Type": "application/json",
-    "Notion-Version": "2022-06-28"
-}
-
-# ==========================================
-# ၂။ SIDEBAR MENU
-# ==========================================
+# --- Sidebar Menu ---
 with st.sidebar:
     st.markdown("## 🚜 KMM Service")
     menu_choice = st.radio("သွားလိုရာကို ရွေးချယ်ပါ (กรุณาเลือกเมนู) -", ["Brand Selection", "Competitor News Updates"])
@@ -36,9 +20,7 @@ with st.sidebar:
             ["Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika", "Yamabisi", "DongFeng"]
         )
 
-# ==========================================
-# ၃။ FUNCTIONS (DATA LOAD & FETCH NOTION NEWS DIRECTLY)
-# ==========================================
+# --- ဒေတာ Load လုပ်သည့် Function ---
 @st.cache_data(ttl=60)
 def load_data(tab_name):
     base_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet="
@@ -56,86 +38,8 @@ def load_data(tab_name):
             pass
     return df_tractor, df_attach
 
-def fetch_notion_news_with_images():
-    """ Notion ထဲက မည်သည့် Property ပုံစံမျိုးမဆို ဇွတ်ဆွဲထုတ်ပေးမည့် အဆင့်မြင့်ဆုံးဗားရှင်း """
-    url = f"https://api.notion.com/v1/databases/{DATABASE_ID}/query"
-    
-    try:
-        # ဒေတာအားလုံးကို အကန့်အသတ်မရှိ ဆွဲထုတ်ခိုင်းခြင်း
-        res = requests.post(url, headers=NOTION_HEADERS, json={}).json()
-        notion_items = []
-        
-        for page in res.get("results", []):
-            page_id = page["id"]
-            props = page.get("properties", {})
-            
-            # ၁။ ခေါင်းစဉ် (Title) ကို ဘယ်နာမည်နဲ့ပဲဖြစ်ဖြစ် ဆွဲထုတ်မည်
-            item_title = "No Title"
-            for p_val in props.values():
-                if p_val.get("type") == "title":
-                    title_list = p_val.get("title", [])
-                    if title_list:
-                        item_title = title_list[0].get("text", {}).get("content", "No Title")
-                    break
-            
-            # ၂။ ရက်စွဲ (Date) ကို ကော်လံနာမည်မရွေးဘဲ အော်တိုရှာမည် (မပါရင် ယနေ့ရက်စွဲပြမည်)
-            item_date = "No Date"
-            for p_val in props.values():
-                if p_val.get("type") == "date" and p_val.get("date"):
-                    item_date = p_val["date"].get("start", "No Date")
-                    break
-            
-            # တကယ်လို့ ကော်လံထဲမှာ Date လုံးဝရှာမတွေ့ရင် Created Time ကနေ ရက်စွဲပြောင်းယူမည်
-            if item_date == "No Date" or not item_date:
-                created_time = page.get("created_time", "")
-                if created_time:
-                    item_date = created_time.split("T")[0]
-            
-            # ၃။ Page Body ထဲက စာသားနှင့် ပုံများကို ဝင်ဖတ်ခြင်း
-            blocks_url = f"https://api.notion.com/v1/blocks/{page_id}/children"
-            blocks_res = requests.get(blocks_url, headers=NOTION_HEADERS).json()
-            
-            item_content_th = ""
-            item_img_url = ""
-            
-            for block in blocks_res.get("results", []):
-                # ပုံများကို ဖတ်ခြင်း
-                if block["type"] == "image":
-                    img_data = block["image"]
-                    if img_data["type"] == "file":
-                        item_img_url = img_data["file"]["url"]
-                    elif img_data["type"] == "external":
-                        item_img_url = img_data["external"]["url"]
-                
-                # စာသား block ပုံစံမျိုးစုံ (Paragraph, Headings) အကုန်ဖတ်မည်
-                elif block["type"] == "paragraph":
-                    text_list = block["paragraph"]["rich_text"]
-                    if text_list: item_content_th += text_list[0]["text"]["content"] + "\n"
-                elif block["type"] == "heading_1":
-                    text_list = block["heading_1"]["rich_text"]
-                    if text_list: item_content_th += text_list[0]["text"]["content"] + "\n"
-                elif block["type"] == "heading_2":
-                    text_list = block["heading_2"]["rich_text"]
-                    if text_list: item_content_th += text_list[0]["text"]["content"] + "\n"
-                elif block["type"] == "heading_3":
-                    text_list = block["heading_3"]["rich_text"]
-                    if text_list: item_content_th += text_list[0]["text"]["content"] + "\n"
-            
-            notion_items.append({
-                "date": item_date if item_date else "No Date",
-                "title": item_title,
-                "content_th": item_content_th.strip(),
-                "image": item_img_url
-            })
-            
-        # ရက်စွဲအလိုက်Sort လုပ်ခြင်း
-        notion_items.sort(key=lambda x: x['date'], reverse=True)
-        return notion_items
-    except Exception as e:
-        return []
-
 # ==========================================
-# ၄။ BRAND SELECTION MENU (မူရင်းအတိုင်း မပြောင်းလဲပါ)
+# ၁။ BRAND SELECTION MENU
 # ==========================================
 if menu_choice == "Brand Selection":
     df_tractor, df_attach = load_data(selected_brand)
@@ -201,37 +105,117 @@ if menu_choice == "Brand Selection":
         st.success(f"## 📄 စုစုပေါင်း: {grand_total:,.0f} MMK")
     else:
         st.warning("Sheet Not Found")
-
 # ==========================================
-# ၅။ COMPETITOR NEWS UPDATES MENU (NOTION DIRECT IMAGE SHOW)
+# ၂။ COMPETITOR NEWS UPDATES MENU (သတင်းတစ်ဗုဒ်တည်း စုစည်းပေးမည့် Version သစ်)
 # ==========================================
 elif menu_choice == "Competitor News Updates":
     st.markdown("<h1 style='text-align: center; color: #0066cc;'>📊 Competitor News Updates & News Myanmar</h1>", unsafe_allow_html=True)
     st.write("---")
     
-    st.info("💡 အကြံပြုချက် - သတင်းအသစ်နှင့် ပုံများကို ကိုယ်တိုင် Notion App/Web ထဲမှာပဲ စိတ်ကြိုက် သွားရောက်ထည့်သွင်းပေးပါ။ အောက်တွင် အော်တို ပုံနှင့်တကွ ထွက်ပေါ်လာပါလိမ့်မည်။")
-    st.write("<br>", unsafe_allow_html=True)
+    import time
+    timestamp = int(time.time())
+    comp_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Competitor%20News%20Updates&cache_bust={timestamp}"
     
-    # Notion Database ထဲက သတင်းများကို လှမ်းဆွဲထုတ်ခြင်း
-    with st.spinner("Notion ထဲမှ ပုံများနှင့် သတင်းများကို တိုက်ရိုက်ဆွဲထုတ်နေပါသည်..."):
-        notion_news_list = fetch_notion_news_with_images()
+    try:
+        df_comp = pd.read_csv(comp_url).fillna('')
+        df_comp.columns = [str(c).strip().lower() for c in df_comp.columns]
         
-    if notion_news_list:
-        for news in notion_news_list:
-            st.markdown(f"<h4 style='color: #ff6600; background-color: #f0f7ff; padding: 8px; border-radius: 5px;'>📅 Date: {news['date']}</h4>", unsafe_allow_html=True)
-            with st.container(border=True):
-                st.subheader(f"🏢 {news['title']}")
+        grouped_data = {}  # Format: {'2026-05-18': [news1, news2]}
+        current_date = "No Date"
+        last_news_item = None # အပေါ်က သတင်းဟောင်းကို မှတ်ထားရန်
+        
+        for _, row in df_comp.iterrows():
+            r_date = str(row.get('date', '')).strip()
+            r_company = str(row.get('company', '')).strip()
+            r_content = str(row.get('content', '')).strip()
+            
+            # အကယ်၍ အရေးကြီးသော ကော်လံအားလုံး လွတ်နေပါက ကျော်သွားမည်
+            if r_date == '' and r_company == '' and r_content == '':
+                continue
                 
-                # ပုံရှိလျှင် တိုက်ရိုက်ဆွဲပြမည်
-                if news['image']:
-                    st.image(news['image'], use_container_width=True)
-                    
-                if news['content_th']:
-                    st.write("**รายละเอียด (ထိုင်းလို အကျဉ်းချုပ်):**")
-                    st.info(news['content_th'])
-            st.write("<br>", unsafe_allow_html=True)
-    else:
-        st.info("Notion ပြက္ခဒိန်ထဲမှာ ပြစရာ သတင်းမရှိသေးပါဘူးဗျာ။")
+            # Date အသစ်တွေ့လျှင် ဖြစ်စေ၊ ကုမ္ပဏီအသစ်တွေ့လျှင်ဖြစ်စေ သတင်းအသစ် (Card အသစ်) စဆောက်မည်
+            if r_date != '' or r_company != '':
+                if r_date != '':
+                    current_date = r_date
+                
+                # အကယ်၍ ယခင်သတင်းရှိခဲ့လျှင် သိမ်းဆည်းမည်
+                if last_news_item is not None:
+                    if last_news_item['date_key'] not in grouped_data:
+                        grouped_data[last_news_item['date_key']] = []
+                    grouped_data[last_news_item['date_key']].append(last_news_item)
+                
+                # Card အသစ်အတွက် ဒေတာ စမှတ်မှတ်မည်
+                last_news_item = {
+                    'date_key': current_date,
+                    'company': r_company if r_company != '' else '💵 Exchange Rate / News',
+                    'content': r_content,
+                    'promo': str(row.get('promo', '')).strip(),
+                    'facebook': str(row.get('facebook', '')).strip(),
+                    'tiktok': str(row.get('tiktok', '')).strip()
+                }
+            else:
+                # Date ရော Company ရော မပါဘဲ Content ချည်းပဲ ထပ်လာပါက (ဥပမာ- ရွှေဈေးအတန်းများ)
+                # အပေါ်က ကတ်ပြားတစ်ခုတည်းထဲသို့ စာကြောင်းအသစ်အနေဖြင့် ပေါင်းထည့်မည်
+                if last_news_item is not None:
+                    if r_content != '':
+                        last_news_item['content'] = last_news_item['content'] + "\n" + r_content
+                        # အကယ်၍ အောက်ကအတန်းတွေမှာ Promo သို့မဟုတ် Link တွေပါလာရင်လည်း ပေါင်းထည့်မည်
+                        if str(row.get('promo', '')).strip() != '':
+                            last_news_item['promo'] = str(row.get('promo', '')).strip()
+                        if str(row.get('facebook', '')).strip() != '':
+                            last_news_item['facebook'] = str(row.get('facebook', '')).strip()
+                        if str(row.get('tiktok', '')).strip() != '':
+                            last_news_item['tiktok'] = str(row.get('tiktok', '')).strip()
+                else:
+                    # ထိပ်ဆုံးအတန်းများတွင် Date လွတ်နေခဲ့ပါက ယာယီသိမ်းမည်
+                    last_news_item = {
+                        'date_key': current_date,
+                        'company': '💵 Exchange Rate / News',
+                        'content': r_content,
+                        'promo': str(row.get('promo', '')).strip(),
+                        'facebook': str(row.get('facebook', '')).strip(),
+                        'tiktok': str(row.get('tiktok', '')).strip()
+                    }
+        
+        # နောက်ဆုံးကျန်ခဲ့သော သတင်းကို ထည့်သွင်းခြင်း
+        if last_news_item is not None:
+            if last_news_item['date_key'] not in grouped_data:
+                grouped_data[last_news_item['date_key']] = []
+            grouped_data[last_news_item['date_key']].append(last_news_item)
+            
+        if grouped_data:
+            # ရက်စွဲအလိုက် Sort လုပ်မည်
+            sorted_dates = sorted(grouped_data.keys(), reverse=True)
+            
+            for date_key in sorted_dates:
+                st.markdown(f"<h2 style='color: #ff6600; background-color: #f0f7ff; padding: 10px; border-radius: 5px;'>📅 Date: {date_key}</h2>", unsafe_allow_html=True)
+                
+                for news in grouped_data[date_key]:
+                    with st.container(border=True):
+                        st.subheader(f"🏢 {news['company']}")
+                        st.write("**Description:**")
+                        st.write(news['content'])
+                        
+                        promo = news['promo']
+                        if promo not in ['', '0']:
+                            st.info(f"💡 {promo}")
+                        
+                        # ခလုတ်များ
+                        fb_link = news['facebook']
+                        tt_link = news['tiktok']
+                        if fb_link.startswith("http") or tt_link.startswith("http"):
+                            st.write("---")
+                            btn_col1, btn_col2 = st.columns(2)
+                            if fb_link.startswith("http"):
+                                with btn_col1:
+                                    st.link_button("🔵 Facebook", fb_link, use_container_width=True)
+                            if tt_link.startswith("http"):
+                                with btn_col2:
+                                    st.link_button("⚫ TikTok", tt_link, use_container_width=True)
+                st.write("<br>", unsafe_allow_html=True)
+                
+    except Exception as e:
+        st.error(f"Error loading data: {e}")
 
 st.markdown("<br><hr><center><small>© 2026 KMM Service Co., Ltd.</small></center>", unsafe_allow_html=True)
 
