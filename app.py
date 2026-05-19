@@ -106,7 +106,7 @@ if menu_choice == "Brand Selection":
     else:
         st.warning("Sheet Not Found")
 # ==========================================
-# ၂။ COMPETITOR NEWS UPDATES MENU (သတင်းတစ်ဗုဒ်တည်း စုစည်းပေးမည့် Version သစ်)
+# ၂။ COMPETITOR NEWS UPDATES MENU (Image Support Version)
 # ==========================================
 elif menu_choice == "Competitor News Updates":
     st.markdown("<h1 style='text-align: center; color: #0066cc;'>📊 Competitor News Updates & News Myanmar</h1>", unsafe_allow_html=True)
@@ -122,44 +122,41 @@ elif menu_choice == "Competitor News Updates":
         
         grouped_data = {}  # Format: {'2026-05-18': [news1, news2]}
         current_date = "No Date"
-        last_news_item = None # အပေါ်က သတင်းဟောင်းကို မှတ်ထားရန်
+        last_news_item = None
         
         for _, row in df_comp.iterrows():
             r_date = str(row.get('date', '')).strip()
             r_company = str(row.get('company', '')).strip()
             r_content = str(row.get('content', '')).strip()
             
-            # အကယ်၍ အရေးကြီးသော ကော်လံအားလုံး လွတ်နေပါက ကျော်သွားမည်
             if r_date == '' and r_company == '' and r_content == '':
                 continue
                 
-            # Date အသစ်တွေ့လျှင် ဖြစ်စေ၊ ကုမ္ပဏီအသစ်တွေ့လျှင်ဖြစ်စေ သတင်းအသစ် (Card အသစ်) စဆောက်မည်
             if r_date != '' or r_company != '':
                 if r_date != '':
                     current_date = r_date
                 
-                # အကယ်၍ ယခင်သတင်းရှိခဲ့လျှင် သိမ်းဆည်းမည်
                 if last_news_item is not None:
                     if last_news_item['date_key'] not in grouped_data:
                         grouped_data[last_news_item['date_key']] = []
                     grouped_data[last_news_item['date_key']].append(last_news_item)
                 
-                # Card အသစ်အတွက် ဒေတာ စမှတ်မှတ်မည်
                 last_news_item = {
                     'date_key': current_date,
                     'company': r_company if r_company != '' else '💵 Exchange Rate / News',
                     'content': r_content,
                     'promo': str(row.get('promo', '')).strip(),
                     'facebook': str(row.get('facebook', '')).strip(),
-                    'tiktok': str(row.get('tiktok', '')).strip()
+                    'tiktok': str(row.get('tiktok', '')).strip(),
+                    'image_url': str(row.get('image_url', '')).strip()  # အသစ်ထည့်သွင်းခြင်း
                 }
             else:
-                # Date ရော Company ရော မပါဘဲ Content ချည်းပဲ ထပ်လာပါက (ဥပမာ- ရွှေဈေးအတန်းများ)
-                # အပေါ်က ကတ်ပြားတစ်ခုတည်းထဲသို့ စာကြောင်းအသစ်အနေဖြင့် ပေါင်းထည့်မည်
                 if last_news_item is not None:
                     if r_content != '':
                         last_news_item['content'] = last_news_item['content'] + "\n" + r_content
-                        # အကယ်၍ အောက်ကအတန်းတွေမှာ Promo သို့မဟုတ် Link တွေပါလာရင်လည်း ပေါင်းထည့်မည်
+                        # အောက်က အတန်းလွတ်တွေမှာ image_url ပါလာခဲ့ရင်လည်း ဆွဲယူရန်
+                        if str(row.get('image_url', '')).strip() != '':
+                            last_news_item['image_url'] = str(row.get('image_url', '')).strip()
                         if str(row.get('promo', '')).strip() != '':
                             last_news_item['promo'] = str(row.get('promo', '')).strip()
                         if str(row.get('facebook', '')).strip() != '':
@@ -167,34 +164,37 @@ elif menu_choice == "Competitor News Updates":
                         if str(row.get('tiktok', '')).strip() != '':
                             last_news_item['tiktok'] = str(row.get('tiktok', '')).strip()
                 else:
-                    # ထိပ်ဆုံးအတန်းများတွင် Date လွတ်နေခဲ့ပါက ယာယီသိမ်းမည်
                     last_news_item = {
                         'date_key': current_date,
                         'company': '💵 Exchange Rate / News',
                         'content': r_content,
                         'promo': str(row.get('promo', '')).strip(),
                         'facebook': str(row.get('facebook', '')).strip(),
-                        'tiktok': str(row.get('tiktok', '')).strip()
+                        'tiktok': str(row.get('tiktok', '')).strip(),
+                        'image_url': str(row.get('image_url', '')).strip()
                     }
         
-        # နောက်ဆုံးကျန်ခဲ့သော သတင်းကို ထည့်သွင်းခြင်း
         if last_news_item is not None:
             if last_news_item['date_key'] not in grouped_data:
                 grouped_data[last_news_item['date_key']] = []
             grouped_data[last_news_item['date_key']].append(last_news_item)
             
         if grouped_data:
-            # ရက်စွဲအလိုက် Sort လုပ်မည်
             sorted_dates = sorted(grouped_data.keys(), reverse=True)
             
             for date_key in sorted_dates:
-                st.markdown(f"<h2 style='color: #ff6600; background-color: #f0f7ff; padding: 10px; border-radius: 5px;'>📅 Date: {date_key}</h2>", unsafe_allow_html=True)
+                st.markdown(f"<h2 style='color: #ff6600; background-color: #f0f7ff; padding: 10px; border-radius: 5px;'>📅 ရက်စွဲ: {date_key}</h2>", unsafe_allow_html=True)
                 
                 for news in grouped_data[date_key]:
                     with st.container(border=True):
                         st.subheader(f"🏢 {news['company']}")
                         st.write("**Description:**")
                         st.write(news['content'])
+                        
+                        # 📸 ပုံပြသရန် အပိုင်း (image_url ထဲမှာ လင့်ခ်ပါရင် ပုံတန်းဖော်ပေးမည်)
+                        img = news.get('image_url', '')
+                        if img and img.startswith("http"):
+                            st.image(img, use_container_width=True)
                         
                         promo = news['promo']
                         if promo not in ['', '0']:
