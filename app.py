@@ -183,7 +183,7 @@ elif menu_choice == "Competitor News Updates":
             sorted_dates = sorted(grouped_data.keys(), reverse=True)
             
             for date_key in sorted_dates:
-                st.markdown(f"<h2 style='color: #ff6600; background-color: #f0f7ff; padding: 10px; border-radius: 5px;'>📅 ရက်စွဲ: {date_key}</h2>", unsafe_allow_html=True)
+                st.markdown(f"<h2 style='color: #ff6600; background-color: #f0f7ff; padding: 10px; border-radius: 5px;'> Date: {date_key}</h2>", unsafe_allow_html=True)
                 
                 for news in grouped_data[date_key]:
                     with st.container(border=True):
