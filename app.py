@@ -122,7 +122,7 @@ elif menu_choice == "Competitor News Updates":
         
         grouped_data = {}  # Format: {'2026-05-18': [news1, news2]}
         current_date = "No Date"
-        last_news_item = None
+        last_news_item = None 
         
         for _, row in df_comp.iterrows():
             r_date = str(row.get('date', '')).strip()
