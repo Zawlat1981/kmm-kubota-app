@@ -218,11 +218,17 @@ elif menu_choice == "Competitor News Updates":
                             formatted_mm = c_mm.replace("\n", "  \n")
                             st.markdown(formatted_mm)
                         
-                        # --- 📸 ၃။ ပုံပြသရန် အပိုင်း ---
-                        img = news.get('image_url', '')
-                        if img and img.startswith("http"):
+                        # --- 📸 ၃။ ပုံပြသရန် အပိုင်း (ပုံတစ်ပုံထက်မက တင်နိုင်သည့် စနစ်သစ်)---
+                        img_data = news.get('image_url', '').strip()
+                        if img_data:
+                            # ပုံလင့်ခ်တွေကို ကော်မာ (,) ဖြင့်ခွဲထုတ်ပါတယ် 
+                            # ဥပမာ - Link1, Link2, Link3 ဆိုပြီး sheet ထဲမှာ ရေးထားခဲ့ရင်
+                            img_list = [i.strip() for i in img_data.split(',')]
+                            
                             st.write("---")
-                            st.image(img, use_container_width=True)
+                            for img in img_list:
+                                if img.startswith("http"):
+                                    st.image(img, use_container_width=True) 
                         
                         # --- 💡 ၄။ Promo ပြသရန်အပိုင်း ---
                         promo = news['promo']
