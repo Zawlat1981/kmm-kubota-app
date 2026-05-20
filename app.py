@@ -6,7 +6,7 @@ import time
 st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout="centered")
 
 # Google Sheet ID
-SHEET_ID = "1QqQvPKH7G0hqqhd_0V6cP40Htl8qdFEZ6nHBVe_53_g"
+SHEET_ID = "1QqQvPKH7G0hqqhd_0V6cP40Htl8qdFEZ6nHBVe_53_g" 
 
 # --- Sidebar Menu ---
 with st.sidebar:
