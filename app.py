@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import time
 
 # ၁။ Page Config
 st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout="centered")
@@ -105,14 +106,14 @@ if menu_choice == "Brand Selection":
         st.success(f"## 📄 စုစုပေါင်း: {grand_total:,.0f} MMK")
     else:
         st.warning("Sheet Not Found")
+
 # ==========================================
-# ၂။ COMPETITOR NEWS UPDATES MENU (Image Support Version)
+# ၂။ COMPETITOR NEWS UPDATES MENU (အပေါ်အောက် ခွဲပြသည့် ပုံစံသစ်)
 # ==========================================
 elif menu_choice == "Competitor News Updates":
     st.markdown("<h1 style='text-align: center; color: #0066cc;'>📊 Competitor News Updates & News Myanmar</h1>", unsafe_allow_html=True)
     st.write("---")
     
-    import time
     timestamp = int(time.time())
     comp_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Competitor%20News%20Updates&cache_bust={timestamp}"
     
@@ -120,16 +121,19 @@ elif menu_choice == "Competitor News Updates":
         df_comp = pd.read_csv(comp_url).fillna('')
         df_comp.columns = [str(c).strip().lower() for c in df_comp.columns]
         
-        grouped_data = {}  # Format: {'2026-05-18': [news1, news2]}
+        grouped_data = {}  
         current_date = "No Date"
         last_news_item = None 
         
         for _, row in df_comp.iterrows():
             r_date = str(row.get('date', '')).strip()
             r_company = str(row.get('company', '')).strip()
-            r_content = str(row.get('content', '')).strip()
             
-            if r_date == '' and r_company == '' and r_content == '':
+            # ကော်လံအသစ် ၂ ခုဖြစ်တဲ့ content_th နဲ့ content_mm ကို ဒေတာဖတ်ယူခြင်း
+            r_content_th = str(row.get('content_th', '')).strip()
+            r_content_mm = str(row.get('content_mm', '')).strip()
+            
+            if r_date == '' and r_company == '' and r_content_th == '' and r_content_mm == '':
                 continue
                 
             if r_date != '' or r_company != '':
@@ -144,30 +148,35 @@ elif menu_choice == "Competitor News Updates":
                 last_news_item = {
                     'date_key': current_date,
                     'company': r_company if r_company != '' else '💵 Exchange Rate / News',
-                    'content': r_content,
+                    'content_th': r_content_th,
+                    'content_mm': r_content_mm,
                     'promo': str(row.get('promo', '')).strip(),
                     'facebook': str(row.get('facebook', '')).strip(),
                     'tiktok': str(row.get('tiktok', '')).strip(),
-                    'image_url': str(row.get('image_url', '')).strip()  # အသစ်ထည့်သွင်းခြင်း
+                    'image_url': str(row.get('image_url', '')).strip() 
                 }
             else:
                 if last_news_item is not None:
-                    if r_content != '':
-                        last_news_item['content'] = last_news_item['content'] + "\n" + r_content
-                        # အောက်က အတန်းလွတ်တွေမှာ image_url ပါလာခဲ့ရင်လည်း ဆွဲယူရန်
-                        if str(row.get('image_url', '')).strip() != '':
-                            last_news_item['image_url'] = str(row.get('image_url', '')).strip()
-                        if str(row.get('promo', '')).strip() != '':
-                            last_news_item['promo'] = str(row.get('promo', '')).strip()
-                        if str(row.get('facebook', '')).strip() != '':
-                            last_news_item['facebook'] = str(row.get('facebook', '')).strip()
-                        if str(row.get('tiktok', '')).strip() != '':
-                            last_news_item['tiktok'] = str(row.get('tiktok', '')).strip()
+                    # အတန်းအောက်ဆင်းပြီး ဆက်ရေးထားတာတွေရှိရင် သက်ဆိုင်ရာဘာသာစကားအလိုက် စာသားချင်းဆက်ပေးခြင်း
+                    if r_content_th != '':
+                        last_news_item['content_th'] = (last_news_item['content_th'] + "\n" + r_content_th).strip()
+                    if r_content_mm != '':
+                        last_news_item['content_mm'] = (last_news_item['content_mm'] + "\n" + r_content_mm).strip()
+                        
+                    if str(row.get('image_url', '')).strip() != '':
+                        last_news_item['image_url'] = str(row.get('image_url', '')).strip()
+                    if str(row.get('promo', '')).strip() != '':
+                        last_news_item['promo'] = str(row.get('promo', '')).strip()
+                    if str(row.get('facebook', '')).strip() != '':
+                        last_news_item['facebook'] = str(row.get('facebook', '')).strip()
+                    if str(row.get('tiktok', '')).strip() != '':
+                        last_news_item['tiktok'] = str(row.get('tiktok', '')).strip()
                 else:
                     last_news_item = {
                         'date_key': current_date,
                         'company': '💵 Exchange Rate / News',
-                        'content': r_content,
+                        'content_th': r_content_th,
+                        'content_mm': r_content_mm,
                         'promo': str(row.get('promo', '')).strip(),
                         'facebook': str(row.get('facebook', '')).strip(),
                         'tiktok': str(row.get('tiktok', '')).strip(),
@@ -188,14 +197,34 @@ elif menu_choice == "Competitor News Updates":
                 for news in grouped_data[date_key]:
                     with st.container(border=True):
                         st.subheader(f"🏢 {news['company']}")
-                        st.write("**Description:**")
-                        st.write(news['content'])
                         
-                        # 📸 ပုံပြသရန် အပိုင်း (image_url ထဲမှာ လင့်ခ်ပါရင် ပုံတန်းဖော်ပေးမည်)
+                        # --- ၁။ ထိုင်းဘာသာစကားဖြင့် ပြသရန်အပိုင်း (အပေါ်) ---
+                        c_th = news.get('content_th', '').strip()
+                        if c_th:
+                            st.markdown("**🇹🇭 ภาษาไทย**")
+                            # Sheet ထဲက Alt+Enter အတိုင်း အတန်းလိုက်ပေါ်အောင် လုပ်ဆောင်ခြင်း
+                            formatted_th = c_th.replace("\n", "  \n")
+                            st.markdown(formatted_th)
+                        
+                        # စာပိုဒ်နှစ်ခုကြား မျဉ်းကြောင်းလေးခြားပေးခြင်း
+                        if c_th and news.get('content_mm', '').strip():
+                            st.write("---")
+                            
+                        # --- ၂။ မြန်မာဘာသာစကားဖြင့် ပြသရန်အပိုင်း (အောက်) ---
+                        c_mm = news.get('content_mm', '').strip()
+                        if c_mm:
+                            st.markdown("**🇲🇲 မြန်မာဘာသာ**")
+                            # Sheet ထဲက Alt+Enter အတိုင်း အတန်းလိုက်ပေါ်အောင် လုပ်ဆောင်ခြင်း
+                            formatted_mm = c_mm.replace("\n", "  \n")
+                            st.markdown(formatted_mm)
+                        
+                        # --- 📸 ၃။ ပုံပြသရန် အပိုင်း ---
                         img = news.get('image_url', '')
                         if img and img.startswith("http"):
+                            st.write("---")
                             st.image(img, use_container_width=True)
                         
+                        # --- 💡 ၄။ Promo ပြသရန်အပိုင်း ---
                         promo = news['promo']
                         if promo not in ['', '0']:
                             st.info(f"💡 {promo}")
