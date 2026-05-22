@@ -254,6 +254,82 @@ if menu_choice == "Brand Selection":
         
         st.subheader("🛠 နောက်တွဲများ ရွေးချယ်ရန်")
         selected_att_total = 0
+import streamlit as st
+import pandas as pd
+import time
+
+# ၁။ Page Config
+st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout="centered")
+
+# Google Sheet ID
+SHEET_ID = "1QqQvPKH7G0hqqhd_0V6cP40Htl8qdFEZ6nHBVe_53_g" 
+
+# --- Sidebar Menu ---
+with st.sidebar:
+    st.markdown("## 🚜 KMM Service")
+    menu_choice = st.radio("သွားလိုရာကို ရွေးချယ်ပါ (กรุณาเลือกเมนู) -", ["Brand Selection", "Competitor News Updates"])
+    st.write("---")
+    
+    if menu_choice == "Brand Selection":
+        st.header("🔍 Filter")
+        selected_brand = st.selectbox(
+            "အမှတ်တံဆိပ် ရွေးချယ်ပါ (กรุณาเลือกยี่ห้อ) -", 
+            ["Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika", "Yamabisi", "DongFeng"]
+        )
+
+# --- ดေတာ Load လုပ်သည့် Function ---
+@st.cache_data(ttl=60)
+def load_data(tab_name):
+    base_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet="
+    try:
+        df_tractor = pd.read_csv(base_url + tab_name).fillna(0)
+    except:
+        df_tractor = pd.DataFrame()
+    
+    df_attach = pd.DataFrame()
+    if tab_name in ["Kubota", "Yanmar"]:
+        attachment_tab = f"Attachments_{tab_name}"
+        try:
+            df_attach = pd.read_csv(base_url + attachment_tab).fillna(0)
+        except:
+            pass
+    return df_tractor, df_attach
+
+# ==========================================
+# ၁။ BRAND SELECTION MENU
+# ==========================================
+if menu_choice == "Brand Selection":
+    df_tractor, df_attach = load_data(selected_brand)
+    if not df_tractor.empty:
+        st.markdown("<h1 style='text-align: center; color: #ff6600;'>🚜 KMM Kubota Price List</h1>", unsafe_allow_html=True)
+        
+        if selected_brand in ["John-Deere", "New-Holland", "Mahindra", "Sonalika"]: origin = "Indian"
+        elif selected_brand in ["YTO", "Yamabisi", "DongFeng"]: origin = "China"
+        elif selected_brand == "Kubota": origin = "Japan/Thailand"
+        elif selected_brand == "Yanmar": origin = "Japan"
+        else: origin = ""
+        
+        display_text = f"({selected_brand} Brand - {origin})" if origin else f"({selected_brand} Brand)"
+        st.markdown(f"<p style='text-align: center; color: #555; font-weight: bold;'>{display_text}</p>", unsafe_allow_html=True)
+        st.write("---") 
+
+        model_list = df_tractor.iloc[:, 0].astype(str).tolist()
+        model_list = [m for m in model_list if m not in ["0", "0.0", "nan", "Model"]]
+        selected_model = st.selectbox(f"{selected_brand} မော်ဒယ်ကို ရွေးပါ -", model_list)
+        t_info = df_tractor[df_tractor.iloc[:, 0].astype(str) == selected_model].iloc[0]
+        
+        try:
+            raw_p = str(t_info.iloc[1]).replace(',', '').strip()
+            base_price = float(raw_p) if raw_p != "" else 0
+        except: base_price = 0
+        img_url = str(t_info.iloc[2])
+        if img_url and img_url.startswith("http"):
+            st.image(img_url, use_container_width=True)
+        st.markdown(f"### 💰 စက်ဈေးနှုန်း: **{base_price:,.0f}** MMK")
+        st.write("---")
+        
+        st.subheader("🛠 နောက်တွဲများ ရွေးချယ်ရန်")
+        selected_att_total = 0
         if not df_attach.empty:
             filtered_att = df_attach[df_attach.iloc[:, 0].astype(str) == selected_model]
             def add_att_ui(label, m_col, p_col):
@@ -333,7 +409,7 @@ elif menu_choice == "Competitor News Updates":
                     'promo': str(row.get('promo', '')).strip(),
                     'facebook': str(row.get('facebook', '')).strip(),
                     'tiktok': str(row.get('tiktok', '')).strip(),
-                    'telegram': str(row.get('telegram', '')).strip(),  # အပေါ်ပိုင်းဒေတာစုဆောင်းတဲ့နေရာမှာပါ တိုးထားပေးပါတယ်
+                    'telegram': str(row.get('telegram', '')).strip(),
                     'image_url': str(row.get('image_url', '')).strip() 
                 }
             else:
@@ -352,7 +428,7 @@ elif menu_choice == "Competitor News Updates":
                     if str(row.get('tiktok', '')).strip() != '':
                         last_news_item['tiktok'] = str(row.get('tiktok', '')).strip()
                     if str(row.get('telegram', '')).strip() != '':
-                        last_news_item['telegram'] = str(row.get('telegram', '')).strip()
+                        last_news_item['telegram'] = str(row.get('telegram', '')).strip() # <-- ဒီနေရာမှာ ကွင်းပိတ် ပြန်ထည့်ပေးထားပါတယ်
                 else:
                     last_news_item = {
                         'date_key': current_date,
@@ -381,7 +457,7 @@ elif menu_choice == "Competitor News Updates":
                     with st.container(border=True):
                         st.subheader(f"🏢 {news['company']}")
                         
-                        # --- ၁။ ထိုင်းဘာသာစကားဖြင့် ပြသရန်အပိုင်း (อัปเดต) ---
+                        # --- ၁။ ထိုင်းဘာသာစကားဖြင့် ပြသရန်အပိုင်း ---
                         c_th = news.get('content_th', '').strip()
                         if c_th:
                             st.markdown("**🇹🇭 ภาษาไทย**")
@@ -412,7 +488,7 @@ elif menu_choice == "Competitor News Updates":
                         if promo not in ['', '0']:
                             st.info(f"💡 {promo}")
                         
-                        # --- 🔗 ၅။ ခလုတ်များပြသရန်အပိုင်း (ဘေးတိုက် ၃ ခုခွဲစနစ်) ---
+                        # --- 🔗 ၅။ ขลုတ်များပြသရန်အပိုင်း ---
                         fb_link = news.get('facebook', '').strip()
                         tt_link = news.get('tiktok', '').strip()
                         tg_link = news.get('telegram', '').strip()
@@ -442,6 +518,7 @@ elif menu_choice == "Competitor News Updates":
         st.error(f"Error loading data: {e}")
 
 st.markdown("<br><hr><center><small>© 2026 KMM Service Co., Ltd.</small></center>", unsafe_allow_html=True)
+
 
 
 
