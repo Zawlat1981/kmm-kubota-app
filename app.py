@@ -236,7 +236,7 @@ elif menu_choice == "Competitor News Updates":
                             st.info(f"💡 {promo}")
                         
                         # ခလုတ်များ
-                                                fb_link = news['facebook']
+                        fb_link = news['facebook']
                         tt_link = news['tiktok']
                         tg_link = news['telegram']
 
@@ -258,7 +258,7 @@ elif menu_choice == "Competitor News Updates":
                                 with btn_col3:
                                     st.link_button("✈️ Telegram", tg_link, use_container_width=True)
                                     
-                        st.write("<br>", unsafe_allow_html=True)
+                            st.write("<br>", unsafe_allow_html=True)
                 
     except Exception as e:
         st.error(f"Error loading data: {e}")
