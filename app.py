@@ -238,7 +238,8 @@ elif menu_choice == "Competitor News Updates":
                         # ခလုတ်များ
                         fb_link = news['facebook']
                         tt_link = news['tiktok']
-                        if fb_link.startswith("http") or tt_link.startswith("http"):
+                        tg_link = news['telegram']
+                        if fb_link.startswith("http") or tt_link.startswith("http") or tg_link.startswith("http"):
                             st.write("---")
                             btn_col1, btn_col2 = st.columns(2)
                             if fb_link.startswith("http"):
