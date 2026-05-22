@@ -249,6 +249,9 @@ elif menu_choice == "Competitor News Updates":
                                 with btn_col2:
                                     st.link_button("⚫ TikTok", tt_link, use_container_width=True)
                 st.write("<br>", unsafe_allow_html=True)
+                            if tg_link.startswith("http"):
+        with btn_col3:
+            st.link_button("✈️ Telegram", tg_link, use_container_width=True)
                 
     except Exception as e:
         st.error(f"Error loading data: {e}")
