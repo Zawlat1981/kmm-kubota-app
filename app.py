@@ -236,22 +236,29 @@ elif menu_choice == "Competitor News Updates":
                             st.info(f"💡 {promo}")
                         
                         # ခလုတ်များ
-                        fb_link = news['facebook']
+                                                fb_link = news['facebook']
                         tt_link = news['tiktok']
                         tg_link = news['telegram']
+
                         if fb_link.startswith("http") or tt_link.startswith("http") or tg_link.startswith("http"):
                             st.write("---")
-                            btn_col1, btn_col2 = st.columns(2)
+                            
+                            # ကော်လံ (၃) ခု ခွဲလိုက်ပါတယ် (btn_col3 ပါအောင်)
+                            btn_col1, btn_col2, btn_col3 = st.columns(3)
+                            
                             if fb_link.startswith("http"):
                                 with btn_col1:
                                     st.link_button("🔵 Facebook", fb_link, use_container_width=True)
+                                    
                             if tt_link.startswith("http"):
                                 with btn_col2:
                                     st.link_button("⚫ TikTok", tt_link, use_container_width=True)
-                st.write("<br>", unsafe_allow_html=True)
+                                    
                             if tg_link.startswith("http"):
-        with btn_col3:
-            st.link_button("✈️ Telegram", tg_link, use_container_width=True)
+                                with btn_col3:
+                                    st.link_button("✈️ Telegram", tg_link, use_container_width=True)
+                                    
+                        st.write("<br>", unsafe_allow_html=True)
                 
     except Exception as e:
         st.error(f"Error loading data: {e}")
