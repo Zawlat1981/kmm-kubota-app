@@ -113,7 +113,6 @@ if menu_choice == "Brand Selection":
 # ==========================================
 elif menu_choice == "Competitor News Updates":
     
-    # 🌟 [A] ဖိကိတ်က Link ကိုနှိပ်ပြီး ဝင်ကြည့်တဲ့အခါ ပေါ်မယ့် "သီးသန့် Report အမြင်သက်သက်စာမျက်နှာ" 🌟
     if "report" in st.query_params and "items" in st.query_params:
         st.markdown("<h1 style='text-align: center; color: #ff6600;'>📰 รายงานสรุปข่าวเด่นประจำสัปดาห์</h1>", unsafe_allow_html=True)
         st.markdown("<p style='text-align: center; color: #555; font-weight: bold;'>รายงานพิเศษสำหรับ คุณ Cake (P' Cake)</p>", unsafe_allow_html=True)
