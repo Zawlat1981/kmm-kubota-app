@@ -13,7 +13,7 @@ SHEET_ID = "1QqQvPKH7G0hqqhd_0V6cP40Htl8qdFEZ6nHBVe_53_g"
 with st.sidebar:
     st.markdown("## 🚜 KMM Service")
     menu_choice = st.radio("သွားလိုရာကို ရွေးချယ်ပါ (กรุณาเลือกเมนู) -", ["Brand Selection", "Competitor News Updates"])
-    st.write("---")
+    st.write("---") 
     
     if menu_choice == "Brand Selection":
         st.header("🔍 Filter")
