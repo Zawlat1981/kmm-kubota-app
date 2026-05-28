@@ -109,19 +109,18 @@ if menu_choice == "Brand Selection":
         st.warning("Sheet Not Found")
 
 # ==========================================
-# ၂။ COMPETITOR NEWS UPDATES MENU (ပြင်ဆင်ထားသော ပုံစံသစ်)
+# ၂။ COMPETITOR NEWS UPDATES MENU (Key Duplicate Error ပြင်ဆင်ပြီး)
 # ==========================================
 elif menu_choice == "Competitor News Updates":
     
+    # 🌟 Link ကိုနှိပ်ပြီး ဝင်ကြည့်တဲ့အခါ ပေါ်မယ့် "သီးသန့် Report အမြင်သက်သက်စာမျက်နှာ" 🌟
     if "report" in st.query_params and "items" in st.query_params:
         st.markdown("<h1 style='text-align: center; color: #ff6600;'>📰 รายงานสรุปข่าวเด่นประจำสัปดาห์</h1>", unsafe_allow_html=True)
         st.markdown("<p style='text-align: center; color: #555; font-weight: bold;'>รายงานพิเศษสำหรับ คุณ Cake (P' Cake)</p>", unsafe_allow_html=True)
         st.write("---")
         
-        # Link ထဲကနေ ပါလာတဲ့ ကုမ္ပဏီအမည်နဲ့ အကြောင်းအရာတွေကို ပြန်ဖတ်တာပါ
         chosen_items = st.query_params["items"].split("||")
         
-        # ဒေတာ ပြန်လည်ဆွဲထုတ်ရန်အတွက် မူရင်းစာရင်းကို ခေတ္တ Load လုပ်ပါတယ်
         timestamp = int(time.time())
         comp_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Competitor%20News%20Updates&cache_bust={timestamp}"
         
@@ -129,42 +128,67 @@ elif menu_choice == "Competitor News Updates":
             df_comp = pd.read_csv(comp_url).fillna('')
             df_comp.columns = [str(c).strip().lower() for c in df_comp.columns]
             
-            # ခွဲထုတ်ထားတဲ့ ကုမ္ပဏီအမည်တွေနဲ့ တိုက်စစ်ပြီး Report ထုတ်ပေးပါတယ်
-            for item in chosen_items:
-                if "::" in item:
-                    comp_name, date_val = item.split("::")
+            # ဒေတာတွေကို မူရင်းအတိုင်း ပြန်စုစည်းပြီး ပြသခြင်း
+            temp_list = []
+            current_date = "No Date"
+            last_item = None
+            
+            for _, row in df_comp.iterrows():
+                r_date = str(row.get('date', '')).strip()
+                r_company = str(row.get('company', '')).strip()
+                r_content_th = str(row.get('content_th', '')).strip()
+                r_content_mm = str(row.get('content_mm', '')).strip()
+                
+                if r_date == '' and r_company == '' and r_content_th == '' and r_content_mm == '':
+                    continue
                     
-                    # ၎င်းကုမ္ပဏီနှင့် ရက်စွဲတူညီသော သတင်းကို ရှာဖွေပြသခြင်း
-                    for _, row in df_comp.iterrows():
-                        if str(row.get('company', '')).strip() == comp_name:
-                            with st.container(border=True):
-                                col1, col2 = st.columns([2, 1]) # ဘယ်ဘက်စာသား၊ ညာဘက်ပုံ
-                                
-                                with col1:
-                                    st.subheader(f"🏢 {comp_name}")
-                                    st.caption(f"📅 Date: {date_val}")
-                                    
-                                    c_th = str(row.get('content_th', '')).strip()
-                                    if c_th:
-                                        st.markdown("**🇹🇭 ภาษาไทย**")
-                                        st.markdown(c_th.replace("\n", "  \n"))
-                                        
-                                    promo = str(row.get('promo', '')).strip()
-                                    if promo not in ['', '0']:
-                                        st.info(f"💡 Promo: {promo}")
-                                
-                                with col2:
-                                    img_data = str(row.get('image_url', '')).strip()
-                                    if img_data:
-                                        img_list = [i.strip() for i in img_data.split(',')]
-                                        for img in img_list:
-                                            if img.startswith("http"):
-                                                st.image(img, use_container_width=True)
+                if r_date != '' or r_company != '':
+                    if r_date != '': current_date = r_date
+                    if last_item is not None: temp_list.append(last_item)
+                    
+                    last_item = {
+                        'date_key': current_date,
+                        'company': r_company if r_company != '' else '💵 Exchange Rate / News',
+                        'content_th': r_content_th,
+                        'content_mm': r_content_mm,
+                        'promo': str(row.get('promo', '')).strip(),
+                        'image_url': str(row.get('image_url', '')).strip()
+                    }
+                else:
+                    if last_item is not None:
+                        if r_content_th != '': last_item['content_th'] = (last_item['content_th'] + "\n" + r_content_th).strip()
+                        if r_content_mm != '': last_item['content_mm'] = (last_item['content_mm'] + "\n" + r_content_mm).strip()
+                        if str(row.get('image_url', '')).strip() != '': last_item['image_url'] = str(row.get('image_url', '')).strip()
+                        if str(row.get('promo', '')).strip() != '': last_item['promo'] = str(row.get('promo', '')).strip()
+            
+            if last_item is not None: temp_list.append(last_item)
+            
+            # လင့်ခ်ထဲကပါလာတဲ့ အချက်အလက်တွေနဲ့ တိုက်စစ်ပြီး Report ထုတ်ပြတာပါ
+            for idx, item in enumerate(temp_list):
+                match_str = f"{item['company']}::{item['date_key']}::{idx}"
+                # အဟောင်းကော အသစ်ကော အဆင်ပြေအောင် နှစ်မျိုးလုံး စစ်ပေးထားပါတယ်
+                match_str_old = f"{item['company']}::{item['date_key']}"
+                
+                if match_str in chosen_items or match_str_old in chosen_items:
+                    with st.container(border=True):
+                        col1, col2 = st.columns([2, 1])
+                        with col1:
+                            st.subheader(f"🏢 {item['company']}")
+                            st.caption(f"📅 Date: {item['date_key']}")
+                            if item['content_th']:
+                                st.markdown("**🇹🇭 ภาษาไทย**")
+                                st.markdown(item['content_th'].replace("\n", "  \n"))
+                            if item['promo'] not in ['', '0']:
+                                st.info(f"💡 Promo: {item['promo']}")
+                        with col2:
+                            if item['image_url']:
+                                for img in [i.strip() for i in item['image_url'].split(',')]:
+                                    if img.startswith("http"): st.image(img, use_container_width=True)
             
         except Exception as e:
             st.error(f"Error generation report view: {e}")
             
-        if st.button("⬅️ หน้าหลัก (ပင်မစာမျက်နှာသို့ ပြန်သွားရန်)"):
+        if st.button("⬅️ หน้าหลัก (ပင်มစာမျက်နှာသို့ ပြန်သွားရန်)"):
             st.query_params.clear()
             st.rerun()
 
@@ -248,11 +272,12 @@ elif menu_choice == "Competitor News Updates":
                     grouped_data[last_news_item['date_key']] = []
                 grouped_data[last_news_item['date_key']].append(last_news_item)
                 
-            # --- 🛠️ နေရာသစ်: Checkbox ရွေးချယ်ရန်စနစ် ထည့်သွင်းခြင်း ---
+            # --- 🛠️ စနစ်သစ်: Error မတက်အောင် Unique Index Number သုံးပြီး ဖြေရှင်းခြင်း ---
             st.markdown("### 🎯 အပတ်စဉ် Report အတွက် သတင်းများ ရွေးချယ်ရန်")
-            st.caption("ဖိကိတ် (P' Cake) ထံ တင်ပြလိုသော သတင်းများကို အမှန်ခြစ်ပေးပါ အစ်ကို။")
+            st.caption("ဖิကิต (P' Cake) ထံ တင်ပြလိုသော သတင်းများကို အမှันခြစ်ပေးပါ အစ်ကို။")
             
             selected_news_keys = []
+            global_idx = 0 # ခွဲခြားရန်အတွက် Index နံပါတ်
             
             if grouped_data:
                 sorted_dates = sorted(grouped_data.keys(), reverse=True)
@@ -261,9 +286,10 @@ elif menu_choice == "Competitor News Updates":
                     st.markdown(f"<h2 style='color: #ff6600; background-color: #f0f7ff; padding: 10px; border-radius: 5px;'> Date: {date_key}</h2>", unsafe_allow_html=True)
                     
                     for news in grouped_data[date_key]:
-                        # တစ်ခုချင်းစီရဲ့ သတင်း Container ဘေးမှာ အမှန်ခြစ်ထည့်တာပါ
-                        chk_key = f"{news['company']}::{date_key}"
-                        is_selected = st.checkbox(f"🏢 **{news['company']}** ကို ပတ်စဉ် Report ထဲထည့်မည်", key=f"chk_{chk_key}")
+                        # ဒီနေရာမှာ Index ပါထည့်လိုက်လို့ နာမည်တူ ရက်စွဲတူလည်း Key လုံးဝ မထပ်တော့ပါဘူး
+                        chk_key = f"{news['company']}::{date_key}::{global_idx}"
+                        
+                        is_selected = st.checkbox(f"🏢 **{news['company']}** ကို ပတ်စဉ် Report ထဲထည့်မည်", key=f"chk_{global_idx}")
                         
                         if is_selected:
                             selected_news_keys.append(chk_key)
@@ -311,28 +337,25 @@ elif menu_choice == "Competitor News Updates":
                                     with btn_col3: st.link_button("✈️ Telegram", tg_link, use_container_width=True)
                             
                             st.write("<br>", unsafe_allow_html=True)
+                        
+                        global_idx += 1 # Index ကို တိုးပေးသွားတာဖြစ်ပါတယ်
                 
                 # --- 🔗 Link ထုတ်ပေးသည့် ခလုတ်နေရာ ---
                 st.write("---")
                 st.markdown("### 🔗 P' Cake ဆီ ပို့ရန် Report Link ထုတ်ယူခြင်း")
                 if st.button("📊 ယခုတစ်ပတ်အတွင်း သတင်း Summary Link ထုတ်ရန်", type="primary"):
                     if selected_news_keys:
-                        # ရွေးချယ်ထားတဲ့ သတင်း ID/Name တွေကို စာသားအဖြစ် ပြောင်းလဲတာပါ
                         param_items = "||".join(selected_news_keys)
-                        
-                        # လက်ရှိ App Link ကို Auto ယူပြီး Parameter တွဲပေးတာပါ
                         report_url = f"https://kmm-kubota.streamlit.app/?report=true&items={param_items}"
                         
                         st.success("🎯 တစ်ပတ်စာ သတင်း Report Link အောင်မြင်စွာ ထွက်လာပါပြီ အစ်ကို!")
                         st.write("အောက်ပါ Link ကို Copy ကူးပြီး LINE ကနေ P' Cake ဆီ ပို့ပေးလိုက်ရုံပါပဲဗျာ -")
                         st.code(report_url, language="text")
                     else:
-                        st.warning("⚠️ ကျေးဇူးပြု၍ တင်ပြလိုသော သတင်းများ၏ အပေါ်ရှိ အမှန်ခြစ်များကို အရင်ရွေးချယ်ပေးပါ အစ်ကို။")
+                        st.warning("⚠️ ကျေးဇူးပြု၍ တင်ပြလိုသော သတင်းများ၏ အပေါ်ရှိ အမှန်чивများကို အရင်ရွေးချယ်ပေးပါ အစ်ကို။")
                         
         except Exception as e:
             st.error(f"Error loading data: {e}")
-
-st.markdown("<br><hr><center><small>© 2026 KMM Service Co., Ltd.</small></center>", unsafe_allow_html=True)
 
 
 
