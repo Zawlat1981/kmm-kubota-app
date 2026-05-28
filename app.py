@@ -9,23 +9,14 @@ st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout=
 # Google Sheet ID
 SHEET_ID = "1QqQvPKH7G0hqqhd_0V6cP40Htl8qdFEZ6nHBVe_53_g" 
 
-# --- Sidebar Menu ---
-with st.sidebar:
-    st.markdown("## 🚜 KMM Service")
-    menu_choice = st.radio("သွားလိုရာကို ရွေးချယ်ပါ (กรุณาเลือกเมนู) -", ["Brand Selection", "Competitor News Updates"])
-    st.write("---") 
-    
-    if menu_choice == "Brand Selection":
-        st.header("🔍 Filter")
-        selected_brand = st.selectbox(
-            "အမှတ်တံဆိပ် ရွေးချယ်ပါ (กรุณาเลือกยี่ห้อ) -", 
-            ["Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika", "Yamabisi", "DongFeng"]
-        )
+# အစောပိုင်း Session State အခြေအနေများ သတ်မှတ်ခြင်း
+if "selected_news_keys" not in st.session_state:
+    st.session_state.selected_news_keys = []
 
 # --- ဒေတာ Load လုပ်သည့် Function ---
 @st.cache_data(ttl=60)
 def load_data(tab_name):
-    base_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet="
+    base_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=" 
     try:
         df_tractor = pd.read_csv(base_url + tab_name).fillna(0)
     except:
@@ -39,6 +30,35 @@ def load_data(tab_name):
         except:
             pass
     return df_tractor, df_attach
+
+# --- Sidebar Menu ---
+with st.sidebar:
+    st.markdown("## 🚜 KMM Service")
+    menu_choice = st.radio("သွားလိုရာကို ရွေးချယ်ပါ (กรุณาเลือกเมนู) -", ["Brand Selection", "Competitor News Updates"])
+    st.write("---")
+    
+    if menu_choice == "Brand Selection":
+        st.header("🔍 Filter")
+        selected_brand = st.selectbox(
+            "အမှတ်ตံဆိပ် ရွေးချယ်ပါ (กรุณาเลือกยี่ห้อ) -", 
+            ["Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika", "Yamabisi", "DongFeng"]
+        )
+    
+    # 🌟 [နေရာသစ်] သတင်းတွေကို အောက်ဆုံးအထိ ဆွဲမချရအောင် Sidebar ထဲမှာ ခလုတ်လာထားပေးခြင်း 🌟
+    elif menu_choice == "Competitor News Updates" and not ("report" in st.query_params and "items" in st.query_params):
+        st.markdown("### 🔗 Report Link Generator")
+        st.caption("သတင်းများကို အမှန်ခြစ်ပြီးပါက ဤခလုတ်ကို နှိပ်ပါ -")
+        
+        if st.button("📊 သတင်း Summary Link ထုတ်ရန်", type="primary", use_container_width=True):
+            if st.session_state.selected_news_keys:
+                param_items = "||".join(st.session_state.selected_news_keys)
+                report_url = f"https://kmm-kubota.streamlit.app/?report=true&items={param_items}"
+                
+                st.success("🎯 Link ထွက်လာပါပြီ!")
+                st.write("Copy ကူးပြီး P' Cake ထံ ပို့ပေးပါ -")
+                st.code(report_url, language="text")
+            else:
+                st.warning("⚠️ ကျေးဇူးပြု၍ သတင်းများကို အရင်အမှန်ခြစ်ပေးပါ အစ်ကို။")
 
 # ==========================================
 # ၁။ BRAND SELECTION MENU
@@ -109,11 +129,11 @@ if menu_choice == "Brand Selection":
         st.warning("Sheet Not Found")
 
 # ==========================================
-# ၂။ COMPETITOR NEWS UPDATES MENU (စာသားဖျောက်ပြီး ပုံစံသစ်)
+# ၂။ COMPETITOR NEWS UPDATES MENU 
 # ==========================================
 elif menu_choice == "Competitor News Updates":
     
-    # 🌟 Link ကိုနှိပ်ပြီး ဝင်ကြည့်တဲ့အခါ ပေါ်မယ့် "သီးသန့် Report စာမျက်နှာ" 🌟
+    # 🌟 [A] ဖိကိတ်က Link ကိုနှိပ်ပြီး ဝင်ကြည့်တဲ့အခါ ပေါ်မယ့် "သီးသန့် Report အမြင်သက်သက်စာမျက်နှာ" 🌟
     if "report" in st.query_params and "items" in st.query_params:
         st.markdown("<h1 style='text-align: center; color: #ff6600;'>📰 รายงานสรุปข่าวเด่นประจำสัปดาห์</h1>", unsafe_allow_html=True)
         st.markdown("<p style='text-align: center; color: #555; font-weight: bold;'>รายงานพิเศษสำหรับ คุณ Cake (P' Cake)</p>", unsafe_allow_html=True)
@@ -185,11 +205,11 @@ elif menu_choice == "Competitor News Updates":
         except Exception as e:
             st.error(f"Error generation report view: {e}")
             
-        if st.button("⬅️ หน้าหลัก (ပင်မစာမျက်နှာသို့ ပြန်သွားရန်)"):
+        if st.button("⬅️ หน้าหลัก (ပင်มစာမျက်နှาသို့ ပြန်သွားရန်)"):
             st.query_params.clear()
             st.rerun()
 
-    # 🌟 [B] မူရင်းစာမျက်နှာ (အစ်ကို သတင်းရွေးချယ်ပြီး Link ထုတ်ယူမည့်နေရာ) 🌟
+    # 🌟 [B] မူရင်းစာမျက်နှာ 🌟
     else:
         st.markdown("<h1 style='text-align: center; color: #0066cc;'>📊 Competitor News Updates & News Myanmar</h1>", unsafe_allow_html=True)
         st.write("---")
@@ -269,10 +289,9 @@ elif menu_choice == "Competitor News Updates":
                     grouped_data[last_news_item['date_key']] = []
                 grouped_data[last_news_item['date_key']].append(last_news_item)
                 
-            # --- 🛠️ စနစ်သစ်: ခေါင်းစဉ်စာသား ပြင်ဆင်ပြီး စာတန်းတိုလေးကို ဖျောက်ထားသည် ---
             st.markdown("### 🎯 အပတ်စဉ် Report အတွက် သတင်းများ ရွေးချယ်ရန်")
             
-            selected_news_keys = []
+            temp_selected_keys = []
             global_idx = 0 
             
             if grouped_data:
@@ -284,11 +303,10 @@ elif menu_choice == "Competitor News Updates":
                     for news in grouped_data[date_key]:
                         chk_key = f"{news['company']}::{date_key}::{global_idx}"
                         
-                        # စာသားကို ပိုပြီးရုံးသုံးဆန်အောင် ပြောင်းလဲထားပါတယ်
                         is_selected = st.checkbox(f"🏢 **{news['company']}** ကို Report ထဲထည့်မည်", key=f"chk_{global_idx}")
                         
                         if is_selected:
-                            selected_news_keys.append(chk_key)
+                            temp_selected_keys.append(chk_key)
                             
                         with st.container(border=True):
                             c_th = news.get('content_th', '').strip()
@@ -336,22 +354,13 @@ elif menu_choice == "Competitor News Updates":
                         
                         global_idx += 1 
                 
-                # --- 🔗 Link ထုတ်ပေးသည့် ခလုတ်နေရာ ---
-                st.write("---")
-                st.markdown("### 🔗 Report Link ထုတ်ယူခြင်း")
-                if st.button("📊 ယခုတစ်ပတ်အတွင်း သတင်း Summary Link ထုတ်ရန်", type="primary"):
-                    if selected_news_keys:
-                        param_items = "||".join(selected_news_keys)
-                        report_url = f"https://kmm-kubota.streamlit.app/?report=true&items={param_items}"
-                        
-                        st.success("🎯 တစ်ပတ်စာ သတင်း Report Link အောင်မြင်စွာ ထွက်လာပါပြီ ခင်ဗျာ!")
-                        st.write("အောက်ပါ Link ကို Copy ကူးပြီး LINE ကနေ ပို့ပေးလို့ရပါပြီဗျာ -")
-                        st.code(report_url, language="text")
-                    else:
-                        st.warning("⚠️ ကျေးဇူးပြု၍ တင်ပြလိုသော သတင်းများ၏ အပေါ်ရှိ အမှန်ခြစ်များကို အရင်ရွေးချယ်ပေးပါ ခင်ဗျာ။")
+            # ရွေးထားတဲ့ Key တွေကို Sidebar ခလုတ်က လှမ်းဖတ်နိုင်အောင် Session State ထဲ သိမ်းထားခြင်း
+            st.session_state.selected_news_keys = temp_selected_keys
                         
         except Exception as e:
             st.error(f"Error loading data: {e}")
+
+st.markdown("<br><hr><center><small>© 2026 KMM Service Co., Ltd.</small></center>", unsafe_allow_html=True)
 
 
 
