@@ -47,7 +47,7 @@ with st.sidebar:
     # 🌟 Sidebar ထဲမှ Link ထုတ်ပေးသည့်ခလုတ် (Session State သို့ တိုက်ရိုက်ချိတ်ဆက်ထားသည်)
     elif menu_choice == "Competitor News Updates" and not ("report" in st.query_params and "items" in st.query_params):
         st.markdown("### 🔗 Report Link Generator")
-        st.caption("သတင်းများကို အမှန်ခြစ်ပြီးပါက ဤခလုတ်ကို နှိပ်ပါ -")
+        st.caption("Report တင်လိုသော သတင်းများကို ရွေးချယ်ပြီးမှ ဤခလုတ်ကို နှိပ်ပါ / หลังจากเลือกข่าวสำหรับรายงานแล้ว จึงกดปุ่มนี้ -")
         
         if st.button("📊 သတင်း Summary Link ထုတ်ရန်", type="primary", use_container_width=True):
             if st.session_state.selected_news_keys:
@@ -288,8 +288,8 @@ elif menu_choice == "Competitor News Updates":
                     grouped_data[last_news_item['date_key']] = []
                 grouped_data[last_news_item['date_key']].append(last_news_item)
                 
-            st.markdown("### 🎯 အပတ်စဉ် Report အတွက် သတင်းများ ရွေးချယ်ရန်")
-            st.caption("တင်ပြလိုသော သတင်းများကို အမှန်ခြစ်ပေးပါ ခင်ဗျာ။")
+            st.markdown("### 🎯 Report အတွက် သတင်းများ ရွေးချယ်ရန် / เลือกข่าวเพื่อรายงาน")
+            st.caption("တင်ပြလိုသော သတင်းများကို အမှန်ခြစ်ပေးပါ ခင်ဗျာ / กรุณาติ๊กเลือกข่าวที่ต้องการรายงานครับ")
             
             # ပြင်ဆင်ချက်- ဒေတာများကို Session State ထဲသို့ တိုက်ရိုက်သိမ်းဆည်းခြင်း
             st.session_state.selected_news_keys = []
