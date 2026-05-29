@@ -58,7 +58,7 @@ with st.sidebar:
                 st.write("Copy ကူးပြီး link ပို့လို့ရပါပြီ -")
                 st.code(report_url, language="text")
             else:
-                st.warning("⚠️ ကျေးဇူးပြု၍ သတင်းများကို အရင်အမှန်ခြစ်ပေးပါ အစ်ကို။")
+                st.warning("⚠️ ကျေးဇူးပြု၍ သတင်းများကို အရင်အမှန်ခြစ်ပေးပါ ခင်ဗျာ။")
 
 # ==========================================
 # ၁။ BRAND SELECTION MENU
@@ -129,11 +129,11 @@ if menu_choice == "Brand Selection":
         st.warning("Sheet Not Found")
 
 # ==========================================
-# ၂။ COMPETITOR NEWS UPDATES MENU 
+# ၂။ COMPETITOR NEWS UPDATES MENU (Key Duplicate Error ပြင်ဆင်ပြီး)
 # ==========================================
 elif menu_choice == "Competitor News Updates":
     
-    # 🌟 [A] Link ကိုနှိပ်ပြီး ဝင်ကြည့်တဲ့အခါ ပေါ်မယ့် "သီးသန့် Report အမြင်သက်သက်စာမျက်နှာ" 🌟
+    # 🌟 [A]Link ကိုနှိပ်ပြီး ဝင်ကြည့်တဲ့အခါ ပေါ်မယ့် "သီးသန့် Report စာမျက်နှာ" 🌟
     if "report" in st.query_params and "items" in st.query_params:
         st.markdown("<h1 style='text-align: center; color: #ff6600;'>📰 รายงานสรุปข่าวเด่นประจำสัปดาห์</h1>", unsafe_allow_html=True)
         st.markdown("<p style='text-align: center; color: #555; font-weight: bold;'>รายงานพิเศษสำหรับ คุณ Cake (P' Cake)</p>", unsafe_allow_html=True)
@@ -148,6 +148,7 @@ elif menu_choice == "Competitor News Updates":
             df_comp = pd.read_csv(comp_url).fillna('')
             df_comp.columns = [str(c).strip().lower() for c in df_comp.columns]
             
+            # ဒေတာတွေကို မူရင်းအတိုင်း ပြန်စုစည်းပြီး ပြသခြင်း
             temp_list = []
             current_date = "No Date"
             last_item = None
@@ -182,8 +183,10 @@ elif menu_choice == "Competitor News Updates":
             
             if last_item is not None: temp_list.append(last_item)
             
+            # လင့်ခ်ထဲကပါလာတဲ့ အချက်အလက်တွေနဲ့ တိုက်စစ်ပြီး Report ထုတ်ပြတာပါ
             for idx, item in enumerate(temp_list):
                 match_str = f"{item['company']}::{item['date_key']}::{idx}"
+                # အဟောင်းကော အသစ်ကော အဆင်ပြေအောင် နှစ်မျိုးလုံး စစ်ပေးထားပါတယ်
                 match_str_old = f"{item['company']}::{item['date_key']}"
                 
                 if match_str in chosen_items or match_str_old in chosen_items:
@@ -209,7 +212,7 @@ elif menu_choice == "Competitor News Updates":
             st.query_params.clear()
             st.rerun()
 
-    # 🌟 [B] မူရင်းစာမျက်နှာ 🌟
+    # 🌟 [B] သတင်းတွေရွေးချယ်ပြီး Link ထုတ်ယူမယ့် "မူရင်းစာမျက်နှာ" 🌟
     else:
         st.markdown("<h1 style='text-align: center; color: #0066cc;'>📊 Competitor News Updates & News Myanmar</h1>", unsafe_allow_html=True)
         st.write("---")
@@ -289,10 +292,12 @@ elif menu_choice == "Competitor News Updates":
                     grouped_data[last_news_item['date_key']] = []
                 grouped_data[last_news_item['date_key']].append(last_news_item)
                 
+            # --- 🛠️ စနစ်သစ်: Error မတက်အောင် Unique Index Number သုံးပြီး ဖြေရှင်းခြင်း ---
             st.markdown("### 🎯 အပတ်စဉ် Report အတွက် သတင်းများ ရွေးချယ်ရန်")
+            st.caption("တင်ပြလိုသော သတင်းများကို အမှန်ခြစ်ပေးပါ ခင်ဗျာ။")
             
-            temp_selected_keys = []
-            global_idx = 0 
+            selected_news_keys = []
+            global_idx = 0 # ခွဲခြားရန်အတွက် Index နံပါတ်
             
             if grouped_data:
                 sorted_dates = sorted(grouped_data.keys(), reverse=True)
@@ -301,12 +306,13 @@ elif menu_choice == "Competitor News Updates":
                     st.markdown(f"<h2 style='color: #ff6600; background-color: #f0f7ff; padding: 10px; border-radius: 5px;'> Date: {date_key}</h2>", unsafe_allow_html=True)
                     
                     for news in grouped_data[date_key]:
+                        # ဒီနေရာမှာ Index ပါထည့်လိုက်လို့ နာမည်တူ ရက်စွဲတူလည်း Key လုံးဝ မထပ်တော့ပါဘူး
                         chk_key = f"{news['company']}::{date_key}::{global_idx}"
                         
-                        is_selected = st.checkbox(f"🏢 **{news['company']}** ကို Report ထဲထည့်မည်", key=f"chk_{global_idx}")
+                        is_selected = st.checkbox(f"🏢 **{news['company']}** ကို ပတ်စဉ် Report ထဲထည့်မည်", key=f"chk_{global_idx}")
                         
                         if is_selected:
-                            temp_selected_keys.append(chk_key)
+                            selected_news_keys.append(chk_key)
                             
                         with st.container(border=True):
                             c_th = news.get('content_th', '').strip()
@@ -352,15 +358,24 @@ elif menu_choice == "Competitor News Updates":
                             
                             st.write("<br>", unsafe_allow_html=True)
                         
-                        global_idx += 1 
+                        global_idx += 1 # Index ကို တိုးပေးသွားတာဖြစ်ပါတယ်
                 
-            # ရွေးထားတဲ့ Key တွေကို Sidebar ခလုတ်က လှမ်းဖတ်နိုင်အောင် Session State ထဲ သိမ်းထားခြင်း
-            st.session_state.selected_news_keys = temp_selected_keys
+                # --- 🔗 Link ထုတ်ပေးသည့် ခလုတ်နေရာ ---
+                st.write("---")
+                st.markdown("### 🔗 "Report Link ထုတ်ယူခြင်း")
+                if st.button("📊 ယခုတစ်ပတ်အတွင်း သတင်း Summary Link ထုတ်ရန်", type="primary"):
+                    if selected_news_keys:
+                        param_items = "||".join(selected_news_keys)
+                        report_url = f"https://kmm-kubota.streamlit.app/?report=true&items={param_items}"
+                        
+                        st.success("🎯 တစ်ပတ်စာ သတင်း Report Link အောင်မြင်စွာ ထွက်လာပါပြီ အစ်ကို!")
+                        st.write("အောက်ပါ Link ကို Copy ကူးပြီး LINE မှတစ်ဆင့် ပို့ပေးလို့ရပါပြီ ခင်ဗျာ -")
+                        st.code(report_url, language="text")
+                    else:
+                        st.warning("⚠️ ကျေးဇူးပြု၍ တင်ပြလိုသော သတင်းများ၏ အပေါ်ရှိ Checkbox အမှန်ခြစ်များကို အရင်ရွေးချယ်ပေးပါ ခင်ဗျာ။")
                         
         except Exception as e:
             st.error(f"Error loading data: {e}")
-
-st.markdown("<br><hr><center><small>© 2026 KMM Service Co., Ltd.</small></center>", unsafe_allow_html=True)
 
 
 
