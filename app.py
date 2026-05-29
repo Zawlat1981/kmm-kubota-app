@@ -58,7 +58,7 @@ with st.sidebar:
                 st.write("Copy ကူးပြီး link ပို့လို့ရပါပြီ -")
                 st.code(report_url, language="text")
             else:
-                st.warning("⚠️ ကျေးဇူးပြု၍ သတင်းများကို အရင်အမှန်ခြစ်ပေးပါ ခင်ဗျာ။")
+                st.warning("⚠️ ကျေးဇူးပြု၍ သတင်းများကို အရင်အမှန်ခြစ်ပေးပါ ခင်ဗျာ။") 
 
 # ==========================================
 # ၁။ BRAND SELECTION MENU
