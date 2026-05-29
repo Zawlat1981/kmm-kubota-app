@@ -362,7 +362,7 @@ elif menu_choice == "Competitor News Updates":
                 
                 # --- 🔗 Link ထုတ်ပေးသည့် ခလုတ်နေရာ ---
                 st.write("---")
-                st.markdown("### 🔗 "Report Link ထုတ်ယူခြင်း")
+                st.markdown("### 🔗 Report Link ထုတ်ယူခြင်း")
                 if st.button("📊 ယခုတစ်ပတ်အတွင်း သတင်း Summary Link ထုတ်ရန်", type="primary"):
                     if selected_news_keys:
                         param_items = "||".join(selected_news_keys)
