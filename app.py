@@ -40,7 +40,7 @@ with st.sidebar:
     if menu_choice == "Brand Selection":
         st.header("🔍 Filter")
         selected_brand = st.selectbox(
-            "အမှတ်ตံဆိပ် ရွေးချယ်ပါ (กรุณาเลือกยี่ห้อ) -", 
+            "အမှတ်တံဆိပ် ရွေးချယ်ပါ (กรุณาเลือกยี่ห้อ) -", 
             ["Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika", "Yamabisi", "DongFeng"]
         )
     
@@ -55,7 +55,7 @@ with st.sidebar:
                 report_url = f"https://kmm-kubota.streamlit.app/?report=true&items={param_items}"
                 
                 st.success("🎯 Link ထွက်လာပါပြီ!")
-                st.write("Copy ကူးပြီး P' Cake ထံ ပို့ပေးပါ -")
+                st.write("Copy ကူးပြီး link ပို့လို့ရပါပြီ -")
                 st.code(report_url, language="text")
             else:
                 st.warning("⚠️ ကျေးဇူးပြု၍ သတင်းများကို အရင်အမှန်ခြစ်ပေးပါ အစ်ကို။")
@@ -133,7 +133,7 @@ if menu_choice == "Brand Selection":
 # ==========================================
 elif menu_choice == "Competitor News Updates":
     
-    # 🌟 [A] ဖိကိတ်က Link ကိုနှိပ်ပြီး ဝင်ကြည့်တဲ့အခါ ပေါ်မယ့် "သီးသန့် Report အမြင်သက်သက်စာမျက်နှာ" 🌟
+    # 🌟 [A] Link ကိုနှိပ်ပြီး ဝင်ကြည့်တဲ့အခါ ပေါ်မယ့် "သီးသန့် Report အမြင်သက်သက်စာမျက်နှာ" 🌟
     if "report" in st.query_params and "items" in st.query_params:
         st.markdown("<h1 style='text-align: center; color: #ff6600;'>📰 รายงานสรุปข่าวเด่นประจำสัปดาห์</h1>", unsafe_allow_html=True)
         st.markdown("<p style='text-align: center; color: #555; font-weight: bold;'>รายงานพิเศษสำหรับ คุณ Cake (P' Cake)</p>", unsafe_allow_html=True)
@@ -205,7 +205,7 @@ elif menu_choice == "Competitor News Updates":
         except Exception as e:
             st.error(f"Error generation report view: {e}")
             
-        if st.button("⬅️ หน้าหลัก (ပင်มစာမျက်နှาသို့ ပြန်သွားရန်)"):
+        if st.button("⬅️ หน้าหลัก (ပင်မစာမျက်နှာသို့ ပြန်သွားရန်)"):
             st.query_params.clear()
             st.rerun()
 
