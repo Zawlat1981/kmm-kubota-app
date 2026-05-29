@@ -10,7 +10,7 @@ st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout=
 SHEET_ID = "1QqQvPKH7G0hqqhd_0V6cP40Htl8qdFEZ6nHBVe_53_g" 
 
 # အစောပိုင်း Session State အခြေအနေများ သတ်မှတ်ခြင်း
-if "selected_news_keys" not in st.session_state:
+if "selected_news_keys" not in st.session_state: 
     st.session_state.selected_news_keys = []
 
 # --- ဒေတာ Load လုပ်သည့် Function ---
