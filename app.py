@@ -280,7 +280,7 @@ elif menu_choice == "Competitor News Updates":
                             'facebook': str(row.get('facebook', '')).strip(),
                             'tiktok': str(row.get('tiktok', '')).strip(),
                             'telegram': str(row.get('telegram', '')).strip(),
-                            'image_url': str(row.get('image_url', '')).strip()
+                            'image_url': str(row.get('image_url', '')).strip() 
                         }
             
             if last_news_item is not None:
