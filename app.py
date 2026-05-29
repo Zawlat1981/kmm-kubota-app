@@ -361,7 +361,7 @@ elif menu_choice == "Competitor News Updates":
                 if st.button("📊 ယခုတစ်ပတ်အတွင်း သတင်း Summary Link ထုတ်ရန်", type="primary"):
                     if st.session_state.selected_news_keys:
                         param_items = "||".join(st.session_state.selected_news_keys)
-                        report_url = f"https://kmm-kubota-app.streamlit.app/?report=true&items={param_items}"
+                        report_url = f"https://kmm-kubota-app.streamlit.app/?report=true&items={param_items}" 
                         
                         st.success("🎯 တစ်ပတ်စာ သတင်း Report Link အောင်မြင်စွာ ထွက်လာပါပြီ ခင်ဗျာ!")
                         st.write("အောက်ပါ Link ကို Copy ကူးပြီး LINE မှတစ်ဆင့် ပို့ပေးလို့ရပါပြီ ခင်ဗျာ -")
