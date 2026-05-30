@@ -248,7 +248,7 @@ elif menu_choice == "Competitor News Updates":
                     global_idx += 1 
                     
     except Exception as e:
-        st.error(f"Error loading data: {e}") 
+        st.error(f"Error loading data: {e}")
 
 
 
