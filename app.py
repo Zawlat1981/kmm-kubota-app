@@ -446,7 +446,7 @@ with news_tab2:
         else:
             st.error("ကျေးဇူးပြု၍ သတင်းခေါင်းစဉ် နှင့် သတင်းအသေးစိတ်ကို မဖြစ်မနေ ဖြည့်စွက်ပေးပါဗျာ။")
 
-st.markdown("<br><hr><center><small>© 2026 Kubota Maesod Myanmar Co., Ltd.</small></center>", unsafe_allow_html=True)
+st.markdown("<br><hr><center><small>© 2026 Kubota Maesod Myanmar Co., Ltd.</small></center>", unsafe_allow_html=True) 
 
 
 
