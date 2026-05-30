@@ -13,7 +13,7 @@ SHEET_ID = "1QqQvPKH7G0hqqhd_0V6cP40Htl8qdFEZ6nHBVe_53_g"
 @st.cache_data(ttl=10)
 def load_data(tab_name):
     """ Google Sheet မှ ဒေတာများကို ပုံမှန်အတိုင်း အော်တိုဆွဲဖတ်သည့်စနစ် """
-    base_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet="
+    base_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=" 
     
     # စက်ပစ္စည်းစျေးနှုန်းစာမျက်နှာ ဖတ်ခြင်း
     try:
