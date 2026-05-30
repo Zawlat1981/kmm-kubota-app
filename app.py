@@ -41,7 +41,7 @@ with st.sidebar:
         )
 
 # ==========================================
-# ၁။ BRAND SELECTION MENU (စက်ဈေးနှုန်း + SALE MEMO PRINT)
+# ၁။ BRAND SELECTION MENU
 # ==========================================
 if menu_choice == "Brand Selection":
     df_tractor, df_attach = load_data(selected_brand)
@@ -75,8 +75,6 @@ if menu_choice == "Brand Selection":
         
         st.subheader("🛠 နောက်တွဲများ ရွေးချယ်ရန်")
         selected_att_total = 0
-        chosen_attachments = [] 
-        
         if not df_attach.empty:
             filtered_att = df_attach[df_attach.iloc[:, 0].astype(str) == selected_model]
             def add_att_ui(label, m_col, p_col):
@@ -88,16 +86,13 @@ if menu_choice == "Brand Selection":
                             try:
                                 p_val = str(row[p_col]).replace(',', '').strip()
                                 p = float(p_val)
-                                options.append({"model_name": str(row[m_col]), "label": f"{row[m_col]} (+{p:,.0f} MMK)", "price": p})
+                                options.append({"label": f"{row[m_col]} (+{p:,.0f} MMK)", "price": p})
                             except: continue
                     if options:
                         c = st.selectbox(f"{label}:", ["မယူပါ"] + [o["label"] for o in options], key=f"{label}_{selected_model}")
                         if c != "မယူပါ":
-                            selected_item = next(item for item in options if item["label"] == c)
-                            chosen_attachments.append({"type": label, "model": selected_item["model_name"], "price": selected_item["price"]})
-                            return selected_item["price"]
+                            return next(item["price"] for item in options if item["label"] == c)
                 return 0
-                
             c1, c2 = st.columns(2)
             with c1:
                 selected_att_total += add_att_ui("Rotary", "Rotary_Model1", "Rotary_Price")
@@ -110,208 +105,165 @@ if menu_choice == "Brand Selection":
         
         grand_total = base_price + selected_att_total
         st.success(f"## 📄 စုစုပေါင်း: {grand_total:,.0f} MMK")
-        
-        # --- 🖨️ SALE MEMO GENERATOR ---
-        st.write("---")
-        st.subheader("📋 Sale Memo / Quotation ထုတ်ရန်")
-        
-        customer_name = st.text_input("ဝယ်ယူသူအမည် (Customer Name):", placeholder="ဦးမောင်မောင်")
-        memo_remark = st.text_area("မှတ်ချက် / မှတ်စု (Remark):", placeholder="ဥပမာ - အပိုလက်ဆောင် ပေးရန်ရှိသည်များ...")
-        
-        today_str = datetime.date.today().strftime("%d-%b-%Y")
-        
-        items_rows_html = f"""
-        <tr>
-            <td style="padding: 10px; border: 1px solid #ddd;">1</td>
-            <td style="padding: 10px; border: 1px solid #ddd;"><b>{selected_brand} Tractor</b><br>Model: {selected_model}</td>
-            <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">{base_price:,.0f} MMK</td>
-        </tr>
-        """
-        
-        for idx, att in enumerate(chosen_attachments, start=2):
-            items_rows_html += f"""
-            <tr>
-                <td style="padding: 10px; border: 1px solid #ddd;">{idx}</td>
-                <td style="padding: 10px; border: 1px solid #ddd;"><b>{att['type']}</b><br>Model: {att['model']}</td>
-                <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">{att['price']:,.0f} MMK</td>
-            </tr>
-            """
-            
-        memo_html = f"""
-        <div id="printArea" style="font-family: Arial, sans-serif; padding: 25px; border: 2px solid #ff6600; border-radius: 8px; background-color: #fff; color: #333;">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <h2 style="color: #ff6600; margin: 0;">KMM KUBOTA HEAVY MACHINERY</h2>
-                <p style="margin: 5px 0; font-size: 14px; color: #666;">စက်ကိရိယာနှင့် နောက်တွဲယာဉ် အရောင်းဌာန</p>
-                <h3 style="margin: 10px 0; border-bottom: 2px solid #ff6600; padding-bottom: 5px; display: inline-block;">SALE MEMO / QUOTATION</h3>
-            </div>
-            
-            <table style="width: 100%; font-size: 14px; margin-bottom: 20px;">
-                <tr>
-                    <td><b>ဝယ်ယူသူအမည်:</b> {customer_name if customer_name else '-'}</td>
-                    <td style="text-align: right;"><b>ရက်စွဲ:</b> {today_str}</td>
-                </tr>
-                <tr>
-                    <td><b>အမှတ်တံဆိပ်:</b> {selected_brand}</td>
-                    <td style="text-align: right;"><b>အခြေအနေ:</b> စျေးနှုန်းစိစစ်ချက်</td>
-                </tr>
-            </table>
-            
-            <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 20px;">
-                <thead>
-                    <tr style="background-color: #ff6600; color: white;">
-                        <th style="padding: 10px; border: 1px solid #ddd; text-align: left; width: 10%;">စဉ်</th>
-                        <th style="padding: 10px; border: 1px solid #ddd; text-align: left; width: 60%;">အမျိုးအမည် / မော်ဒယ်</th>
-                        <th style="padding: 10px; border: 1px solid #ddd; text-align: right; width: 30%;">စျေးနှုန်း (MMK)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {items_rows_html}
-                    <tr style="background-color: #f9f9f9; font-weight: bold;">
-                        <td colspan="2" style="padding: 10px; border: 1px solid #ddd; text-align: right;">စုစုပေါင်း ကျသင့်ငွေ:</td>
-                        <td style="padding: 10px; border: 1px solid #ddd; text-align: right; color: #ff6600; font-size: 16px;">{grand_total:,.0f} MMK</td>
-                    </tr>
-                </tbody>
-            </table>
-            
-            {f'<div style="margin-top: 15px; font-size: 13px; background: #f5f5f5; padding: 10px; border-radius: 4px;"><b>မှတ်ချက်:</b> {memo_remark}</div>' if memo_remark else ''}
-        </div>
-        """
-        
-        with st.expander("👀 Sale Memo Preview ကိုကြည့်ရန်", expanded=True):
-            st.markdown(memo_html, unsafe_allow_html=True)
-            
-        st.write("<br>", unsafe_allow_html=True)
-        print_btn_html = f"""
-        <script>
-        function printDiv() {{
-            var printContents = document.getElementById('printArea').innerHTML;
-            var originalContents = document.body.innerHTML;
-            document.body.innerHTML = printContents;
-            window.print();
-            document.body.innerHTML = originalContents;
-            window.location.reload();
-        }}
-        </script>
-        <button onclick="printDiv()" style="width: 100%; background-color: #4CAF50; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold;">
-            🖨️ စာရွက်ထုတ်ရန် / PDF သိမ်းရန် (Print Memo)
-        </button>
-        """
-        st.components.v1.html(print_btn_html, height=60)
-        
     else:
         st.warning("Sheet Not Found")
 
 # ==========================================
-# ၂။ COMPETITOR NEWS UPDATES MENU (စာသား၊ ပုံနှင့် Social Links အားလုံးပြသပေးသည့်အပိုင်း)
+# ၂။ COMPETITOR NEWS UPDATES MENU
 # ==========================================
 elif menu_choice == "Competitor News Updates":
     st.markdown("<h1 style='text-align: center; color: #0066cc;'>📊 Competitor News Updates & News Myanmar</h1>", unsafe_allow_html=True)
     st.write("---")
     
-    tab_view, tab_post = st.tabs(["📌 သတင်းများ ဖတ်ရှုရန်", "✍️ သတင်းအသစ်တင်ရန် (Post)"])
-    
     timestamp = int(time.time())
     comp_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Competitor%20News%20Updates&cache_bust={timestamp}"
     
-    # --- TAB 1: သတင်းများဖတ်ရှုရန် ---
-    with tab_view:
-        st.markdown("## 📰 Sheet ထဲရှိ နေ့စဉ်တင်ထားသော သတင်းများ")
+    try:
+        df_comp = pd.read_csv(comp_url).fillna('')
+        df_comp.columns = [str(c).strip().lower() for c in df_comp.columns]
         
-        try:
-            # Google Sheet ဒေတာကို ကော်လံအပြည့် ဖတ်ခြင်း
-            df_comp = pd.read_csv(comp_url).fillna('')
-            df_comp.columns = [str(c).strip().lower() for c in df_comp.columns]
+        grouped_data = {}  
+        current_date = "No Date"
+        last_news_item = None 
+        
+        for _, row in df_comp.iterrows():
+            r_date = str(row.get('date', '')).strip()
+            r_company = str(row.get('company', '')).strip()
+            r_content_th = str(row.get('content_th', '')).strip()
+            r_content_mm = str(row.get('content_mm', '')).strip()
             
-            current_date = "No Date"
-            
-            for idx, row in df_comp.iterrows():
-                r_date = str(row.get('date', '')).strip()
-                r_company = str(row.get('company', '')).strip()
-                r_content_th = str(row.get('content_th', '')).strip()
-                r_content_mm = str(row.get('content_mm', '')).strip()
-                r_promo = str(row.get('promo', '')).strip()
+            if r_date == '' and r_company == '' and r_content_th == '' and r_content_mm == '':
+                continue
                 
-                # Social Links များနှင့် ပုံလင့်ခ်ကို တိုက်ရိုက်ရယူခြင်း
-                r_fb = str(row.get('facebook', '')).strip()
-                r_tt = str(row.get('tiktok', '')).strip()
-                r_tg = str(row.get('telegram', '')).strip()
-                r_image = str(row.get('image_url', '')).strip()
-                
-                # အားလုံး ဗလာဖြစ်နေလျှင် ကျော်သွားမည်
-                if not r_date and not r_company and not r_content_th and not r_content_mm:
-                    continue
-                
-                # ရက်စွဲအသစ်တွေ့ရင် ခေါင်းစဉ်တပ်မည်
-                if r_date:
+            if r_date != '' or r_company != '':
+                if r_date != '':
                     current_date = r_date
-                    st.markdown(f"<h3 style='color: #ff6600; background-color: #f0f7ff; padding: 10px; border-radius: 5px; margin-top: 20px;'>📅 ရက်စွဲ: {current_date}</h3>", unsafe_allow_html=True)
                 
-                # သတင်းကတ်ပြားပုံစံ ဖန်တီးပြသခြင်း
-                with st.container(border=True):
-                    # ခေါင်းစဉ် (Company)
-                    title_display = r_company if r_company else "💵 Exchange Rate / News Updates"
-                    st.markdown(f"#### 🏢 {title_display}")
-                    
-                    # ထိုင်းဘာသာစာသား ပြသခြင်း
-                    if r_content_th:
-                        st.markdown("**🇹🇭 ภาษาไทย:**")
-                        st.write(r_content_th)
-                    
-                    if r_content_th and r_content_mm:
-                        st.write("---")
+                if last_news_item is not None:
+                    if last_news_item['date_key'] not in grouped_data:
+                        grouped_data[last_news_item['date_key']] = []
+                    grouped_data[last_news_item['date_key']].append(last_news_item)
+                
+                last_news_item = {
+                    'date_key': current_date,
+                    'company': r_company if r_company != '' else '💵 Exchange Rate / News',
+                    'content_th': r_content_th,
+                    'content_mm': r_content_mm,
+                    'promo': str(row.get('promo', '')).strip(),
+                    'facebook': str(row.get('facebook', '')).strip(),
+                    'tiktok': str(row.get('tiktok', '')).strip(),
+                    'telegram': str(row.get('telegram', '')).strip(),
+                    'image_url': str(row.get('image_url', '')).strip() 
+                }
+            else:
+                if last_news_item is not None:
+                    if r_content_th != '':
+                        last_news_item['content_th'] = (last_news_item['content_th'] + "\n" + r_content_th).strip()
+                    if r_content_mm != '':
+                        last_news_item['content_mm'] = (last_news_item['content_mm'] + "\n" + r_content_mm).strip()
                         
-                    # မြန်မာဘာသာစာသား ပြသခြင်း
-                    if r_content_mm:
-                        st.markdown("**🇲🇲 မြန်မာဘာသာ:**")
-                        st.write(r_content_mm)
-                        
-                    # ပရိုမိုးရှင်း ရှိလျှင်ပြမည်
-                    if r_promo and r_promo != '0':
-                        st.info(f"💡 **Promo:** {r_promo}")
-                        
-                    # 🖼️ ပုံလင့်ခ်ပါဝင်ပါက ပုံကို App ထဲ၌ တိုက်ရိုက်ဆွဲပြခြင်း
-                    if r_image and r_image.startswith("http"):
-                        st.image(r_image, use_container_width=True)
-                    
-                    # 🔗 Facebook, TikTok, Telegram Link များအတွက် ခလုတ်များ ဖန်တီးခြင်း
-                    if (r_fb and r_fb.startswith("http")) or (r_tt and r_tt.startswith("http")) or (r_tg and r_tg.startswith("http")):
-                        st.write("---")
-                        btn_col1, btn_col2, btn_col3 = st.columns(3)
-                        if r_fb and r_fb.startswith("http"):
-                            with btn_col1: st.link_button("🔵 Facebook သို့သွားရန်", r_fb, use_container_width=True)
-                        if r_tt and r_tt.startswith("http"):
-                            with btn_col2: st.link_button("⚫ TikTok သို့သွားရန်", r_tt, use_container_width=True)
-                        if r_tg and r_tg.startswith("http"):
-                            with btn_col3: st.link_button("✈️ Telegram သို့သွားရန်", r_tg, use_container_width=True)
-                            
-        except Exception as e:
-            st.error(f"Error loading news: {e}")
-
-    # --- TAB 2: သတင်းအသစ်တင်ရန် ---
-    with tab_post:
-        st.markdown("## ✍️ သတင်းအချက်အလက်အသစ် တင်ရန် (Post)")
-        
-        with st.form("news_post_form", clear_on_submit=True):
-            post_date = st.date_input("ရက်စွဲရွေးချယ်ရန် (Date):", datetime.date.today())
-            post_company = st.text_input("ကုမ္ပဏီ / ခေါင်းစဉ် (Company/Title):", placeholder="ဥပမာ - Voice of Myanmar, Win Shwe Wah")
-            post_content_th = st.text_area("သတင်းအကြောင်းအရာ (ภาษาไทย):", placeholder="กรอกเนื้อหาข่าวภาษาไทย...")
-            post_content_mm = st.text_area("သတင်းအကြောင်းအရာ (မြန်မာဘာသာ):", placeholder="မြန်မာဘာသာဖြင့် ရေးသားရန်...")
-            post_promo = st.text_input("ပရိုမိုးရှင်း အချက်အလက် (Promo):", placeholder="ဥပမာ - Promotion - 20,000 THB")
-            post_img_url = st.text_input("ပုံ Link (Image URL):", placeholder="https://i.postimg.cc/...")
-            
-            col_b1, col_b2, col_b3 = st.columns(3)
-            post_fb = col_b1.text_input("Facebook Link:")
-            post_tt = col_b2.text_input("TikTok Link:")
-            post_tg = col_b3.text_input("Telegram Link:")
-            
-            submit_btn = st.form_submit_button("🚀 သတင်း အချက်အလက် တင်မည် (Post Now)", type="primary")
-            
-            if submit_btn:
-                if post_company or post_content_mm or post_content_th:
-                    st.success("🎯 သတင်းပေးပို့မှု စနစ်သို့ ရောက်ရှိသွားပါပြီ!")
-                    st.balloons()
+                    if str(row.get('image_url', '')).strip() != '':
+                        last_news_item['image_url'] = str(row.get('image_url', '')).strip()
+                    if str(row.get('promo', '')).strip() != '':
+                        last_news_item['promo'] = str(row.get('promo', '')).strip()
+                    if str(row.get('facebook', '')).strip() != '':
+                        last_news_item['facebook'] = str(row.get('facebook', '')).strip()
+                    if str(row.get('tiktok', '')).strip() != '':
+                        last_news_item['tiktok'] = str(row.get('tiktok', '')).strip()
+                    if str(row.get('telegram', '')).strip() != '':
+                        last_news_item['telegram'] = str(row.get('telegram', '')).strip()
                 else:
-                    st.warning("⚠️ ကျေးဇူးပြု၍ အချက်အလက်တစ်ခုခု ဖြည့်စွက်ပေးပါ ခင်ဗျာ။") 
+                    last_news_item = {
+                        'date_key': current_date,
+                        'company': '💵 Exchange Rate / News',
+                        'content_th': r_content_th,
+                        'content_mm': r_content_mm,
+                        'promo': str(row.get('promo', '')).strip(),
+                        'facebook': str(row.get('facebook', '')).strip(),
+                        'tiktok': str(row.get('tiktok', '')).strip(),
+                        'telegram': str(row.get('telegram', '')).strip(),
+                        'image_url': str(row.get('image_url', '')).strip() 
+                    }
+        
+        if last_news_item is not None:
+            if last_news_item['date_key'] not in grouped_data:
+                grouped_data[last_news_item['date_key']] = []
+            grouped_data[last_news_item['date_key']].append(last_news_item)
+            
+        global_idx = 0 
+        
+        if grouped_data:
+            sorted_dates = sorted(grouped_data.keys(), reverse=True)
+            
+            for date_key in sorted_dates:
+                st.markdown(f"<h2 style='color: #ff6600; background-color: #f0f7ff; padding: 10px; border-radius: 5px;'> Date: {date_key}</h2>", unsafe_allow_html=True)
+                
+                for news in grouped_data[date_key]:
+                    with st.container(border=True):
+                        st.subheader(f"🏢 {news['company']}")
+                        
+                        c_th = news.get('content_th', '').strip()
+                        if c_th:
+                            st.markdown("**🇹🇭 ภาษาไทย**")
+                            st.markdown(c_th.replace("\n", "  \n"))
+                        
+                        if c_th and news.get('content_mm', '').strip():
+                            st.write("---")
+                            
+                        c_mm = news.get('content_mm', '').strip()
+                        if c_mm:
+                            st.markdown("**🇲🇲 မြန်မာဘာသာ**")
+                            st.markdown(c_mm.replace("\n", "  \n"))
+                        
+                        img_data = news.get('image_url', '').strip()
+                        if img_data:
+                            img_list = [i.strip() for i in img_data.split(',')]
+                            st.write("---")
+                            for img in img_list:
+                                if img.startswith("http"):
+                                    st.image(img, use_container_width=True) 
+                        
+                        promo = news.get('promo', '')
+                        if promo not in ['', '0']:
+                            st.info(f"💡 {promo}")
+                        
+                        fb_link = news.get('facebook', '').strip()
+                        tt_link = news.get('tiktok', '').strip()
+                        tg_link = news.get('telegram', '').strip()
+
+                        if (fb_link and fb_link.startswith("http")) or \
+                           (tt_link and tt_link.startswith("http")) or \
+                           (tg_link and tg_link.startswith("http")):
+                            st.write("---")
+                            btn_col1, btn_col2, btn_col3 = st.columns(3)
+                            if fb_link and fb_link.startswith("http"):
+                                with btn_col1: st.link_button("🔵 Facebook", fb_link, use_container_width=True)
+                            if tt_link and tt_link.startswith("http"):
+                                with btn_col2: st.link_button("⚫ TikTok", tt_link, use_container_width=True)
+                            if tg_link and tg_link.startswith("http"):
+                                with btn_col3: st.link_button("✈️ Telegram", tg_link, use_container_width=True)
+                        
+                        st.write("<br>", unsafe_allow_html=True)
+                    
+                    global_idx += 1 
+                    
+    except Exception as e:
+        st.error(f"Error loading data: {e}") 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
 
 
 
