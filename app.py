@@ -10,7 +10,7 @@ st.set_page_config(page_title="Kubota Maesod Myanmar Co., Ltd", page_icon="🚜"
 # Google Sheet ID (မူရင်း ID အတိုင်း ကွက်တိ)
 SHEET_ID = "1QqQvPKH7G0hqqhd_0V6cP40Htl8qdFEZ6nHBVe_53_g"
 
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=10)
 def load_data(tab_name):
     """ Google Sheet မှ ဒေတာများကို ပုံမှန်အတိုင်း အော်တိုဆွဲဖတ်သည့်စနစ် """
     base_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet="
@@ -21,7 +21,7 @@ def load_data(tab_name):
     except:
         df_tractor = pd.DataFrame()
 
-    # နောက်တွဲပစ္စည်းစာမျက်နှာ ဖတ်ခြင်း (Kubota နှင့် Yanmar အတွက်သာ)
+    # နောက်တွဲပစ္စည်းစာမျက်နှာ ဖတ်ခြင်း
     df_attach = pd.DataFrame() 
     if tab_name in ["Kubota", "Yanmar"]:
         attachment_tab = f"Attachments_{tab_name}"
@@ -30,7 +30,7 @@ def load_data(tab_name):
         except:
             pass
             
-    # News စာမျက်နှာကို ဖတ်ခြင်း (မပျောက်ပျက်စေရန် သေချာထည့်သွင်းထားပါသည်)
+    # News စာမျက်နှာကို ဖတ်ခြင်း
     try:
         df_news = pd.read_csv(base_url + "News").fillna("")
     except:
@@ -47,6 +47,21 @@ selected_brand = st.sidebar.selectbox(
 
 # ဒေတာများ စတင်ခေါ်ယူခြင်း
 df_tractor, df_attach, df_news = load_data(selected_brand)
+
+
+# ------------------------------------------------------------------------------
+# 📰 SIDEBAR - COMPETITOR NEWS UPDATE (နေ့စဉ်တင်သည့် သတင်းများ ဖတ်ရှုရန်)
+# ------------------------------------------------------------------------------
+st.sidebar.markdown("---")
+st.sidebar.header("📰 Competitor News Update")
+
+selected_news_title = None
+if not df_news.empty:
+    news_titles = df_news.iloc[:, 2].astype(str).tolist()
+    # Sidebar တွင် နေ့စဉ်သတင်းများ ရွေးချယ်ရန် Selector ထည့်သွင်းခြင်း
+    selected_news_title = st.sidebar.selectbox("နေ့စဉ်တင်သည့် သတင်းများ -", news_titles, key="sidebar_news_select")
+else:
+    st.sidebar.warning("သတင်းဒေတာ မရှိသေးပါ။")
 
 
 # ==============================================================================
@@ -101,10 +116,8 @@ if not df_tractor.empty:
     st.markdown("#### 🎁 လစဉ်ပြောင်းလဲမည့် ပရိုမိုးရှင်းနှင့် လျှော့ဈေး သတ်မှတ်ရန်")
     col_p1, col_p2 = st.columns(2)
     with col_p1:
-        # ကွင်းထဲက လစဥ်အပြောင်းအလဲရှိမည့် စာသားကို ကိုယ်တိုင်ဖြည့်ရန် ကွက်လပ်
         promo_text = st.text_input("ပရိုမိုးရှင်း အမှတ်အသား ဖြည့်ရန် (ဥပမာ - ပရိုမိုးရှင်း 50 % လျှော့ပြီး)", "ပရိုမိုးရှင်း 50 % လျှော့ပြီး")
     with col_p2:
-        # လျှော့ဈေး ပမာဏကို ကိုယ်တိုင်ဖြည့်ရန် ကွက်လပ်
         discount_input = st.number_input("လျှော့ဈေး ပမာဏ (Discount MMK)", min_value=0, value=500000, step=50000)
         
     note_info = st.text_area("မှတ်ချက် (Note)", "Exchange rate -2106$,\n05-Broker, Cash, Promotion")
@@ -112,12 +125,10 @@ if not df_tractor.empty:
     st.write("---")
     st.subheader("🚜 စက်ပစ္စည်းနှင့် နောက်တွဲပစ္စည်းများ ရွေးချယ်ခြင်း")
 
-    # စက်မော်ဒယ် ရွေးချယ်ခြင်း
     model_list = df_tractor.iloc[:, 0].astype(str).tolist()
     model_list = [m for m in model_list if m not in ["0", "0.0", "nan", "Model"]]
     selected_model = st.selectbox(f"{selected_brand} မော်ဒယ်ကို ရွေးပါ -", model_list)
     
-    # [AUTO FROM SHEET] ပင်မစက်ဈေးနှုန်းနှင့် ပုံရိပ်ကို ဖတ်ခြင်း
     t_info = df_tractor[df_tractor.iloc[:, 0].astype(str) == selected_model].iloc[0]
     try:
         raw_p = str(t_info.iloc[1]).replace(',', '').strip()
@@ -129,7 +140,6 @@ if not df_tractor.empty:
     if img_url and img_url.startswith("http"):
         st.image(img_url, use_container_width=True)
 
-    # နောက်တွဲများ ရွေးချယ်ခြင်း
     st.write("---")
     st.caption("🛠 နောက်တွဲပစ္စည်းများ စိတ်ကြိုက်ရွေးချယ်ရန်")
     filtered_att = df_attach[df_attach.iloc[:, 0].astype(str) == selected_model] if not df_attach.empty else pd.DataFrame()
@@ -168,7 +178,6 @@ if not df_tractor.empty:
         selected_att_total += add_att_ui("Hydraulic Breaker", "Breaker_Model1", "Breaker_Price")
         selected_att_total += add_att_ui("Sowing/Transplanter", "Transplanter_Model1", "Transplanter_Price")
 
-    # [AUTO CALCULATED] တွက်ချက်မှု Logic (စက်ဈေး + နောက်တွဲဈေး မူရင်းအတိုင်း ပေါင်းပေးမည့်ပုံစံ)
     total_machine_amount = base_price * qty_input
     total_attachments_amount = selected_att_total * qty_input
     grand_total = total_machine_amount + total_attachments_amount
@@ -183,13 +192,9 @@ if not df_tractor.empty:
     st.sidebar.markdown("---")
     st.sidebar.subheader("📄 Export Section")
     
-    # [AUTO] ယနေ့ရက်စွဲကို DD-MM-YYYY ပုံစံဖြင့် အော်တိုရယူခြင်း
     current_date_str = datetime.now().strftime("%d-%m-%Y")
-    
-    # [AUTO] မော်ဒယ်အလိုက် အမျိုးအစားနှင့် မြင်းကောင်ရေ အော်တိုခွဲခြားမှု ခေါ်ယူခြင်း
     full_machine_name, machine_code = get_machine_details(selected_model)
 
-    # ဇယားကွက် HTML Rows များ တည်ဆောက်ခြင်း
     item_no = 1
     machine_display_name = f"{full_machine_name} <br><small style='color:#555;'>({promo_text})</small>" if promo_text else full_machine_name
     
@@ -333,33 +338,115 @@ else:
 
 
 # ==============================================================================
-# 📰 အပိုင်း (၅) - သတင်းကဏ္ဍ (NEWS SECTION - အပြည့်အစုံ ပြန်ထည့်ပေးထားပါသည်)
+# 📰 အပိုင်း (၅) - သတင်းကဏ္ဍ (READ & WRITE NEWS SECTION)
 # ==============================================================================
 st.write("---")
-st.markdown("<h2 style='text-align: center; color: #0066cc;'>📰 KMM Official News Section</h2>", unsafe_allow_html=True)
+st.markdown("<h2 style='text-align: center; color: #0066cc;'>📰 KMM Competitor News Update</h2>", unsafe_allow_html=True)
 
-if not df_news.empty:
-    news_titles = df_news.iloc[:, 2].astype(str).tolist()
-    st.subheader("📌 သတင်းများကို ရွေးချယ်ဖတ်ရှုရန်")
-    selected_news_title = st.selectbox("ဖတ်ရှုလိုသည့် သတင်းခေါင်းစဉ်ကို ရွေးပါ -", news_titles)
-    
-    news_info = df_news[df_news.iloc[:, 2].astype(str) == selected_news_title].iloc[0]
-    news_id = str(news_info.iloc[0])
-    news_date = str(news_info.iloc[1]) 
-    news_detail = str(news_info.iloc[3])
-    news_img_url = str(news_info.iloc[4])
-    
-    st.info(f"📅 သတင်းတင်သည့်ရက်စွဲ: {news_date}")
-    st.markdown(f"### 📌 {selected_news_title}")
-    
-    if news_img_url and news_img_url.startswith("http"):
-        st.image(news_img_url, use_container_width=True)
-    st.write(news_detail)
-else:
-    st.warning("Google Sheet ထဲတွင် 'News' စာမျက်နှာ ဒေတာများကို မတွေ့ရှိပါ။")
+# Main Screen ပေါ်တွင် အပိုင်း (၂) ခုခွဲ၍ ပြသခြင်း
+news_tab1, news_tab2 = st.tabs(["📌 ရွေးချယ်ထားသောသတင်းဖတ်ရှုရန် (Read)", "✍️ သတင်းအသစ်တင်ရန် (Post)"])
 
-st.markdown("<br><hr><center><small>© 2026 Kubota Maesod Myanmar Co., Ltd.</small></center>", unsafe_allow_html=True) 
+with news_tab1:
+    # Sidebar တွင် သတင်းရွေးချယ်ထားမှုရှိပါက ၎င်းသတင်းကို ဆွဲပြမည်
+    if selected_news_title and not df_news.empty:
+        news_info = df_news[df_news.iloc[:, 2].astype(str) == selected_news_title].iloc[0]
+        news_id = str(news_info.iloc[0])
+        news_date = str(news_info.iloc[1]) 
+        news_detail = str(news_info.iloc[3])
+        news_img_url = str(news_info.iloc[4])
+        
+        st.info(f"📅 သတင်းတင်သည့်ရက်စွဲ: {news_date}")
+        st.markdown(f"### 📌 {selected_news_title}")
+        
+        if news_img_url and news_img_url.startswith("http"):
+            st.image(news_img_url, use_container_width=True)
+        st.write(news_detail)
+        
+        # --- HTML/PDF File အဖြစ် သိမ်းဆည်းရန်နှင့် Print ထုတ်ရန် ခလုတ်အပိုင်း ---
+        st.write("---")
+        
+        news_summary_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                body {{ font-family: 'Helvetica Neue', Arial, sans-serif; padding: 30px; background-color: #ffffff; color: #333; line-height: 1.6; }}
+                .container {{ max-width: 750px; margin: auto; border: 1px solid #e0e0e0; padding: 40px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }}
+                .company-header {{ text-align: center; border-bottom: 3px solid #0066cc; padding-bottom: 15px; margin-bottom: 25px; }}
+                .company-name {{ font-size: 20px; font-weight: bold; color: #0066cc; }}
+                .doc-type {{ font-size: 14px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }}
+                .meta-info {{ font-size: 13px; color: #777; margin-bottom: 20px; text-align: right; border-bottom: 1px dashed #ddd; padding-bottom: 10px; }}
+                .news-title {{ font-size: 24px; font-weight: bold; color: #111; margin-bottom: 20px; line-height: 1.3; }}
+                .news-content {{ font-size: 15px; color: #222; text-align: justify; white-space: pre-line; }}
+                .footer {{ text-align: center; margin-top: 40px; padding-top: 15px; border-top: 1px solid #eee; font-size: 12px; color: #999; }}
+                .btn-print-container {{ text-align: center; margin-bottom: 20px; }}
+                .btn-print {{ background-color: #0066cc; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; }}
+                @media print {{
+                    body {{ padding: 0; }}
+                    .container {{ border: none; box-shadow: none; padding: 10px; }}
+                    .btn-print-container {{ display: none !important; }}
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="btn-print-container">
+                <button class="btn-print" onclick="window.print()">🖨 Print / Save as PDF (သတင်းကို စာရွက်ထုတ်ရန် သို့မဟုတ် PDF သိမ်းရန်)</button>
+            </div>
+            <div class="container">
+                <div class="company-header">
+                    <div class="company-name">Kubota Maesod Myanmar Co., Ltd</div>
+                    <div class="doc-type">Competitor News Summary Report</div>
+                </div>
+                <div class="meta-info">
+                    <strong>News ID:</strong> {news_id} &nbsp;|&nbsp; <strong>Published Date:</strong> {news_date}
+                </div>
+                <div class="news-title">📌 {selected_news_title}</div>
+                <div class="news-content">{news_detail}</div>
+                <div class="footer">
+                    © {datetime.now().strftime("%Y")} Kubota Maesod Myanmar Co., Ltd. All Rights Reserved.
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        st.download_button(
+            label="📥 Download News Summary File (HTML/PDF)",
+            data=news_summary_html,
+            file_name=f"News_Summary_{news_id}.html",
+            mime="text/html"
+        )
+        st.caption("💡 အပေါ်က ခလုတ်ကိုနှိပ်ပြီး ဖိုင်ကို ဒေါင်းလုဒ်ဆွဲပါ။ ထို့နောက် ဖိုင်ကိုဖွင့်ပြီး 'Print / Save as PDF' ခလုတ်ဖြင့် လိုအပ်သလို Print ထုတ်ခြင်း သို့မဟုတ် PDF အဖြစ် သိမ်းဆည်းခြင်းများ ပြုလုပ်နိုင်ပါတယ်ဗျာ။")
+    else:
+        st.info("👈 ဘယ်ဘက် Sidebar ထဲရှိ 'Competitor News Update' မှ ဖတ်ရှုလိုသည့် သတင်းကို ရွေးချယ်ပေးပါဗျာ။")
 
+with news_tab2:
+    st.subheader("✍️ သတင်းအချက်အလက်အသစ် ဖြည့်စွက်ရန်")
+    
+    new_title = st.text_input("သတင်းခေါင်းစဉ် (Title)", placeholder="ဥပမာ - စက်ပစ္စည်းအသစ်များ ရောက်ရှိခြင်း")
+    new_detail = st.text_area("သတင်းအသေးစိတ် (Detail)", placeholder="သတင်းအကြောင်းအရာများကို ဤနေရာတွင် ရေးသားပါ...")
+    new_img = st.text_input("ဓာတ်ပုံ Link (Image URL)", placeholder="https://example.com/image.jpg (မရှိလျှင် အလွတ်ထားပါ)")
+    
+    if st.button("📢 သတင်းအသစ်တင်မည် (Post News)"):
+        if new_title and new_detail:
+            next_id = len(df_news) + 1 if not df_news.empty else 1
+            today_date = datetime.now().strftime("%d-%m-%Y")
+            
+            new_row = {
+                df_news.columns[0] if not df_news.empty else "ID": next_id,
+                df_news.columns[1] if not df_news.empty else "Date": today_date,
+                df_news.columns[2] if not df_news.empty else "Title": new_title,
+                df_news.columns[3] if not df_news.empty else "Detail": new_detail,
+                df_news.columns[4] if not df_news.empty else "Image": new_img if new_img else "0"
+            }
+            
+            st.success("🎉 သတင်းတင်ခြင်း အောင်မြင်ပါသည်။ (မှတ်ချက် - Google Sheet API ချက်ဆက်မှုအဆင့် သတ်မှတ်ပြီးပါက ဒေတာများ Sheet ထဲသို့ တိုက်ရိုက်အော်တို ဝင်ရောက်သွားမည်ဖြစ်ပါသည်)")
+            st.balloons()
+        else:
+            st.error("ကျေးဇူးပြု၍ သတင်းခေါင်းစဉ် နှင့် သတင်းအသေးစိတ်ကို မဖြစ်မနေ ဖြည့်စွက်ပေးပါဗျာ။")
+
+st.markdown("<br><hr><center><small>© 2026 Kubota Maesod Myanmar Co., Ltd.</small></center>", unsafe_allow_html=True)
 
 
 
