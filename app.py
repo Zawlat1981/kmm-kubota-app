@@ -3,11 +3,26 @@ import pandas as pd
 from datetime import datetime
 
 # ==============================================================================
-# ⚙️ အပိုင်း (၁) - PAGE CONFIGURATION & SETUP
+# ⚙️ အပိုင်း (၁) - PAGE CONFIGURATION & NAVIGATION SETUP
 # ==============================================================================
-st.set_page_config(page_title="Kubota Maesod Myanmar Co., Ltd", page_icon="🚜", layout="centered")
+st.set_page_config(page_title="Good Brother Co., Ltd", page_icon="🚜", layout="centered")
 
-# Google Sheet ID (မူရင်း ID အတိုင်း ကွက်တိ)
+# --- SIDEBAR NAVIGATION (စာမျက်နှာ ရွေးချယ်မှုကဏ္ဍ) ---
+st.sidebar.markdown("## 🧭 Navigation")
+page_selection = st.sidebar.radio(
+    "သွားလိုသည့် စာမျက်နှာကို ရွေးပါ -",
+    ["🚜 Price List & Sales Memo", "📰 Competitor News Update"]
+)
+
+# --- SIDEBAR BRAND SELECTION ---
+st.sidebar.markdown("---")
+st.sidebar.header("🚜 Brand Selection")
+selected_brand = st.sidebar.selectbox(
+    "အမှတ်တံဆိပ် ရွေးချယ်ပါ -", 
+    ["Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika", "Yamabisi", "DongFeng"]
+)
+
+# Google Sheet ID
 SHEET_ID = "1QqQvPKH7G0hqqhd_0V6cP40Htl8qdFEZ6nHBVe_53_g"
 
 @st.cache_data(ttl=10)
@@ -30,47 +45,26 @@ def load_data(tab_name):
         except:
             pass
             
-    # News စာမျက်နှာကို ဖတ်ခြင်း
+    # News စာမျက်နှာကို ဖတ်ခြင်း (Column ခေါင်းစဉ်များကို သေချာရှင်းလင်းအောင် လုပ်ဆောင်ပါသည်)
     try:
         df_news = pd.read_csv(base_url + "News").fillna("")
+        # ကော်လံအမည်များ သတ်မှတ်ရလွယ်ကူစေရန် သန့်စင်ခြင်း
+        if not df_news.empty and len(df_news.columns) >= 4:
+            df_news.columns = ['ID', 'Date', 'Title', 'Detail', 'Image'] + list(df_news.columns[5:])
     except:
         df_news = pd.DataFrame()
         
     return df_tractor, df_attach, df_news
 
-# --- Sidebar အတွက် အမှတ်တံဆိပ်ရွေးချယ်မှု ကဏ္ဍ ---
-st.sidebar.header("🚜 Brand Selection")
-selected_brand = st.sidebar.selectbox(
-    "အမှတ်တံဆိပ် ရွေးချယ်ပါ -", 
-    ["Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika", "Yamabisi", "DongFeng"]
-)
-
 # ဒေတာများ စတင်ခေါ်ယူခြင်း
 df_tractor, df_attach, df_news = load_data(selected_brand)
 
 
-# ------------------------------------------------------------------------------
-# 📰 SIDEBAR - COMPETITOR NEWS UPDATE (နေ့စဉ်တင်သည့် သတင်းများ ဖတ်ရှုရန်)
-# ------------------------------------------------------------------------------
-st.sidebar.markdown("---")
-st.sidebar.header("📰 Competitor News Update")
-
-selected_news_title = None
-if not df_news.empty:
-    news_titles = df_news.iloc[:, 2].astype(str).tolist()
-    # Sidebar တွင် နေ့စဉ်သတင်းများ ရွေးချယ်ရန် Selector ထည့်သွင်းခြင်း
-    selected_news_title = st.sidebar.selectbox("နေ့စဉ်တင်သည့် သတင်းများ -", news_titles, key="sidebar_news_select")
-else:
-    st.sidebar.warning("သတင်းဒေတာ မရှိသေးပါ။")
-
-
 # ==============================================================================
-# 🧠 အပိုင်း (၂) - AUTOMATIC CODE & NAME SPLITTING LOGIC
+# 🧠 AUTOMATIC CODE & NAME SPLITTING LOGIC
 # ==============================================================================
 def get_machine_details(model_name):
-    """ စက်မော်ဒယ်အလိုက် အမျိုးအစားကုဒ်နှင့် မြင်းကောင်ရေ (HP) ကို အလိုအလျောက် ခွဲခြားပေးခြင်း """
     model_upper = str(model_name).upper().strip()
-    
     if model_upper.startswith('B'):
         hp = "21 HP" if "21" in model_upper else "24 HP" if "24" in model_upper else "27 HP" if "27" in model_upper else "B Series"
         return f"Tractor {model_name} ({hp})", "B-Series"
@@ -91,362 +85,252 @@ def get_machine_details(model_name):
     elif model_upper.startswith('U') or model_upper.startswith('KX'):
         hp = "17 HP Class" if "17" in model_upper else "33 HP Class" if "033" in model_upper else "55 HP Class" if "U55" in model_upper else "80 HP Class" if "080" in model_upper else "Excavator"
         return f"Excavator {model_name} ({hp})", "Excavator"
-    
     return f"{model_name}", "Machinery"
 
 
 # ==============================================================================
-# 🚜 အပိုင်း (၃) - စက်ပစ္စည်းနှင့် စျေးနှုန်းကဏ္ဍ (PRICE LIST & MEMO)
+# 🚜 စာမျက်နှာ (၁) - PRICE LIST & SALES MEMO VOUCHER
 # ==============================================================================
-if not df_tractor.empty:
-    st.markdown("<h1 style='text-align: center; color: #ff6600;'>🚜 KMM Kubota Price List</h1>", unsafe_allow_html=True)
-    st.write("---") 
+if page_selection == "🚜 Price List & Sales Memo":
+    if not df_tractor.empty:
+        st.markdown("<h1 style='text-align: center; color: #ff6600;'>🚜 GBS Tractor Price List</h1>", unsafe_allow_html=True)
+        st.write("---") 
 
-    # 📝 [MANUAL INPUT] ဘောက်ချာအတွက် ကိုယ်တိုင်ရိုက်ထည့်ရမည့် အချက်အလက်များ
-    st.subheader("📝 ဘောက်ချာအတွက် ကိုယ်တိုင်ရိုက်ထည့်ရန် အချက်အလက်များ")
-    col_v1, col_v2 = st.columns(2)
-    with col_v1:
-        cust_info = st.text_input("ဝယ်သူအမည် နှင့် ဖုန်းနံပါတ် (Customer)", "Aung Naing Win (Nattalin) (09-423737582)")
-        sale_name = st.text_input("အရောင်းဝန်ထမ်းအမည် (Sale)", "HLA MYO OO")
-        address_info = st.text_input("ဝယ်သူလိပ်စာ (Address)", "San Chaung Village, Nattalin, Bagowest, Myanmar")
-    with col_v2:
-        doc_no = st.text_input("ဘောက်ချာနံပါတ် (Document No.)", "121-2605-0016")
-        qty_input = st.number_input("စက်အရေအတွက် (Qty)", min_value=1, value=1, step=1)
-        
-    st.markdown("#### 🎁 လစဉ်ပြောင်းလဲမည့် ပရိုမိုးရှင်းနှင့် လျှော့ဈေး သတ်မှတ်ရန်")
-    col_p1, col_p2 = st.columns(2)
-    with col_p1:
-        promo_text = st.text_input("ပရိုမိုးရှင်း အမှတ်အသား ဖြည့်ရန် (ဥပမာ - ပရိုမိုးရှင်း 50 % လျှော့ပြီး)", "ပရိုမိုးရှင်း 50 % လျှော့ပြီး")
-    with col_p2:
-        discount_input = st.number_input("လျှော့ဈေး ပမာဏ (Discount MMK)", min_value=0, value=500000, step=50000)
-        
-    note_info = st.text_area("မှတ်ချက် (Note)", "Exchange rate -2106$,\n05-Broker, Cash, Promotion")
-
-    st.write("---")
-    st.subheader("🚜 စက်ပစ္စည်းနှင့် နောက်တွဲပစ္စည်းများ ရွေးချယ်ခြင်း")
-
-    model_list = df_tractor.iloc[:, 0].astype(str).tolist()
-    model_list = [m for m in model_list if m not in ["0", "0.0", "nan", "Model"]]
-    selected_model = st.selectbox(f"{selected_brand} မော်ဒယ်ကို ရွေးပါ -", model_list)
-    
-    t_info = df_tractor[df_tractor.iloc[:, 0].astype(str) == selected_model].iloc[0]
-    try:
-        raw_p = str(t_info.iloc[1]).replace(',', '').strip()
-        base_price = float(raw_p) if raw_p != "" else 0
-    except:
-        base_price = 0
-    img_url = str(t_info.iloc[2])
-
-    if img_url and img_url.startswith("http"):
-        st.image(img_url, use_container_width=True)
-
-    st.write("---")
-    st.caption("🛠 နောက်တွဲပစ္စည်းများ စိတ်ကြိုက်ရွေးချယ်ရန်")
-    filtered_att = df_attach[df_attach.iloc[:, 0].astype(str) == selected_model] if not df_attach.empty else pd.DataFrame()
-    
-    selected_att_total = 0
-    chosen_attachments = [] 
-
-    def add_att_ui(label, m_col, p_col):
-        if not filtered_att.empty and m_col in df_attach.columns:
-            items = filtered_att[[m_col, p_col]].drop_duplicates()
-            options = []
-            for _, row in items.iterrows():
-                if str(row[m_col]) not in ["0", "0.0", "nan"]:
-                    try:
-                        p_val = str(row[p_col]).replace(',', '').strip()
-                        p = float(p_val)
-                        options.append({"label": f"{row[m_col]} (+{p:,.0f} MMK)", "price": p, "name": str(row[m_col])})
-                    except:
-                        continue
-            if options:
-                c = st.selectbox(f"{label}:", ["မယူပါ"] + [o["label"] for o in options])
-                if c != "မယူပါ":
-                    price = next(item["price"] for item in options if item["label"] == c)
-                    name = next(item["name"] for item in options if item["label"] == c)
-                    chosen_attachments.append({"type": label, "model": name, "price": price})
-                    return price
-        return 0
-
-    col_att1, col_att2 = st.columns(2)
-    with col_att1:
-        selected_att_total += add_att_ui("Rotary", "Rotary_Model1", "Rotary_Price")
-        selected_att_total += add_att_ui("Disc Harrow", "Harrow_Model1", "Harrow_Price")
-        selected_att_total += add_att_ui("Disc Plow", "Plow_Model1", "Plow_Price")
-    with col_att2:
-        selected_att_total += add_att_ui("Combine Harvester Attach", "Combine_Model1", "Combine_Price")
-        selected_att_total += add_att_ui("Hydraulic Breaker", "Breaker_Model1", "Breaker_Price")
-        selected_att_total += add_att_ui("Sowing/Transplanter", "Transplanter_Model1", "Transplanter_Price")
-
-    total_machine_amount = base_price * qty_input
-    total_attachments_amount = selected_att_total * qty_input
-    grand_total = total_machine_amount + total_attachments_amount
-    
-    st.write("---")
-    st.success(f"## 📄 စုစုပေါင်းကျသင့်ငွေ: {grand_total:,.0f} MMK")
-
-
-    # ==============================================================================
-    # 🖨 အပိုင်း (၄) - SALES MEMO VOUCHER GENERATOR (HTML/PDF)
-    # ==============================================================================
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("📄 Export Section")
-    
-    current_date_str = datetime.now().strftime("%d-%m-%Y")
-    full_machine_name, machine_code = get_machine_details(selected_model)
-
-    item_no = 1
-    machine_display_name = f"{full_machine_name} <br><small style='color:#555;'>({promo_text})</small>" if promo_text else full_machine_name
-    
-    table_rows_html = f"""
-    <tr>
-        <td style="text-align: center;">{item_no}</td>
-        <td>{machine_code}</td>
-        <td>{machine_display_name}</td>
-        <td style="text-align: right;">{base_price:,.0f}</td>
-        <td style="text-align: center;">{qty_input}.00</td>
-        <td style="text-align: right;">{discount_input:,.0f}</td>
-        <td style="text-align: right; font-weight: bold;">{total_machine_amount:,.0f}</td>
-    </tr>
-    """
-    
-    for att in chosen_attachments:
-        item_no += 1
-        att_amount = att['price'] * qty_input
-        table_rows_html += f"""
-        <tr>
-            <td style="text-align: center;">{item_no}</td>
-            <td>ATT-CODE</td>
-            <td>{att['type']} - {att['model']}</td>
-            <td style="text-align: right;">{att['price']:,.0f}</td>
-            <td style="text-align: center;">{qty_input}.00</td>
-            <td style="text-align: right;">0</td>
-            <td style="text-align: right; font-weight: bold;">{att_amount:,.0f}</td>
-        </tr>
-        """
-
-    sales_memo_html = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-            body {{ font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 20px; background-color: #f5f5f5; color: #000; }}
-            .btn-container {{ text-align: center; margin-bottom: 15px; }}
-            .btn-print {{ background-color: #2b7deb; color: white; padding: 12px 25px; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; font-weight: bold; }}
-            .invoice-box {{ max-width: 850px; margin: auto; padding: 30px; background: #fff; border: 1px solid #ddd; font-size: 13px; line-height: 20px; color: #000; }}
-            .header-title {{ font-size: 18px; font-weight: bold; margin: 0; }}
-            .header-subtitle {{ font-size: 12px; color: #333; margin: 2px 0; }}
-            .divider-line {{ border-top: 2px solid #2b7deb; margin: 12px 0 20px 0; }}
-            .memo-title {{ font-size: 26px; font-weight: bold; margin-bottom: 20px; }}
+        st.subheader("📝 ဘောက်ချာအတွက် ကိုယ်တိုင်ရိုက်ထည့်ရန် အချက်အလက်များ")
+        col_v1, col_v2 = st.columns(2)
+        with col_v1:
+            cust_info = st.text_input("ဝယ်သူအမည် နှင့် ဖုန်းနံပါတ် (Customer)", "Aung Naing Win (Nattalin) (09-423737582)")
+            sale_name = st.text_input("အရောင်းဝန်ထမ်းအမည် (Sale)", "HLA MYO OO")
+            address_info = st.text_input("ဝယ်သူလိပ်စာ (Address)", "San Chaung Village, Nattalin, Bagowest, Myanmar")
+        with col_v2:
+            doc_no = st.text_input("ဘောက်ချာနံပါတ် (Document No.)", "121-2605-0016")
+            qty_input = st.number_input("စက်အရေအတွက် (Qty)", min_value=1, value=1, step=1)
             
-            .info-grid {{ width: 100%; border-collapse: collapse; margin-bottom: 25px; }}
-            .info-grid td {{ padding: 4px 6px; vertical-align: top; border: none; }}
-            .label-cell {{ width: 12%; }}
-            .val-cell {{ width: 45%; }}
+        st.markdown("#### 🎁 လစဉ်ပြောင်းလဲမည့် ပရိုမိုးရှင်းနှင့် လျှော့ဈေး သတ်မှတ်ရန်")
+        col_p1, col_p2 = st.columns(2)
+        with col_p1:
+            promo_text = st.text_input("ပရိုမိုးရှင်း အမှတ်အသား ဖြည့်ရန်", "ပရိုမိုးရှင်း 50 % လျှော့ပြီး")
+        with col_p2:
+            discount_input = st.number_input("လျှော့ဈေး ပမာဏ (Discount MMK)", min_value=0, value=500000, step=50000)
             
-            .products-table {{ width: 100%; border-collapse: collapse; margin-top: 15px; }}
-            .products-table th {{ background-color: #58a5f7 !important; color: white !important; font-weight: bold; padding: 8px; border: 1px solid #58a5f7; -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
-            .products-table td {{ border: 1px solid #e2e2e2; padding: 10px 8px; }}
-            .total-row td {{ border: none; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 8px; font-size: 15px; font-weight: bold; }}
-            
-            @media print {{
-                body {{ background-color: white; padding: 0; margin: 0; }}
-                .btn-container {{ display: none !important; }}
-                .invoice-box {{ border: none; padding: 10px; width: 100%; }}
-                .products-table th {{ background-color: #58a5f7 !important; color: white !important; }}
-                @page {{ size: A4 portrait; margin: 10mm; }}
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="btn-container">
-            <button class="btn-print" onclick="window.print()">🖨 Print / Save as PDF (Sales Memo ထုတ်ရန်)</button>
-        </div>
-        
-        <div class="invoice-box">
-            <div class="header-title">Kubota Maesod Myanmar Co., Ltd (Tharyarwaddy Branch)</div>
-            <div class="header-subtitle">No.253, Yangon-Pyay Main Road, Ahlekone Quarter, Thonze Township, Bago Division, Myanmar</div>
-            <div class="header-subtitle">Tel. +95978999848</div>
-            <div class="divider-line"></div>
-            <div class="memo-title">Sales Memo</div>
-            
-            <table class="info-grid">
-                <tr>
-                    <td class="label-cell">Customer</td>
-                    <td class="val-cell">: &nbsp; {cust_info}</td>
-                    <td style="width:13%;">Document</td>
-                    <td style="width:30%;">: &nbsp; {doc_no}</td>
-                    <td style="width:10%;">Deliver</td>
-                    <td>: &nbsp; {current_date_str}</td>
-                </tr>
-                <tr>
-                    <td class="label-cell">Sale</td>
-                    <td class="val-cell">: &nbsp; {sale_name}</td>
-                    <td>Quotation</td>
-                    <td>: &nbsp; </td>
-                    <td>Date</td>
-                    <td style="font-weight: bold;">: &nbsp; {current_date_str}</td>
-                </tr>
-                <tr>
-                    <td class="label-cell">Address</td>
-                    <td class="val-cell" colspan="5">: &nbsp; {address_info}</td>
-                </tr>
-                <tr>
-                    <td class="label-cell">Note</td>
-                    <td class="val-cell" colspan="5" style="white-space: pre-line;">: &nbsp; {note_info}</td>
-                </tr>
-            </table>
-            
-            <div style="font-weight: bold; font-size: 15px; margin-bottom: 5px;">Products</div>
-            <table class="products-table">
-                <thead>
-                    <tr>
-                        <th style="width: 5%; text-align: center;">No</th>
-                        <th style="width: 15%;">Code</th>
-                        <th style="width: 40%;">Name</th>
-                        <th style="width: 13%; text-align: right;">Price/Unit</th>
-                        <th style="width: 7%; text-align: center;">Qty</th>
-                        <th style="width: 10%; text-align: right;">Discount</th>
-                        <th style="width: 13%; text-align: right;">Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {table_rows_html}
-                    <tr class="total-row">
-                        <td colspan="4"></td>
-                        <td style="text-align: center;">{qty_input * item_no}.00</td>
-                        <td></td>
-                        <td style="text-align: right; color: #2b7deb; font-size: 16px;">{grand_total:,.0f}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </body>
-    </html>
-    """
+        note_info = st.text_area("မှတ်ချက် (Note)", "Exchange rate -2106$,\n05-Broker, Cash, Promotion")
 
-    st.sidebar.download_button(
-        label="📥 Download Sales Memo (HTML)",
-        data=sales_memo_html,
-        file_name=f"Sales_Memo_{doc_no}.html",
-        mime="text/html"
-    )
-else:
-    st.error("Google Sheet မှ ဒေတာများကို မဖတ်နိုင်ပါ။ သို့မဟုတ် စာမျက်နှာအမည် မှားယွင်းနေပါသည်။")
-
-
-# ==============================================================================
-# 📰 အပိုင်း (၅) - သတင်းကဏ္ဍ (READ & WRITE NEWS SECTION)
-# ==============================================================================
-st.write("---")
-st.markdown("<h2 style='text-align: center; color: #0066cc;'>📰 KMM Competitor News Update</h2>", unsafe_allow_html=True)
-
-# Main Screen ပေါ်တွင် အပိုင်း (၂) ခုခွဲ၍ ပြသခြင်း
-news_tab1, news_tab2 = st.tabs(["📌 ရွေးချယ်ထားသောသတင်းဖတ်ရှုရန် (Read)", "✍️ သတင်းအသစ်တင်ရန် (Post)"])
-
-with news_tab1:
-    # Sidebar တွင် သတင်းရွေးချယ်ထားမှုရှိပါက ၎င်းသတင်းကို ဆွဲပြမည်
-    if selected_news_title and not df_news.empty:
-        news_info = df_news[df_news.iloc[:, 2].astype(str) == selected_news_title].iloc[0]
-        news_id = str(news_info.iloc[0])
-        news_date = str(news_info.iloc[1]) 
-        news_detail = str(news_info.iloc[3])
-        news_img_url = str(news_info.iloc[4])
-        
-        st.info(f"📅 သတင်းတင်သည့်ရက်စွဲ: {news_date}")
-        st.markdown(f"### 📌 {selected_news_title}")
-        
-        if news_img_url and news_img_url.startswith("http"):
-            st.image(news_img_url, use_container_width=True)
-        st.write(news_detail)
-        
-        # --- HTML/PDF File အဖြစ် သိမ်းဆည်းရန်နှင့် Print ထုတ်ရန် ခလုတ်အပိုင်း ---
         st.write("---")
+        st.subheader("🚜 စက်ပစ္စည်းနှင့် နောက်တွဲပစ္စည်းများ ရွေးချယ်ခြင်း")
+
+        model_list = df_tractor.iloc[:, 0].astype(str).tolist()
+        model_list = [m for m in model_list if m not in ["0", "0.0", "nan", "Model"]]
+        selected_model = st.selectbox(f"{selected_brand} မော်ဒယ်ကို ရွေးပါ -", model_list)
         
-        news_summary_html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <style>
-                body {{ font-family: 'Helvetica Neue', Arial, sans-serif; padding: 30px; background-color: #ffffff; color: #333; line-height: 1.6; }}
-                .container {{ max-width: 750px; margin: auto; border: 1px solid #e0e0e0; padding: 40px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }}
-                .company-header {{ text-align: center; border-bottom: 3px solid #0066cc; padding-bottom: 15px; margin-bottom: 25px; }}
-                .company-name {{ font-size: 20px; font-weight: bold; color: #0066cc; }}
-                .doc-type {{ font-size: 14px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }}
-                .meta-info {{ font-size: 13px; color: #777; margin-bottom: 20px; text-align: right; border-bottom: 1px dashed #ddd; padding-bottom: 10px; }}
-                .news-title {{ font-size: 24px; font-weight: bold; color: #111; margin-bottom: 20px; line-height: 1.3; }}
-                .news-content {{ font-size: 15px; color: #222; text-align: justify; white-space: pre-line; }}
-                .footer {{ text-align: center; margin-top: 40px; padding-top: 15px; border-top: 1px solid #eee; font-size: 12px; color: #999; }}
-                .btn-print-container {{ text-align: center; margin-bottom: 20px; }}
-                .btn-print {{ background-color: #0066cc; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; }}
-                @media print {{
-                    body {{ padding: 0; }}
-                    .container {{ border: none; box-shadow: none; padding: 10px; }}
-                    .btn-print-container {{ display: none !important; }}
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="btn-print-container">
-                <button class="btn-print" onclick="window.print()">🖨 Print / Save as PDF (သတင်းကို စာရွက်ထုတ်ရန် သို့မဟုတ် PDF သိမ်းရန်)</button>
-            </div>
-            <div class="container">
-                <div class="company-header">
-                    <div class="company-name">Kubota Maesod Myanmar Co., Ltd</div>
-                    <div class="doc-type">Competitor News Summary Report</div>
-                </div>
-                <div class="meta-info">
-                    <strong>News ID:</strong> {news_id} &nbsp;|&nbsp; <strong>Published Date:</strong> {news_date}
-                </div>
-                <div class="news-title">📌 {selected_news_title}</div>
-                <div class="news-content">{news_detail}</div>
-                <div class="footer">
-                    © {datetime.now().strftime("%Y")} Kubota Maesod Myanmar Co., Ltd. All Rights Reserved.
-                </div>
-            </div>
-        </body>
-        </html>
+        t_info = df_tractor[df_tractor.iloc[:, 0].astype(str) == selected_model].iloc[0]
+        try:
+            raw_p = str(t_info.iloc[1]).replace(',', '').strip()
+            base_price = float(raw_p) if raw_p != "" else 0
+        except:
+            base_price = 0
+        img_url = str(t_info.iloc[2])
+
+        if img_url and img_url.startswith("http"):
+            st.image(img_url, use_container_width=True)
+
+        st.write("---")
+        st.caption("🛠 နောက်တွဲပစ္စည်းများ စိတ်ကြိုက်ရွေးချယ်ရန်")
+        filtered_att = df_attach[df_attach.iloc[:, 0].astype(str) == selected_model] if not df_attach.empty else pd.DataFrame()
+        
+        selected_att_total = 0
+        chosen_attachments = [] 
+
+        def add_att_ui(label, m_col, p_col):
+            if not filtered_att.empty and m_col in df_attach.columns:
+                items = filtered_att[[m_col, p_col]].drop_duplicates()
+                options = []
+                for _, row in items.iterrows():
+                    if str(row[m_col]) not in ["0", "0.0", "nan"]:
+                        try:
+                            p_val = str(row[p_col]).replace(',', '').strip()
+                            p = float(p_val)
+                            options.append({"label": f"{row[m_col]} (+{p:,.0f} MMK)", "price": p, "name": str(row[m_col])})
+                        except:
+                            continue
+                if options:
+                    c = st.selectbox(f"{label}:", ["မယူပါ"] + [o["label"] for o in options])
+                    if c != "မယူပါ":
+                        price = next(item["price"] for item in options if item["label"] == c)
+                        name = next(item["name"] for item in options if item["label"] == c)
+                        chosen_attachments.append({"type": label, "model": name, "price": price})
+                        return price
+            return 0
+
+        col_att1, col_att2 = st.columns(2)
+        with col_att1:
+            selected_att_total += add_att_ui("Rotary", "Rotary_Model1", "Rotary_Price")
+            selected_att_total += add_att_ui("Disc Harrow", "Harrow_Model1", "Harrow_Price")
+            selected_att_total += add_att_ui("Disc Plow", "Plow_Model1", "Plow_Price")
+        with col_att2:
+            selected_att_total += add_att_ui("Combine Harvester Attach", "Combine_Model1", "Combine_Price")
+            selected_att_total += add_att_ui("Hydraulic Breaker", "Breaker_Model1", "Breaker_Price")
+            selected_att_total += add_att_ui("Sowing/Transplanter", "Transplanter_Model1", "Transplanter_Price")
+
+        total_machine_amount = base_price * qty_input
+        total_attachments_amount = selected_att_total * qty_input
+        grand_total = total_machine_amount + total_attachments_amount
+        
+        st.write("---")
+        st.success(f"## 📄 စုစုပေါင်းကျသင့်ငွေ: {grand_total:,.0f} MMK")
+
+        # HTML Sales Voucher
+        current_date_str = datetime.now().strftime("%d-%m-%Y")
+        full_machine_name, machine_code = get_machine_details(selected_model)
+        item_no = 1
+        machine_display_name = f"{full_machine_name} <br><small style='color:#555;'>({promo_text})</small>" if promo_text else full_machine_name
+        
+        table_rows_html = f"<tr><td style='text-align:center;'>{item_no}</td><td>{machine_code}</td><td>{machine_display_name}</td><td style='text-align:right;'>{base_price:,.0f}</td><td style='text-align:center;'>{qty_input}.00</td><td style='text-align:right;'>{discount_input:,.0f}</td><td style='text-align:right; font-weight:bold;'>{total_machine_amount:,.0f}</td></tr>"
+        for att in chosen_attachments:
+            item_no += 1
+            table_rows_html += f"<tr><td style='text-align:center;'>{item_no}</td><td>ATT-CODE</td><td>{att['type']} - {att['model']}</td><td style='text-align:right;'>{att['price']:,.0f}</td><td style='text-align:center;'>{qty_input}.00</td><td style='text-align:right;'>0</td><td style='text-align:right; font-weight:bold;'>{(att['price']*qty_input):,.0f}</td></tr>"
+
+        sales_memo_html = f"""
+        <!DOCTYPE html><html><head><meta charset="utf-8"><style>
+        body {{ font-family: sans-serif; padding: 20px; background-color: #f5f5f5; }}
+        .btn-container {{ text-align: center; margin-bottom: 15px; }}
+        .btn-print {{ background-color: #2b7deb; color: white; padding: 12px 25px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }}
+        .invoice-box {{ max-width: 850px; margin: auto; padding: 30px; background: #fff; border: 1px solid #ddd; font-size: 13px; }}
+        .products-table {{ width: 100%; border-collapse: collapse; margin-top: 15px; }}
+        .products-table th {{ background-color: #58a5f7!important; color: white!important; padding: 8px; border: 1px solid #58a5f7; }}
+        .products-table td {{ border: 1px solid #e2e2e2; padding: 10px 8px; }}
+        @media print {{ .btn-container {{ display: none !important; }} .invoice-box {{ border: none; padding: 0; }} }}
+        </style></head><body>
+        <div class="btn-container"><button class="btn-print" onclick="window.print()">🖨 Print / Save as PDF</button></div>
+        <div class="invoice-box"><h2>Good Brother Co., Ltd</h2><hr>
+        <p><b>Customer:</b> {cust_info} &nbsp;|&nbsp; <b>Doc No:</b> {doc_no} &nbsp;|&nbsp; <b>Date:</b> {current_date_str}</p>
+        <table class="products-table"><thead><tr><th>No</th><th>Code</th><th>Name</th><th>Price</th><th>Qty</th><th>Discount</th><th>Amount</th></tr></thead>
+        <tbody>{table_rows_html}</tbody></table></div></body></html>
         """
-        
-        st.download_button(
-            label="📥 Download News Summary File (HTML/PDF)",
-            data=news_summary_html,
-            file_name=f"News_Summary_{news_id}.html",
-            mime="text/html"
-        )
-        st.caption("💡 အပေါ်က ခလုတ်ကိုနှိပ်ပြီး ဖိုင်ကို ဒေါင်းလုဒ်ဆွဲပါ။ ထို့နောက် ဖိုင်ကိုဖွင့်ပြီး 'Print / Save as PDF' ခလုတ်ဖြင့် လိုအပ်သလို Print ထုတ်ခြင်း သို့မဟုတ် PDF အဖြစ် သိမ်းဆည်းခြင်းများ ပြုလုပ်နိုင်ပါတယ်ဗျာ။")
+        st.sidebar.download_button("📥 Download Sales Memo (HTML)", data=sales_memo_html, file_name=f"Sales_Memo_{doc_no}.html", mime="text/html")
     else:
-        st.info("👈 ဘယ်ဘက် Sidebar ထဲရှိ 'Competitor News Update' မှ ဖတ်ရှုလိုသည့် သတင်းကို ရွေးချယ်ပေးပါဗျာ။")
+        st.error("ဒေတာများကို မဖတ်နိုင်ပါ။ Sheet အမည် မှားယွင်းနေနိုင်ပါသည်။")
 
-with news_tab2:
-    st.subheader("✍️ သတင်းအချက်အလက်အသစ် ဖြည့်စွက်ရန်")
+
+# ==============================================================================
+# 📰 စာမျက်နှာ (၂) - COMPETITOR NEWS UPDATE (သတင်းစာမျက်နှာ သီးသန့်)
+# ==============================================================================
+elif page_selection == "📰 Competitor News Update":
+    st.markdown("<h1 style='text-align: center; color: #0066cc;'>📰 Competitor News Update</h1>", unsafe_allow_html=True)
+    st.write("---")
     
-    new_title = st.text_input("သတင်းခေါင်းစဉ် (Title)", placeholder="ဥပမာ - စက်ပစ္စည်းအသစ်များ ရောက်ရှိခြင်း")
-    new_detail = st.text_area("သတင်းအသေးစိတ် (Detail)", placeholder="သတင်းအကြောင်းအရာများကို ဤနေရာတွင် ရေးသားပါ...")
-    new_img = st.text_input("ဓာတ်ပုံ Link (Image URL)", placeholder="https://example.com/image.jpg (မရှိလျှင် အလွတ်ထားပါ)")
+    news_tab1, news_tab2 = st.tabs(["📌 သတင်းများ ဖတ်ရှုရန်နှင့် စာရွက်ထုတ်ရန်", "✍️ သတင်းအသစ်တင်ရန် (Post)"])
     
-    if st.button("📢 သတင်းအသစ်တင်မည် (Post News)"):
-        if new_title and new_detail:
-            next_id = len(df_news) + 1 if not df_news.empty else 1
-            today_date = datetime.now().strftime("%d-%m-%Y")
+    with news_tab1:
+        if not df_news.empty:
+            st.markdown("### 📰 နေ့စဉ်တင်ထားသော သတင်းများ စာရင်း")
+            st.caption("💡 မိမိ သိမ်းဆည်းလိုသော သတင်းများကို Checkbox တွင် နှိပ်၍ အစုံလိုက် ရွေးချယ်ထုတ်ယူနိုင်ပါသည်ဗျာ။")
             
-            new_row = {
-                df_news.columns[0] if not df_news.empty else "ID": next_id,
-                df_news.columns[1] if not df_news.empty else "Date": today_date,
-                df_news.columns[2] if not df_news.empty else "Title": new_title,
-                df_news.columns[3] if not df_news.empty else "Detail": new_detail,
-                df_news.columns[4] if not df_news.empty else "Image": new_img if new_img else "0"
-            }
+            selected_news_indices = []
             
-            st.success("🎉 သတင်းတင်ခြင်း အောင်မြင်ပါသည်။ (မှတ်ချက် - Google Sheet API ချက်ဆက်မှုအဆင့် သတ်မှတ်ပြီးပါက ဒေတာများ Sheet ထဲသို့ တိုက်ရိုက်အော်တို ဝင်ရောက်သွားမည်ဖြစ်ပါသည်)")
-            st.balloons()
+            # loop ပတ်ပြီး သတင်းတစ်ခုချင်းစီကို ကတ်ပုံစံလှလှလေးနဲ့ Checkbox ပြသခြင်း
+            for idx, row in df_news.iterrows():
+                news_id = row['ID']
+                news_date = row['Date']
+                news_title = row['Title']
+                news_detail = row['Detail']
+                news_img = row['Image']
+                
+                # Checkbox တပ်ဆင်ခြင်း
+                is_selected = st.checkbox(f"[{news_date}] - {news_title}", key=f"news_check_{idx}")
+                if is_selected:
+                    selected_news_indices.append(idx)
+                    
+                # သတင်းအချက်အလက်ကို UI ပေါ်တွင် ပြသခြင်း
+                with st.expander("🔍 သတင်းအသေးစိတ်နှင့် ပုံကို ကြည့်ရန်"):
+                    st.info(f"📅 ရက်စွဲ: {news_date} | ID: {news_id}")
+                    if news_img and str(news_img).startswith("http"):
+                        st.image(str(news_img), use_container_width=True)
+                    st.write(news_detail)
+                st.write("---")
+            
+            # --- ရွေးချယ်လိုက်သော သတင်းများကို အစုံလိုက် HTML/PDF စုထုတ်ပေးမည့်အပိုင်း ---
+            if selected_news_indices:
+                st.success(f"📌 သတင်း စုစုပေါင်း ({len(selected_news_indices)}) ခု ရွေးချယ်ထားပါသည်")
+                
+                # HTML တည်ဆောက်ခြင်း
+                news_items_html = ""
+                for idx in selected_news_indices:
+                    row = df_news.loc[idx]
+                    img_tag = f'<center><img src="{row["Image"]}" style="max-width:100%; border-radius:6px; margin:15px 0;"></center>' if row["Image"] and str(row["Image"]).startswith("http") else ""
+                    
+                    news_items_html += f"""
+                    <div class="news-card">
+                        <div class="meta-info">📅 ရက်စွဲ: {row['Date']} &nbsp;|&nbsp; News ID: {row['ID']}</div>
+                        <div class="news-title">📌 {row['Title']}</div>
+                        {img_tag}
+                        <div class="news-content">{row['Detail']}</div>
+                    </div>
+                    <hr style="border: 1px dashed #ddd; margin: 30px 0;">
+                    """
+                
+                full_news_report_html = f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <style>
+                        body {{ font-family: sans-serif; padding: 20px; background-color: #ffffff; color: #333; line-height: 1.6; }}
+                        .container {{ max-width: 800px; margin: auto; padding: 20px; }}
+                        .header {{ text-align: center; border-bottom: 3px solid #0066cc; padding-bottom: 10px; margin-bottom: 30px; }}
+                        .news-card {{ background: #fff; padding: 10px; margin-bottom: 20px; }}
+                        .meta-info {{ font-size: 13px; color: #666; margin-bottom: 5px; }}
+                        .news-title {{ font-size: 22px; font-weight: bold; color: #111; margin-bottom: 15px; }}
+                        .news-content {{ font-size: 15px; color: #222; text-align: justify; white-space: pre-line; }}
+                        .btn-print-container {{ text-align: center; margin-bottom: 20px; }}
+                        .btn-print {{ background-color: #0066cc; color: white; padding: 12px 25px; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; font-weight: bold; }}
+                        @media print {{ .btn-print-container {{ display: none !important; }} .container {{ width: 100%; }} }}
+                    </style>
+                </head>
+                <body>
+                    <div class="btn-print-container">
+                        <button class="btn-print" onclick="window.print()">🖨 Print / Save as PDF (ရွေးချယ်ထားသော သတင်းများကို Print ထုတ်ရန်)</button>
+                    </div>
+                    <div class="container">
+                        <div class="header">
+                            <h2>Good Brother Co., Ltd</h2>
+                            <div style="color:#666; text-transform:uppercase;">Competitor News Summary Report</div>
+                        </div>
+                        {news_items_html}
+                    </div>
+                </body>
+                </html>
+                """
+                
+                # Download ခလုတ်ပြသခြင်း
+                st.download_button(
+                    label="📥 Download Selected News Summary (HTML/PDF)",
+                    data=full_news_report_html,
+                    file_name=f"News_Summary_Report_{datetime.now().strftime('%d%m%Y')}.html",
+                    mime="text/html"
+                )
+                st.caption("💡 အပေါ်က ခလုတ်ကိုနှိပ်ပြီး ဖိုင်ကို ဒေါင်းလုဒ်ဆွဲပါ။ ထို့နောက် ဖိုင်ကိုဖွင့်ပြီး 'Print / Save as PDF' ခလုတ်ဖြင့် လိုအပ်သလို စက္ကန့်ပိုင်းအတွင်း စာရွက်ထုတ်ခြင်း သို့မဟုတ် PDF အဖြစ် အလွယ်တကူ သိမ်းဆည်းနိုင်ပါတယ်ဗျာ။")
+            else:
+                st.warning("👉 ကျေးဇူးပြု၍ ဖိုင်ထုတ်ယူလိုသည့် သတင်းများ၏ ရှေ့ရှိ Checkbox များတွင် အမှန်ခြစ် ပေးပါဗျာ။")
         else:
-            st.error("ကျေးဇူးပြု၍ သတင်းခေါင်းစဉ် နှင့် သတင်းအသေးစိတ်ကို မဖြစ်မနေ ဖြည့်စွက်ပေးပါဗျာ။")
+            st.error("သတင်းဒေတာများ မတွေ့ရှိပါ။")
 
-st.markdown("<br><hr><center><small>© 2026 Kubota Maesod Myanmar Co., Ltd.</small></center>", unsafe_allow_html=True) 
+    # မူရင်းအတိုင်း ဘာမှမပြောင်းလဲထားသော သတင်းအသစ်တင်သည့်အပိုင်း (Post Tab)
+    with news_tab2:
+        st.subheader("✍️ သတင်းအချက်အလက်အသစ် ဖြည့်စွက်ရန်")
+        new_title = st.text_input("သတင်းခေါင်းစဉ် (Title)", placeholder="ဥပမာ - စက်ပစ္စည်းအသစ်များ ရောက်ရှိခြင်း")
+        new_detail = st.text_area("သတင်းအသေးစိတ် (Detail)", placeholder="သတင်းအကြောင်းအရာများကို ဤနေရာတွင် ရေးသားပါ...")
+        new_img = st.text_input("ဓာတ်ပုံ Link (Image URL)", placeholder="https://example.com/image.jpg (မရှိလျှင် အလွတ်ထားပါ)")
+        
+        if st.button("📢 သတင်းအသစ်တင်မည် (Post News)"):
+            if new_title and new_detail:
+                next_id = len(df_news) + 1 if not df_news.empty else 1
+                today_date = datetime.now().strftime("%d-%m-%Y")
+                st.success("🎉 သတင်းတင်ခြင်း အောင်မြင်ပါသည်။ (မှတ်ချက် - Google Sheet API ချိတ်ဆက်မှုအဆင့် သတ်မှတ်ပြီးပါက ဒေတာများ Sheet ထဲသို့ တိုက်ရိုက်အော်တို ဝင်ရောက်သွားမည်ဖြစ်ပါသည်)")
+                st.balloons()
+            else:
+                st.error("ကျေးဇူးပြု၍ သတင်းခေါင်းစဉ် နှင့် သတင်းအသေးစိတ်ကို မဖြစ်မနေ ဖြည့်စွက်ပေးပါဗျာ။")
+
+st.markdown("<br><hr><center><small>© 2026 Good Brother Co., Ltd.</small></center>", unsafe_allow_html=True) 
 
 
 
