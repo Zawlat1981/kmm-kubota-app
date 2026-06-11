@@ -127,13 +127,13 @@ elif menu_choice == "Competitor News Updates":
         df_comp.columns = [str(c).strip().lower() for c in df_comp.columns]
         
         # --- [သစ်] ခေါင်းစဉ်ထိပ်မှာ ရှာဖွေရေး UI ထည့်သွင်းခြင်း ---
-        st.markdown("### 🔍 သတင်းများ ပြန်ลည်ရှာဖွေရန်")
+        st.markdown("### 🔍 သတင်းများ ပြန်လည်ရှာဖွေရန်/ค้นหาข่าวย้อนหลัง")
         search_col1, search_col2 = st.columns(2)
         
         with search_col1:
-            search_query = st.text_input("📝 သတင်းခေါင်းစဉ်/ကုမ္ပဏီ/အကြောင်းအရာဖြင့် ရှာရန်", "")
+            search_query = st.text_input("📝 သတင်းခေါင်းစဉ်/ကုမ္ပဏီ/အကြောင်းအရာဖြင့် ရှာရန်/ค้นหาด้วยหัวข้อข่าว/บริษัท/เนื้อหา", "")
         with search_col2:
-            search_date = st.date_input("📅 ရက်စွဲဖြင့် ရွေးချယ်ရန်", value=None, format="YYYY-MM-DD")
+            search_date = st.date_input("📅 ရက်စွဲဖြင့် ရွေးချယ်ရန်/เลือกตามวันที่", value=None, format="YYYY-MM-DD")
         st.write("---")
         
         grouped_data = {}  
