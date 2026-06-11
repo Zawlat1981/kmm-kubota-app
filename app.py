@@ -72,7 +72,7 @@ if menu_choice == "Brand Selection":
         if img_url and img_url.startswith("http"):
             st.image(img_url, use_container_width=True)
             # Brand Selection အောက်က ပုံအတွက်လည်း ဇူးမ်ချဲ့လင့်ခ် ထည့်ပေးထားပါတယ်
-            st.markdown(f"[🔍 ပုံကို အကြီးချဲ့ကြည့်ရန် (သို့မဟုတ်) ဒေါင်းလုด်ซွဲရန် နှိပ်ပါ]({img_url})")
+            st.markdown(f"[🔍 ပုံကို အကြီးချဲ့ကြည့်ရန် (သို့မဟုတ်) Download ဆွဲရန် နှိပ်ပါ/คลิกเพื่อดูรูปภาพขนาดใหญ่ หรือ ดาวน์โหลด]({img_url})")
             
         st.markdown(f"### 💰 စက်ဈေးနှုန်း: **{base_price:,.0f}** MMK")
         st.write("---")
