@@ -67,9 +67,13 @@ if menu_choice == "Brand Selection":
             raw_p = str(t_info.iloc[1]).replace(',', '').strip()
             base_price = float(raw_p) if raw_p != "" else 0
         except: base_price = 0
+        
         img_url = str(t_info.iloc[2])
         if img_url and img_url.startswith("http"):
             st.image(img_url, use_container_width=True)
+            # Brand Selection အောက်က ပုံအတွက်လည်း ဇူးမ်ချဲ့လင့်ခ် ထည့်ပေးထားပါတယ်
+            st.markdown(f"[🔍 ပုံကို အကြီးချဲ့ကြည့်ရန် (သို့မဟုတ်) ဒေါင်းလုด်ซွဲရန် နှိပ်ပါ]({img_url})")
+            
         st.markdown(f"### 💰 စက်ဈေးနှုန်း: **{base_price:,.0f}** MMK")
         st.write("---")
         
@@ -109,7 +113,7 @@ if menu_choice == "Brand Selection":
         st.warning("Sheet Not Found")
 
 # ==========================================
-# ၂။ COMPETITOR NEWS UPDATES MENU
+# ၂။ COMPETITOR NEWS UPDATES MENU (ရှာဖွေရေးနှင့် ပုံချဲ့စနစ် ပေါင်းစပ်ထားသောအပိုင်း)
 # ==========================================
 elif menu_choice == "Competitor News Updates":
     st.markdown("<h1 style='text-align: center; color: #0066cc;'>📊 Competitor News Updates & News Myanmar</h1>", unsafe_allow_html=True)
@@ -121,6 +125,16 @@ elif menu_choice == "Competitor News Updates":
     try:
         df_comp = pd.read_csv(comp_url).fillna('')
         df_comp.columns = [str(c).strip().lower() for c in df_comp.columns]
+        
+        # --- [သစ်] ခေါင်းစဉ်ထိပ်မှာ ရှာဖွေရေး UI ထည့်သွင်းခြင်း ---
+        st.markdown("### 🔍 သတင်းများ ပြန်ลည်ရှာဖွေရန်")
+        search_col1, search_col2 = st.columns(2)
+        
+        with search_col1:
+            search_query = st.text_input("📝 သတင်းခေါင်းစဉ်/ကုမ္ပဏီ/အကြောင်းအရာဖြင့် ရှာရန်", "")
+        with search_col2:
+            search_date = st.date_input("📅 ရက်စွဲဖြင့် ရွေးချယ်ရန်", value=None, format="YYYY-MM-DD")
+        st.write("---")
         
         grouped_data = {}  
         current_date = "No Date"
@@ -195,58 +209,96 @@ elif menu_choice == "Competitor News Updates":
         if grouped_data:
             sorted_dates = sorted(grouped_data.keys(), reverse=True)
             
-            for date_key in sorted_dates:
-                st.markdown(f"<h2 style='color: #ff6600; background-color: #f0f7ff; padding: 10px; border-radius: 5px;'> Date: {date_key}</h2>", unsafe_allow_html=True)
+            # --- [သစ်] ရိုက်ရှာထားသော စာသားနှင့် ရက်စွဲများအလိုက် Data စစ်ထုတ်ခြင်း (Filtering Logic) ---
+            filtered_grouped_data = {}
+            for d_key in sorted_dates:
+                # ရက်စွဲ Filter စစ်ဆေးခြင်း
+                if search_date is not None:
+                    try:
+                        # ရှာဖွေတဲ့ ရက်စွဲနဲ့ Data ထဲက ရက်စွဲ တူမတူ နှိုင်းယှဉ်ရန် Format ညှိခြင်း
+                        sheet_date_obj = pd.to_datetime(d_key).date()
+                        if sheet_date_obj != search_date:
+                            continue
+                    except:
+                        # အကယ်၍ ရက်စွဲပြောင်းလဲရခက်ခဲသော စာသားဖြစ်နေလျှင် စာသားချင်း တိုက်စစ်ပါမည်
+                        if str(search_date) not in d_key:
+                            continue
                 
-                for news in grouped_data[date_key]:
-                    with st.container(border=True):
-                        st.subheader(f"🏢 {news['company']}")
+                # စာသား Search Filter စစ်ဆေးခြင်း
+                news_list_under_date = []
+                for news in grouped_data[d_key]:
+                    if search_query:
+                        q = search_query.lower()
+                        match_company = q in news['company'].lower()
+                        match_th = q in news['content_th'].lower()
+                        match_mm = q in news['content_mm'].lower()
                         
-                        c_th = news.get('content_th', '').strip()
-                        if c_th:
-                            st.markdown("**🇹🇭 ภาษาไทย**")
-                            st.markdown(c_th.replace("\n", "  \n"))
-                        
-                        if c_th and news.get('content_mm', '').strip():
-                            st.write("---")
-                            
-                        c_mm = news.get('content_mm', '').strip()
-                        if c_mm:
-                            st.markdown("**🇲🇲 မြန်မာဘာသာ**")
-                            st.markdown(c_mm.replace("\n", "  \n"))
-                        
-                        img_data = news.get('image_url', '').strip()
-                        if img_data:
-                            img_list = [i.strip() for i in img_data.split(',')]
-                            st.write("---")
-                            for img in img_list:
-                                if img.startswith("http"):
-                                    st.image(img, use_container_width=True) 
-                        
-                        promo = news.get('promo', '')
-                        if promo not in ['', '0']:
-                            st.info(f"💡 {promo}")
-                        
-                        fb_link = news.get('facebook', '').strip()
-                        tt_link = news.get('tiktok', '').strip()
-                        tg_link = news.get('telegram', '').strip()
+                        if not (match_company or match_th or match_mm):
+                            continue # မကိုက်ညီရင် ကျော်သွားမယ်
+                    
+                    news_list_under_date.append(news)
+                
+                if news_list_under_date:
+                    filtered_grouped_data[d_key] = news_list_under_date
 
-                        if (fb_link and fb_link.startswith("http")) or \
-                           (tt_link and tt_link.startswith("http")) or \
-                           (tg_link and tg_link.startswith("http")):
-                            st.write("---")
-                            btn_col1, btn_col2, btn_col3 = st.columns(3)
-                            if fb_link and fb_link.startswith("http"):
-                                with btn_col1: st.link_button("🔵 Facebook", fb_link, use_container_width=True)
-                            if tt_link and tt_link.startswith("http"):
-                                with btn_col2: st.link_button("⚫ TikTok", tt_link, use_container_width=True)
-                            if tg_link and tg_link.startswith("http"):
-                                with btn_col3: st.link_button("✈️ Telegram", tg_link, use_container_width=True)
-                        
-                        st.write("<br>", unsafe_allow_html=True)
+            # --- ရလဒ် ထုတ်ပြခြင်း ---
+            if filtered_grouped_data:
+                for date_key in sorted(filtered_grouped_data.keys(), reverse=True):
+                    st.markdown(f"<h2 style='color: #ff6600; background-color: #f0f7ff; padding: 10px; border-radius: 5px;'> Date: {date_key}</h2>", unsafe_allow_html=True)
                     
-                    global_idx += 1 
-                    
+                    for news in filtered_grouped_data[date_key]:
+                        with st.container(border=True):
+                            st.subheader(f"🏢 {news['company']}")
+                            
+                            c_th = news.get('content_th', '').strip()
+                            if c_th:
+                                st.markdown("**🇹🇭 ภาษาไทย**")
+                                st.markdown(c_th.replace("\n", "  \n"))
+                            
+                            if c_th and news.get('content_mm', '').strip():
+                                st.write("---")
+                                
+                            c_mm = news.get('content_mm', '').strip()
+                            if c_mm:
+                                st.markdown("**🇲🇲 မြန်မာဘာသာ**")
+                                st.markdown(c_mm.replace("\n", "  \n"))
+                            
+                            img_data = news.get('image_url', '').strip()
+                            if img_data:
+                                img_list = [i.strip() for i in img_data.split(',')]
+                                st.write("---")
+                                for img in img_list:
+                                    if img.startswith("http"):
+                                        # ကွန်ပျူတာအတွက် မူရင်းအတိုင်း ပုံပြခြင်း
+                                        st.image(img, use_container_width=True) 
+                                        # --- [သစ်] ဖုန်းသမားများ ချဲ့ကြည့်ရန် ဒေါင်းလုဒ်ဆွဲရန် လင့်ခ်အပို ထည့်သွင်းခြင်း ---
+                                        st.markdown(f"[🔍 ပုံကို အကြီးချဲ့ကြည့်ရန် (သို့မဟုတ်) ဒေါင်းလုဒ်ဆွဲရန် နှိပ်ပါ]({img})")
+                            
+                            promo = news.get('promo', '')
+                            if promo not in ['', '0']:
+                                st.info(f"💡 {promo}")
+                            
+                            fb_link = news.get('facebook', '').strip()
+                            tt_link = news.get('tiktok', '').strip()
+                            tg_link = news.get('telegram', '').strip()
+
+                            if (fb_link and fb_link.startswith("http")) or \
+                               (tt_link and tt_link.startswith("http")) or \
+                               (tg_link and tg_link.startswith("http")):
+                                st.write("---")
+                                btn_col1, btn_col2, btn_col3 = st.columns(3)
+                                if fb_link and fb_link.startswith("http"):
+                                    with btn_col1: st.link_button("🔵 Facebook", fb_link, use_container_width=True)
+                                if tt_link and tt_link.startswith("http"):
+                                    with btn_col2: st.link_button("⚫ TikTok", tt_link, use_container_width=True)
+                                if tg_link and tg_link.startswith("http"):
+                                    with btn_col3: st.link_button("✈️ Telegram", tg_link, use_container_width=True)
+                            
+                            st.write("<br>", unsafe_allow_html=True)
+                            global_idx += 1 
+            else:
+                st.info("❌ ရှာဖွေမှုရလด်မရှိပါ။ စာသား သို့မဟုတ် ရက်စွဲကို ပြန်စစ်ပေးပါ။")
+                
     except Exception as e:
         st.error(f"Error loading data: {e}")
 
