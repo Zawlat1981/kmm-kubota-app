@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import time
 import datetime
-from openai import OpenAI  # AI Agent အတွက် OpenAI Library ထည့်သွင်းခြင်း
+from openai import OpenAI
 
 # ၁။ Page Config
 st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout="centered")
@@ -10,7 +10,10 @@ st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout=
 # Google Sheet ID
 SHEET_ID = "1QqQvPKH7G0hqqhd_0V6cP40Htl8qdFEZ6nHBVe_53_g" 
 
-# --- ဒေတာ Load လုပ်သည့် Function ---
+# အသုံးပြုထားသော Brand စာရင်းအားလုံး (Tab အမည်များ)
+ALL_BRANDS = ["Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika", "Yamabisi", "DongFeng"]
+
+# --- ဒေတာ Load လုပ်သည့် Function (UI ဘက်မှ သုံးရန်) ---
 @st.cache_data(ttl=60)
 def load_data(tab_name):
     base_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=" 
@@ -31,7 +34,8 @@ def load_data(tab_name):
 # --- ဒေတာ Load လုပ်သည့် Function (AI Agent အတွက် သီးသန့် Sheet ဖတ်ရန်) ---
 @st.cache_data(ttl=60)
 def load_all_sheet_data(tab_name):
-    csv_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={tab_name}"
+    timestamp = int(time.time())
+    csv_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={tab_name}&cache_bust={timestamp}"
     try:
         return pd.read_csv(csv_url)
     except:
@@ -40,7 +44,6 @@ def load_all_sheet_data(tab_name):
 # --- Sidebar Menu ---
 with st.sidebar:
     st.markdown("## 🚜 KMM Service")
-    # Menu အသစ်အဖြစ် "KMM Tractor AI Agent" ကို ထည့်သွင်းထားပါတယ်
     menu_choice = st.radio(
         "သွားလိုရာကို ရွေးချယ်ပါ (กรุณาเลือกเมนู) -", 
         ["Brand Selection", "Competitor News Updates", "KMM Tractor AI Agent"]
@@ -51,7 +54,7 @@ with st.sidebar:
         st.header("🔍 Filter")
         selected_brand = st.selectbox(
             "အမှတ်တံဆိပ် ရွေးချယ်ပါ (กรุณาเลือกยี่ห้อ) -", 
-            ["Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika", "Yamabisi", "DongFeng"]
+            ALL_BRANDS
         )
 
 # ==========================================
@@ -85,7 +88,6 @@ if menu_choice == "Brand Selection":
         img_url = str(t_info.iloc[2])
         if img_url and img_url.startswith("http"):
             st.image(img_url, use_container_width=True)
-            # Brand Selection အောက်က ပုံအတွက်လည်း ဇူးမ်ချဲ့လင့်ခ် ထည့်ပေးထားပါတယ်
             st.markdown(f"[🔍 ပုံကို အကြီးချဲ့ကြည့်ရန် (သို့မဟုတ်) Download ဆွဲရန် နှိပ်ပါ/คลิกเพื่อดูรูปภาพขนาดใหญ่ หรือ ดาวน์โหลด]({img_url})")
             
         st.markdown(f"### 💰 စက်ဈေးနှုန်း: **{base_price:,.0f}** MMK")
@@ -140,14 +142,13 @@ elif menu_choice == "Competitor News Updates":
         df_comp = pd.read_csv(comp_url).fillna('')
         df_comp.columns = [str(c).strip().lower() for c in df_comp.columns]
         
-        # --- [သစ်] ခေါင်းစဉ်ထိပ်မှာ ရှာဖွေရေး UI ထည့်သွင်းခြင်း ---
         st.markdown("### 🔍 သတင်းများ ပြန်လည်ရှာဖွေရန်/ค้นหาข่าวย้อนหลัง")
         search_col1, search_col2 = st.columns(2)
         
         with search_col1:
-            search_query = st.text_input("📝 သတင်းခေါင်းစဉ်/ကုမ္ပဏီ/အကြောင်းအရာဖြင့် ရှာရန်/ค้นหาด้วยหัวข้อข่าว/บริษัท/เนื้อหา", "")
+            search_query = st.text_input("📝 သတင်းခေါင်းစဉ်/ကုမ္ပဏီ/အကြောင်းအရာဖြင့် ရှာရန်", "")
         with search_col2:
-            search_date = st.date_input("📅 ရက်စွဲဖြင့် ရွေးချယ်ရန်/เลือกตามวันที่", value=None, format="YYYY-MM-DD")
+            search_date = st.date_input("📅 ရက်စွဲဖြင့် ရွေးချယ်ရန်", value=None, format="YYYY-MM-DD")
         st.write("---")
         
         grouped_data = {}  
@@ -222,11 +223,8 @@ elif menu_choice == "Competitor News Updates":
         
         if grouped_data:
             sorted_dates = sorted(grouped_data.keys(), reverse=True)
-            
-            # --- [သစ်] ရိုက်ရှာထားသော စာသားနှင့် ရက်စွဲများအလိုက် Data စစ်ထုတ်ခြင်း (Filtering Logic) ---
             filtered_grouped_data = {}
             for d_key in sorted_dates:
-                # ရက်စွဲ Filter စစ်ဆေးခြင်း
                 if search_date is not None:
                     try:
                         sheet_date_obj = pd.to_datetime(d_key).date()
@@ -236,7 +234,6 @@ elif menu_choice == "Competitor News Updates":
                         if str(search_date) not in d_key:
                             continue
                 
-                # စာသား Search Filter စစ်ဆေးခြင်း
                 news_list_under_date = []
                 for news in grouped_data[d_key]:
                     if search_query:
@@ -244,32 +241,25 @@ elif menu_choice == "Competitor News Updates":
                         match_company = q in news['company'].lower()
                         match_th = q in news['content_th'].lower()
                         match_mm = q in news['content_mm'].lower()
-                        
                         if not (match_company or match_th or match_mm):
                             continue 
-                    
                     news_list_under_date.append(news)
                 
                 if news_list_under_date:
                     filtered_grouped_data[d_key] = news_list_under_date
 
-            # --- ရလဒ် ထုတ်ပြခြင်း ---
             if filtered_grouped_data:
                 for date_key in sorted(filtered_grouped_data.keys(), reverse=True):
                     st.markdown(f"<h2 style='color: #ff6600; background-color: #f0f7ff; padding: 10px; border-radius: 5px;'> Date: {date_key}</h2>", unsafe_allow_html=True)
-                    
                     for news in filtered_grouped_data[date_key]:
                         with st.container(border=True):
                             st.subheader(f"🏢 {news['company']}")
-                            
                             c_th = news.get('content_th', '').strip()
                             if c_th:
                                 st.markdown("**🇹🇭 ภาษาไทย**")
                                 st.markdown(c_th.replace("\n", "  \n"))
-                            
                             if c_th and news.get('content_mm', '').strip():
                                 st.write("---")
-                                
                             c_mm = news.get('content_mm', '').strip()
                             if c_mm:
                                 st.markdown("**🇲🇲 မြန်မာဘာသာ**")
@@ -282,19 +272,15 @@ elif menu_choice == "Competitor News Updates":
                                 for img in img_list:
                                     if img.startswith("http"):
                                         st.image(img, use_container_width=True) 
-                                        st.markdown(f"[🔍 ပုံကို အကြီးချဲ့ကြည့်ရန် (သို့မဟုတ်) ဒေါင်းလုဒ်ဆွဲရန် နှိပ်ပါ/คลิกเพื่อดูรูปภาพขนาดใหญ่ หรือ ดาวน์โหลด]({img})")
+                                        st.markdown(f"[🔍 ပုံကို အကြီးချဲ့ကြည့်ရန်]({img})")
                             
                             promo = news.get('promo', '')
-                            if promo not in ['', '0']:
-                                st.info(f"💡 {promo}")
+                            if promo not in ['', '0']: st.info(f"💡 {promo}")
                             
                             fb_link = news.get('facebook', '').strip()
                             tt_link = news.get('tiktok', '').strip()
                             tg_link = news.get('telegram', '').strip()
-
-                            if (fb_link and fb_link.startswith("http")) or \
-                               (tt_link and tt_link.startswith("http")) or \
-                               (tg_link and tg_link.startswith("http")):
+                            if (fb_link and fb_link.startswith("http")) or (tt_link and tt_link.startswith("http")) or (tg_link and tg_link.startswith("http")):
                                 st.write("---")
                                 btn_col1, btn_col2, btn_col3 = st.columns(3)
                                 if fb_link and fb_link.startswith("http"):
@@ -303,92 +289,102 @@ elif menu_choice == "Competitor News Updates":
                                     with btn_col2: st.link_button("⚫ TikTok", tt_link, use_container_width=True)
                                 if tg_link and tg_link.startswith("http"):
                                     with btn_col3: st.link_button("✈️ Telegram", tg_link, use_container_width=True)
-                            
                             st.write("<br>", unsafe_allow_html=True)
                             global_idx += 1 
             else:
-                st.info("❌ ရှာဖွေမှုရလဒ်မရှိပါ။ စာသား သို့မဟုတ် ရက်စွဲကို ပြန်စစ်ပေးပါ။")
-                
+                st.info("❌ ရှာဖွေမှုရလဒ်မရှိပါ။")
     except Exception as e:
         st.error(f"Error loading data: {e}")
 
 # ==========================================
-# ၃။ KMM TRACTOR AI AGENT MENU (အသစ်ထည့်သွင်းသည့် အပိုင်း)
+# ၃။ KMM TRACTOR AI AGENT MENU (ဘရန်းအားလုံးနှင့် သတင်းဖတ်ရန် အဆင့်မြှင့်တင်ထားမှု)
 # ==========================================
 elif menu_choice == "KMM Tractor AI Agent":
     st.markdown("<h1 style='text-align: center; color: #ff6600;'>🤖 KMM Tractor AI Agent</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #555;'>Kubota Maesot Myanmar ရဲ့ စျေးနှုန်းနှင့် အချက်အလက်များကို မေးမြန်းနိုင်ပါသည်</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #555;'>Tractor အမှတ်တံဆိပ်အားလုံး၏ ဈေးနှုန်းများနှင့် သတင်းများကို မေးမြန်းနိုင်ပါသည်</p>", unsafe_allow_html=True)
     st.write("---")
     
-    # Streamlit Secrets သို့မဟုတ် ကုဒ်ထဲတွင် တိုက်ရိုက် API Key စစ်ဆေးခြင်း
     if "OPENROUTER_API_KEY" in st.secrets:
         api_key = st.secrets["OPENROUTER_API_KEY"]
     else:
-        api_key = "YOUR_OPENROUTER_API_KEY"  # လိုအပ်ပါက မိမိ API Key ကို ဤနေရာတွင် ထည့်ပါ
+        api_key = "YOUR_OPENROUTER_API_KEY"
         
     if api_key == "YOUR_OPENROUTER_API_KEY":
-        st.warning("⚠️ OpenRouter API Key ထည့်သွင်းရန် လိုအပ်နေပါသည်။ Streamlit Secrets သို့မဟုတ် ကုဒ်ထဲတွင် ဖြည့်စွက်ပေးပါ။")
+        st.warning("⚠️ OpenRouter API Key ထည့်သွင်းရန် လိုအပ်နေပါသည်။ Streamlit Secrets ထဲတွင် ဖြည့်စွက်ပေးပါ။")
     else:
-        # OpenAI Client တည်ဆောက်ခြင်း
         client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=api_key)
         
-        # Chat History သိမ်းဆည်းရန် Initialize လုပ်ခြင်း
         if "messages" not in st.session_state:
             st.session_state.messages = []
             
-        # Chat History များကို အရင်ထုတ်ပြခြင်း
         for message in st.session_state.messages:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
                 
-        # User ဆီက မေးခွန်းလက်ခံခြင်း
-        if user_query := st.chat_input("Tractor မော်ဒယ် သို့မဟုတ် စျေးနှုန်းများကို မြန်မာလို မေးမြန်းပါ..."):
+        if user_query := st.chat_input("ဥပမာ - 'Yanmar EF725 ဈေးဘယ်လောက်လဲ' သို့မဟုတ် 'ယနေ့သတင်း အကျဉ်းချုပ်ပြပါ'"):
             with st.chat_message("user"):
                 st.markdown(user_query)
             st.session_state.messages.append({"role": "user", "content": user_query})
             
-            # Google Sheet ရဲ့ "Kubota" Tab ထဲက ဒေတာကို AI အမှီပြုရန် ဆွဲယူခြင်း
-            df_kubota = load_all_sheet_data("Kubota")
-            context_data = ""
+            # --- [အဆင့်မြှင့်တင်မှု] စာသားပါဝင်မှုအလိုက် သက်ဆိုင်ရာ Brand Sheet ကို ရှာဖွေခြင်း ---
+            context_tractor = ""
+            matched_brand_name = ""
             
-            if df_kubota is not None:
-                # User မေးခွန်းပါတဲ့ row များကို Sheet ထဲတွင် ရှာဖွေခြင်း
-                matched_rows = df_kubota[df_kubota.astype(str).apply(lambda x: x.str.contains(user_query, case=False)).any(axis=1)]
-                if not matched_rows.empty:
-                    context_data = matched_rows.to_string(index=False)
-                else:
-                    context_data = "ဒေတာထဲတွင် ဤမော်ဒယ် သို့မဟုတ် အချက်အလက်ကို တိုက်ရိုက်ရှာမတွေ့ပါ။"
-                    
-            # System Prompt တည်ဆောက်ခြင်း
+            # ခေတ္တ Spinner ပြထားစဉ် စာသားနဲ့ကိုက်ညီမယ့် Brand Tab ထဲမှာ ပတ်ရှာမယ်
+            with st.spinner("အချက်အလက်များကို ရှာဖွေနေပါသည်..."):
+                for brand in ALL_BRANDS:
+                    df_brand = load_all_sheet_data(brand)
+                    if df_brand is not None and not df_brand.empty:
+                        # User query ပါဝင်တဲ့ row ရှိ၊ မရှိ စစ်ထုတ်ခြင်း
+                        matched_rows = df_brand[df_brand.astype(str).apply(lambda x: x.str.contains(user_query, case=False)).any(axis=1)]
+                        if not matched_rows.empty:
+                            context_tractor += f"\n--- Brand: {brand} ---\n" + matched_rows.to_string(index=False)
+                            matched_brand_name = brand
+            
+            # ပြိုင်ဘက်သတင်း Tab ကို Load လုပ်ခြင်း
+            df_news = load_all_sheet_data("Competitor News Updates")
+            context_news = ""
+            if df_news is not None and not df_news.empty:
+                context_news = df_news.tail(35).to_string(index=False) # နောက်ဆုံးသတင်း ၃၅ ကြောင်းခန့် ထည့်ပေးထားသည်
+            
+            # ယနေ့ရက်စွဲ
+            today_date = datetime.date.today().strftime("%Y-%m-%d")
+            
+            # System Prompt အား တိကျစွာ လမ်းညွှန်ခြင်း
             system_prompt = f"""
-            မင်းက KMM (Kubota Maesot Myanmar) ကုမ္ပဏီရဲ့ Tractor အရောင်းဆိုင်က AI Agent ဖြစ်တယ်။
-            အောက်ပါ Google Sheet က ရလာတဲ့ သက်ဆိုင်ရာ Tractor ဒေတာတွေကို အခြေခံပြီး ဝယ်သူရဲ့ မေးခွန်းကို မြန်မာလို ယဉ်ကျေးပျူငှာစွာ ဖြေကြားပေးပါ။
+            မင်းက KMM (Kubota Maesot Myanmar) ရဲ့ သတင်းနဲ့ စျေးနှုန်းကျွမ်းကျင်တဲ့ အရောင်းဆိုင် AI Agent ဖြစ်တယ်။
+            ယနေ့ရက်စွဲသည် {today_date} ဖြစ်သည်။
 
-            [Tractor Data]
-            {context_data}
+            မင်းမှာ Google Sheet ထဲက Tractor အမှတ်တံဆိပ်အားလုံး (Kubota, Yanmar, John-Deere, New-Holland, YTO, Dongfeng, Mahindra, Yamabisi, Sonalika) ရဲ့ စျေးနှုန်းဒေတာတွေနဲ့ ပြိုင်ဘက်သတင်းဒေတာတွေ ရှိပါတယ်။
 
-            စည်းကမ်းချက်များ -
-            - ဒေတာထဲမှာ မပါတဲ့အချက်အလက်ကို ကိုယ်တိုင် အထင်နဲ့ မဖြေပါနဲ့။
-            - သေချာတိကျတဲ့ စျေးနှုန်းနှင့် မော်ဒယ်နံပါတ်များကိုသာ ပြောပြပါ။
-            - ဒေတာရှာမတွေ့ပါက 'တောင်းပန်ပါတယ်ခင်ဗျာ၊ ရှာမတွေ့ပါ' ဟု ယဉ်ကျေးစွာ ပြောပါ။
+            အသုံးပြုသူရဲ့ မေးခွန်းနဲ့ အကိုက်ညီဆုံး ရှာဖွေတွေ့ရှိထားတဲ့ ဒေတာတွေကတော့ အောက်ပါအတိုင်းဖြစ်ပါတယ် -
+
+            [၁။ ရှာဖွေတွေ့ရှိသည့် Tractor စျေးနှုန်းနှင့် မော်ဒယ်ဒေတာ]
+            {context_tractor if context_tractor else "အသုံးပြုသူ မေးမြန်းထားသော မော်ဒယ်အမည်ကို မည်သည့် Brand Tab တွင်မှ တိုက်ရိုက်ရှာမတွေ့ပါ။"}
+
+            [၂။ ပြိုင်ဘက်နှင့် သတင်းဒေတာများ (Competitor News Updates)]
+            {context_news if context_news else "သတင်းဒေတာ မရှိပါ။"}
+
+            အမေးအဖြေ စည်းကမ်းချက်များ -
+            - အသုံးပြုသူက 'သတင်း', 'report', 'update' စသဖြင့် တစ်ရက်စာ၊ တစ်ပတ်စာ၊ တစ်လစာ တောင်းဆိုလာလျှင် သတင်းဒေတာထဲက ရက်စွဲ (Date)၊ ကုမ္ပဏီ (Company)၊ အကြောင်းအရာ (Content) များကို စနစ်တကျ နေ့ရက်အလိုက် စာရင်းပြုစုပြီး Report အကျဉ်းချုပ် ပုံစံမျိုး မြန်မာလို ယဉ်ကျေးပျူငှာစွာ ရှင်းပြပေးပါ။
+            - Tractor မော်ဒယ် သို့မဟုတ် စျေးနှုန်းမေးလျှင် အထက်ပါ ရှာဖွေတွေ့ရှိသည့် ဒေတာကို ကြည့်ပြီး ဈေးနှုန်းနှင့် အချက်အလက်ကို တိကျစွာ ဖြေပါ။ ဒေတာထဲမှာ မပါတာကို ကိုယ်တိုင် အထင်နဲ့ မဖြေပါနဲ့။
+            - ရှာမတွေ့ပါက 'တောင်းပန်ပါတယ်ခင်ဗျာ၊ ဒေတာထဲမှာ ရှာမတွေ့ပါဘူး' ဟု ယဉ်ကျေးစွာ ပြောပါ။
             """
             
-            # OpenRouter (GPT-4o-mini) ထံမှ အဖြေတောင်းခံခြင်း
             with st.chat_message("assistant"):
-                with st.spinner("ခေတ္တစောင့်ဆိုင်းပေးပါ..."):
-                    try:
-                        response = client.chat.completions.create(
-                            model="openai/gpt-4o-mini",
-                            messages=[
-                                {"role": "system", "content": system_prompt},
-                                {"role": "user", "content": user_query}
-                            ]
-                        )
-                        ai_reply = response.choices[0].message.content
-                        st.markdown(ai_reply)
-                        st.session_state.messages.append({"role": "assistant", "content": ai_reply})
-                    except Exception as e:
-                        st.error(f"AI Error: {e}")
+                try:
+                    response = client.chat.completions.create(
+                        model="openai/gpt-4o-mini",
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_query}
+                        ]
+                    )
+                    ai_reply = response.choices[0].message.content
+                    st.markdown(ai_reply)
+                    st.session_state.messages.append({"role": "assistant", "content": ai_reply})
+                except Exception as e:
+                    st.error(f"AI Error: {e}")
 
 
 
