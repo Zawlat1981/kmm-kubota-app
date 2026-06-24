@@ -297,7 +297,7 @@ elif menu_choice == "Competitor News Updates":
         st.error(f"Error loading data: {e}")
 
 # ==========================================
-# ၃။ KMM TRACTOR AI AGENT MENU (ဘရန်းအားလုံးနှင့် သတင်းဖတ်ရန် အဆင့်မြှင့်တင်ထားမှု)
+# ၃။ KMM TRACTOR AI AGENT MENU (သတင်း Report ဒီဇိုင်း အဆင့်မြှင့်တင်ထားမှု)
 # ==========================================
 elif menu_choice == "KMM Tractor AI Agent":
     st.markdown("<h1 style='text-align: center; color: #ff6600;'>🤖 KMM Tractor AI Agent</h1>", unsafe_allow_html=True)
@@ -321,22 +321,25 @@ elif menu_choice == "KMM Tractor AI Agent":
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
                 
-        if user_query := st.chat_input("ဥပမာ - 'Yanmar EF725 ဈေးဘယ်လောက်လဲ' သို့မဟုတ် 'ယနေ့သတင်း အကျဉ်းချုပ်ပြပါ'"):
+        if user_query := st.chat_input("ဥပမာ - 'ယနေ့သတင်းအကျဉ်းချုပ်ပြပါ' သို့မဟုတ် 'ပြီးခဲ့တဲ့တစ်ပတ်စာ သတင်း Report ထုတ်ပေးပါ'"):
             with st.chat_message("user"):
                 st.markdown(user_query)
             st.session_state.messages.append({"role": "user", "content": user_query})
             
-            # --- [အဆင့်မြှင့်တင်မှု] စာသားပါဝင်မှုအလိုက် သက်ဆိုင်ရာ Brand Sheet ကို ရှာဖွေခြင်း ---
+            # --- [ပြင်ဆင်ချက်] 'ယနေ့' သို့မဟုတ် 'ဒီနေ့' ပါက ရက်စွဲပြောင်းလဲရန် ---
+            today_date = datetime.date.today().strftime("%Y-%m-%d")
+            search_keyword = user_query
+            if "ယနေ့" in user_query or "ဒီနေ့" in user_query:
+                search_keyword = today_date
+            
             context_tractor = ""
             matched_brand_name = ""
             
-            # ခေတ္တ Spinner ပြထားစဉ် စာသားနဲ့ကိုက်ညီမယ့် Brand Tab ထဲမှာ ပတ်ရှာမယ်
             with st.spinner("အချက်အလက်များကို ရှာဖွေနေပါသည်..."):
                 for brand in ALL_BRANDS:
                     df_brand = load_all_sheet_data(brand)
                     if df_brand is not None and not df_brand.empty:
-                        # User query ပါဝင်တဲ့ row ရှိ၊ မရှိ စစ်ထုတ်ခြင်း
-                        matched_rows = df_brand[df_brand.astype(str).apply(lambda x: x.str.contains(user_query, case=False)).any(axis=1)]
+                        matched_rows = df_brand[df_brand.astype(str).apply(lambda x: x.str.contains(search_keyword, case=False)).any(axis=1)]
                         if not matched_rows.empty:
                             context_tractor += f"\n--- Brand: {brand} ---\n" + matched_rows.to_string(index=False)
                             matched_brand_name = brand
@@ -345,30 +348,50 @@ elif menu_choice == "KMM Tractor AI Agent":
             df_news = load_all_sheet_data("Competitor News Updates")
             context_news = ""
             if df_news is not None and not df_news.empty:
-                context_news = df_news.tail(35).to_string(index=False) # နောက်ဆုံးသတင်း ၃၅ ကြောင်းခန့် ထည့်ပေးထားသည်
+                # 'ယနေ့' လို့ မေးထားရင် အဲဒီနေ့ဒေတာကိုပဲ ဦးစားပေး စစ်ထုတ်မယ်
+                if search_keyword == today_date:
+                    matched_news_rows = df_news[df_news.astype(str).apply(lambda x: x.str.contains(search_keyword, case=False)).any(axis=1)]
+                    if not matched_news_rows.empty:
+                        context_news = matched_news_rows.to_string(index=False)
+                    else:
+                        context_news = df_news.tail(35).to_string(index=False)
+                else:
+                    # တစ်ပတ်စာ၊ တစ်လစာ သို့မဟုတ် အထွေထွေတောင်းဆိုမှုအတွက် နောက်ဆုံးသတင်း ၃၅ ကြောင်းလုံး ပေးလိုက်မည်
+                    context_news = df_news.tail(35).to_string(index=False)
             
-            # ယနေ့ရက်စွဲ
-            today_date = datetime.date.today().strftime("%Y-%m-%d")
-            
-            # System Prompt အား တိကျစွာ လမ်းညွှန်ခြင်း
+            # System Prompt အား လှပသော Report ထုတ်ပေးရန် လမ်းညွှန်ခြင်း
             system_prompt = f"""
             မင်းက KMM (Kubota Maesot Myanmar) ရဲ့ သတင်းနဲ့ စျေးနှုန်းကျွမ်းကျင်တဲ့ အရောင်းဆိုင် AI Agent ဖြစ်တယ်။
             ယနေ့ရက်စွဲသည် {today_date} ဖြစ်သည်။
 
-            မင်းမှာ Google Sheet ထဲက Tractor အမှတ်တံဆိပ်အားလုံး (Kubota, Yanmar, John-Deere, New-Holland, YTO, Dongfeng, Mahindra, Yamabisi, Sonalika) ရဲ့ စျေးနှုန်းဒေတာတွေနဲ့ ပြိုင်ဘက်သတင်းဒေတာတွေ ရှိပါတယ်။
-
-            အသုံးပြုသူရဲ့ မေးခွန်းနဲ့ အကိုက်ညီဆုံး ရှာဖွေတွေ့ရှိထားတဲ့ ဒေတာတွေကတော့ အောက်ပါအတိုင်းဖြစ်ပါတယ် -
-
-            [၁။ ရှာဖွေတွေ့ရှိသည့် Tractor စျေးနှုန်းနှင့် မော်ဒယ်ဒေတာ]
-            {context_tractor if context_tractor else "အသုံးပြုသူ မေးမြန်းထားသော မော်ဒယ်အမည်ကို မည်သည့် Brand Tab တွင်မှ တိုက်ရိုက်ရှာမတွေ့ပါ။"}
-
-            [၂။ ပြိုင်ဘက်နှင့် သတင်းဒေတာများ (Competitor News Updates)]
-            {context_news if context_news else "သတင်းဒေတာ မရှိပါ။"}
+            မင်းဆီမှာ Google Sheet ကနေ ရယူထားတဲ့ ဒေတာတွေ ရှိပါတယ်။
+            [၁။ Tractor စျေးနှုန်းဒေတာ]: {context_tractor if context_tractor else "တိုက်ရိုက်ရှာမတွေ့ပါ။"}
+            [၂။ သတင်းဒေတာ (Competitor News Updates)]: {context_news if context_news else "သတင်းဒေတာ မရှိပါ။"}
 
             အမေးအဖြေ စည်းကမ်းချက်များ -
-            - အသုံးပြုသူက 'သတင်း', 'report', 'update' စသဖြင့် တစ်ရက်စာ၊ တစ်ပတ်စာ၊ တစ်လစာ တောင်းဆိုလာလျှင် သတင်းဒေတာထဲက ရက်စွဲ (Date)၊ ကုမ္ပဏီ (Company)၊ အကြောင်းအရာ (Content) များကို စနစ်တကျ နေ့ရက်အလိုက် စာရင်းပြုစုပြီး Report အကျဉ်းချုပ် ပုံစံမျိုး မြန်မာလို ယဉ်ကျေးပျူငှာစွာ ရှင်းပြပေးပါ။
-            - Tractor မော်ဒယ် သို့မဟုတ် စျေးနှုန်းမေးလျှင် အထက်ပါ ရှာဖွေတွေ့ရှိသည့် ဒေတာကို ကြည့်ပြီး ဈေးနှုန်းနှင့် အချက်အလက်ကို တိကျစွာ ဖြေပါ။ ဒေတာထဲမှာ မပါတာကို ကိုယ်တိုင် အထင်နဲ့ မဖြေပါနဲ့။
-            - ရှာမတွေ့ပါက 'တောင်းပန်ပါတယ်ခင်ဗျာ၊ ဒေတာထဲမှာ ရှာမတွေ့ပါဘူး' ဟု ယဉ်ကျေးစွာ ပြောပါ။
+            ၁။ အသုံးပြုသူက 'ယနေ့သတင်း'၊ 'တစ်ပတ်စာသတင်း'၊ 'တစ်လစာသတင်း' သို့မဟုတ် 'Summary Report' တောင်းဆိုလာလျှင် အောက်ပါ **လှပသပ်ရပ်သော ဒီဇိုင်းပုံစံ** အတိုင်း မဖြစ်မနေ ထုတ်ပေးရမည်။
+            
+            ---
+            ### 📊 **KMM COMPETITOR NEWS SUMMARY REPORT**
+            **ထုတ်ပေးသည့်ရက်စွဲ:** {today_date} | **သတင်းကာလ:** [ယနေ့ / ပြီးခဲ့သည့် ၁ ပတ် / ၁ လ - သင့်တော်သလို ရေးရန်]
+
+            ---
+
+            #### 📈 ၁။ သတင်းအကျဉ်းချုပ် ဇယား (Quick Summary Table)
+            Markdown Table သုံးပြီး ရက်စွဲ၊ ကုမ္ပဏီ နှင့် အဓိကသတင်းခေါင်းစဉ်ကို ဇယားဖြင့် အရင်ပြပါ။
+            | ရက်စွဲ (Date) | ကုမ္ပဏီ / အဖွဲ့အစည်း | သတင်းအနှစ်ချုပ် (Brief) |
+            | :--- | :--- | :--- |
+            | YYYY-MM-DD | Kubota | ပရိုမိုးရှင်း အသစ်မိတ်ဆက်ခြင်း... |
+
+            #### 📝 ၂။ အသေးစိတ် အချက်အလက်များ (Detailed Updates)
+            ရက်စွဲအလိုက်/ကုမ္ပဏီအလိုက် သတင်းအချက်အလက်ကို Bullet points များဖြင့် ဖတ်ရလွယ်ကူအောင် ခွဲခြားရေးပါ။ 
+            - 🏢 **[ကုမ္ပဏီအမည်]** ([ရက်စွဲ])
+              - **အကြောင်းအရာ:** [မြန်မာလို ရှင်းလင်းစွာ ဘာသာပြန်ပေးရန်]
+              - 💡 **ပရိုမိုးရှင်း/ထူးခြားချက်:** [Promo ဒေတာရှိရင် ထည့်ရန်၊ မရှိရင် မထည့်ပါနဲ့]
+
+            ---
+            ၂။ Tractor မော်ဒယ် သို့မဟုတ် စျေးနှုန်းမေးလျှင် အထက်ပါ ဒေတာကို ကြည့်ပြီး ဈေးနှုန်းနှင့် အချက်အလက်ကို တိကျစွာ ဖြေပါ။ ဒေတာထဲမှာ မပါတာကို ကိုယ်တိုင် အထင်နဲ့ မဖြေပါနဲ့။
+            ၃။ ဒေတာထဲတွင် သတင်း သို့မဟုတ် စျေးနှုန်း လုံးဝရှာမတွေ့ပါက 'တောင်းပန်ပါတယ်ခင်ဗျာ၊ ဒေတာထဲမှာ ရှာမတွေ့ပါဘူး' ဟု ယဉ်ကျေးစွာ ပြောပါ။
             """
             
             with st.chat_message("assistant"):
@@ -384,33 +407,4 @@ elif menu_choice == "KMM Tractor AI Agent":
                     st.markdown(ai_reply)
                     st.session_state.messages.append({"role": "assistant", "content": ai_reply})
                 except Exception as e:
-                    st.error(f"AI Error: {e}")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                    st.error(f"Error generating AI response: {e}")
