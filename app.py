@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import time
 import datetime
+from openai import OpenAI  # AI Agent အတွက် OpenAI Library ထည့်သွင်းခြင်း
 
 # ၁။ Page Config
 st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout="centered")
@@ -27,10 +28,23 @@ def load_data(tab_name):
             pass
     return df_tractor, df_attach
 
+# --- ဒေတာ Load လုပ်သည့် Function (AI Agent အတွက် သီးသန့် Sheet ဖတ်ရန်) ---
+@st.cache_data(ttl=60)
+def load_all_sheet_data(tab_name):
+    csv_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={tab_name}"
+    try:
+        return pd.read_csv(csv_url)
+    except:
+        return None
+
 # --- Sidebar Menu ---
 with st.sidebar:
     st.markdown("## 🚜 KMM Service")
-    menu_choice = st.radio("သွားလိုရာကို ရွေးချယ်ပါ (กรุณาเลือกเมนู) -", ["Brand Selection", "Competitor News Updates"])
+    # Menu အသစ်အဖြစ် "KMM Tractor AI Agent" ကို ထည့်သွင်းထားပါတယ်
+    menu_choice = st.radio(
+        "သွားလိုရာကို ရွေးချယ်ပါ (กรุณาเลือกเมนู) -", 
+        ["Brand Selection", "Competitor News Updates", "KMM Tractor AI Agent"]
+    )
     st.write("---")
     
     if menu_choice == "Brand Selection":
@@ -113,7 +127,7 @@ if menu_choice == "Brand Selection":
         st.warning("Sheet Not Found")
 
 # ==========================================
-# ၂။ COMPETITOR NEWS UPDATES MENU (ရှာဖွေရေးနှင့် ပုံချဲ့စနစ် ပေါင်းစပ်ထားသောအပိုင်း)
+# ၂။ COMPETITOR NEWS UPDATES MENU
 # ==========================================
 elif menu_choice == "Competitor News Updates":
     st.markdown("<h1 style='text-align: center; color: #0066cc;'>📊 Competitor News Updates & News Myanmar</h1>", unsafe_allow_html=True)
@@ -215,12 +229,10 @@ elif menu_choice == "Competitor News Updates":
                 # ရက်စွဲ Filter စစ်ဆေးခြင်း
                 if search_date is not None:
                     try:
-                        # ရှာဖွေတဲ့ ရက်စွဲနဲ့ Data ထဲက ရက်စွဲ တူမတူ နှိုင်းယှဉ်ရန် Format ညှိခြင်း
                         sheet_date_obj = pd.to_datetime(d_key).date()
                         if sheet_date_obj != search_date:
                             continue
                     except:
-                        # အကယ်၍ ရက်စွဲပြောင်းလဲရခက်ခဲသော စာသားဖြစ်နေလျှင် စာသားချင်း တိုက်စစ်ပါမည်
                         if str(search_date) not in d_key:
                             continue
                 
@@ -234,7 +246,7 @@ elif menu_choice == "Competitor News Updates":
                         match_mm = q in news['content_mm'].lower()
                         
                         if not (match_company or match_th or match_mm):
-                            continue # မကိုက်ညီရင် ကျော်သွားမယ်
+                            continue 
                     
                     news_list_under_date.append(news)
                 
@@ -269,9 +281,7 @@ elif menu_choice == "Competitor News Updates":
                                 st.write("---")
                                 for img in img_list:
                                     if img.startswith("http"):
-                                        # ကွန်ပျူတာအတွက် မူရင်းအတိုင်း ပုံပြခြင်း
                                         st.image(img, use_container_width=True) 
-                                        # --- [သစ်] ဖုန်းသမားများ ချဲ့ကြည့်ရန် ဒေါင်းလုဒ်ဆွဲရန် လင့်ခ်အပို ထည့်သွင်းခြင်း ---
                                         st.markdown(f"[🔍 ပုံကို အကြီးချဲ့ကြည့်ရန် (သို့မဟုတ်) ဒေါင်းလုဒ်ဆွဲရန် နှိပ်ပါ/คลิกเพื่อดูรูปภาพขนาดใหญ่ หรือ ดาวน์โหลด]({img})")
                             
                             promo = news.get('promo', '')
@@ -297,10 +307,88 @@ elif menu_choice == "Competitor News Updates":
                             st.write("<br>", unsafe_allow_html=True)
                             global_idx += 1 
             else:
-                st.info("❌ ရှာဖွေမှုရလด်မရှိပါ။ စာသား သို့မဟုတ် ရက်စွဲကို ပြန်စစ်ပေးပါ။")
+                st.info("❌ ရှာဖွေမှုရလဒ်မရှိပါ။ စာသား သို့မဟုတ် ရက်စွဲကို ပြန်စစ်ပေးပါ။")
                 
     except Exception as e:
         st.error(f"Error loading data: {e}")
+
+# ==========================================
+# ၃။ KMM TRACTOR AI AGENT MENU (အသစ်ထည့်သွင်းသည့် အပိုင်း)
+# ==========================================
+elif menu_choice == "KMM Tractor AI Agent":
+    st.markdown("<h1 style='text-align: center; color: #ff6600;'>🤖 KMM Tractor AI Agent</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #555;'>Kubota Maesot Myanmar ရဲ့ စျေးနှုန်းနှင့် အချက်အလက်များကို မေးမြန်းနိုင်ပါသည်</p>", unsafe_allow_html=True)
+    st.write("---")
+    
+    # Streamlit Secrets သို့မဟုတ် ကုဒ်ထဲတွင် တိုက်ရိုက် API Key စစ်ဆေးခြင်း
+    if "OPENROUTER_API_KEY" in st.secrets:
+        api_key = st.secrets["OPENROUTER_API_KEY"]
+    else:
+        api_key = "YOUR_OPENROUTER_API_KEY"  # လိုအပ်ပါက မိမိ API Key ကို ဤနေရာတွင် ထည့်ပါ
+        
+    if api_key == "YOUR_OPENROUTER_API_KEY":
+        st.warning("⚠️ OpenRouter API Key ထည့်သွင်းရန် လိုအပ်နေပါသည်။ Streamlit Secrets သို့မဟုတ် ကုဒ်ထဲတွင် ဖြည့်စွက်ပေးပါ။")
+    else:
+        # OpenAI Client တည်ဆောက်ခြင်း
+        client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=api_key)
+        
+        # Chat History သိမ်းဆည်းရန် Initialize လုပ်ခြင်း
+        if "messages" not in st.session_state:
+            st.session_state.messages = []
+            
+        # Chat History များကို အရင်ထုတ်ပြခြင်း
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+                
+        # User ဆီက မေးခွန်းလက်ခံခြင်း
+        if user_query := st.chat_input("Tractor မော်ဒယ် သို့မဟုတ် စျေးနှုန်းများကို မြန်မာလို မေးမြန်းပါ..."):
+            with st.chat_message("user"):
+                st.markdown(user_query)
+            st.session_state.messages.append({"role": "user", "content": user_query})
+            
+            # Google Sheet ရဲ့ "Kubota" Tab ထဲက ဒေတာကို AI အမှီပြုရန် ဆွဲယူခြင်း
+            df_kubota = load_all_sheet_data("Kubota")
+            context_data = ""
+            
+            if df_kubota is not None:
+                # User မေးခွန်းပါတဲ့ row များကို Sheet ထဲတွင် ရှာဖွေခြင်း
+                matched_rows = df_kubota[df_kubota.astype(str).apply(lambda x: x.str.contains(user_query, case=False)).any(axis=1)]
+                if not matched_rows.empty:
+                    context_data = matched_rows.to_string(index=False)
+                else:
+                    context_data = "ဒေတာထဲတွင် ဤမော်ဒယ် သို့မဟုတ် အချက်အလက်ကို တိုက်ရိုက်ရှာမတွေ့ပါ။"
+                    
+            # System Prompt တည်ဆောက်ခြင်း
+            system_prompt = f"""
+            မင်းက KMM (Kubota Maesot Myanmar) ကုမ္ပဏီရဲ့ Tractor အရောင်းဆိုင်က AI Agent ဖြစ်တယ်။
+            အောက်ပါ Google Sheet က ရလာတဲ့ သက်ဆိုင်ရာ Tractor ဒေတာတွေကို အခြေခံပြီး ဝယ်သူရဲ့ မေးခွန်းကို မြန်မာလို ယဉ်ကျေးပျူငှာစွာ ဖြေကြားပေးပါ။
+
+            [Tractor Data]
+            {context_data}
+
+            စည်းကမ်းချက်များ -
+            - ဒေတာထဲမှာ မပါတဲ့အချက်အလက်ကို ကိုယ်တိုင် အထင်နဲ့ မဖြေပါနဲ့။
+            - သေချာတိကျတဲ့ စျေးနှုန်းနှင့် မော်ဒယ်နံပါတ်များကိုသာ ပြောပြပါ။
+            - ဒေတာရှာမတွေ့ပါက 'တောင်းပန်ပါတယ်ခင်ဗျာ၊ ရှာမတွေ့ပါ' ဟု ယဉ်ကျေးစွာ ပြောပါ။
+            """
+            
+            # OpenRouter (GPT-4o-mini) ထံမှ အဖြေတောင်းခံခြင်း
+            with st.chat_message("assistant"):
+                with st.spinner("ခေတ္တစောင့်ဆိုင်းပေးပါ..."):
+                    try:
+                        response = client.chat.completions.create(
+                            model="openai/gpt-4o-mini",
+                            messages=[
+                                {"role": "system", "content": system_prompt},
+                                {"role": "user", "content": user_query}
+                            ]
+                        )
+                        ai_reply = response.choices[0].message.content
+                        st.markdown(ai_reply)
+                        st.session_state.messages.append({"role": "assistant", "content": ai_reply})
+                    except Exception as e:
+                        st.error(f"AI Error: {e}")
 
 
 
