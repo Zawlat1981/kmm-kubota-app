@@ -486,32 +486,65 @@ elif menu_choice == "KMM Tractor AI Agent":
                         except: pass
 
             # ==========================================================
-            # 模式 (B) - သတင်း သီးသန့်မေးမြန်းခြင်း (Data Type လုံးဝမမှားစေရန် ပြင်ဆင်ပြီး)
+            # 模式 (B) - သတင်း သီးသန့်မေးမြန်းခြင်း (Sheet Tabs အားလုံးကို လိုက်ရှာပေးရန်)
             # ==========================================================
             else:
-                df_news = load_all_sheet_data("Competitor News Updates")
                 matched_news_list = []
+                target_sheet = "Competitor News Updates"  # Default သတင်းစာမျက်နှာ
+                
+                # --- Filter ခလုတ်နှိပ်ထားပြီး ကုမ္ပဏီအမည် ရိုက်ထည့်ထားလျှင် ---
+                if "စစ်ထုတ်မှု" in user_query and filter_company != "":
+                    f_co_clean = filter_company.strip().lower()
+                    
+                    # ပုံ ၁၇၈၂၃၆၇၃၂၁၆၄၇ အရ ရှိနေသော Sheet Tabs နာမည်များနှင့် တိုက်စစ်ခြင်း
+                    if "kubota" in f_co_clean:
+                        target_sheet = "Kubota"
+                    elif "yanmar" in f_co_clean:
+                        target_sheet = "Yanmar"
+                    elif "win shwe wah" in f_co_clean or "win-shwe-wah" in f_co_clean:
+                        target_sheet = "Win-Shwe-Wah(2nd)"
+                    elif "john deere" in f_co_clean or "john-deere" in f_co_clean:
+                        target_sheet = "John-Deere"
+                    elif "new holland" in f_co_clean or "new-holland" in f_co_clean:
+                        target_sheet = "New-Holland"
+                    elif "yto" in f_co_clean:
+                        target_sheet = "YTO"
+                    elif "dongfeng" in f_co_clean:
+                        target_sheet = "Dongfeng"
+                    elif "mahindra" in f_co_clean:
+                        target_sheet = "Mahindra"
+                    elif "yamabisi" in f_co_clean:
+                        target_sheet = "Yamabisi"
+                    elif "sonalika" in f_co_clean:
+                        target_sheet = "Sonalika"
+
+                # သတ်မှတ်လိုက်သည့် သီးသန့် Sheet (သို့မဟုတ်) News Sheet ထဲက ဒေတာကို ဖတ်မည်
+                df_news = load_all_sheet_data(target_sheet)
                 
                 if df_news is not None and not df_news.empty:
                     df_news.columns = [str(c).strip().lower() for c in df_news.columns]
                     all_structured_news = []
                     
-                    # 1. ရိုးရှင်းစွာ Row တစ်လိုင်းချင်းစီကို Direct ဖတ်ပြီး စာသားပြောင်းသိမ်းခြင်း
+                    # 1. ရိုးရှင်းစွာ Row တစ်လိုင်းချင်းစီကို direct ဖတ်ပြီး စာသားပြောင်းသိမ်းခြင်း
                     for _, row in df_news.iterrows():
-                        # Pandas က Date ကို Object အဖြစ် ဖတ်ခဲ့ရင် စာသားအဖြစ် မဖြစ်မနေ ပြောင်းပစ်မယ်
                         raw_date = row.get('date', '')
                         if pd.notna(raw_date) and hasattr(raw_date, 'strftime'):
                             r_date = raw_date.strftime("%Y-%m-%d")
                         else:
                             r_date = str(raw_date).split(" ")[0].strip() if pd.notna(raw_date) else ""
                             
+                        # ကော်လံအမည်များ သန့်စင်ဖတ်ရှုခြင်း
                         r_company = str(row.get('company', '')).strip() if pd.notna(row.get('company')) else ""
                         r_content_th = str(row.get('content_th', '')).strip() if pd.notna(row.get('content_th')) else ""
                         r_content_mm = str(row.get('content_mm', '')).strip() if pd.notna(row.get('content_mm')) else ""
                         r_promo = str(row.get('promo', '')).strip() if pd.notna(row.get('promo')) else ""
                         r_image = str(row.get('image_url', '')).strip() if pd.notna(row.get('image_url')) else ""
                         
-                        if r_date or r_company or r_content_th or r_content_mm:
+                        # အကယ်၍ သီးသန့် Brand Sheet ထဲရောက်နေလို့ Company ကော်လံ လွတ်နေရင် Sheet နာမည်ကို ထည့်ပေးမယ်
+                        if r_company == "" or r_company == "nan":
+                            r_company = target_sheet
+                        
+                        if r_date or r_content_th or r_content_mm:
                             all_structured_news.append({
                                 'date': r_date if r_date and r_date != 'nan' else "No Date",
                                 'company': r_company if r_company and r_company != 'nan' else "Unknown",
@@ -521,9 +554,8 @@ elif menu_choice == "KMM Tractor AI Agent":
                                 'image_url': r_image if r_image != 'nan' else ""
                             })
                     
-                    # 2. စုစည်းထားတဲ့ သတင်းတွေထဲကမှ User Query နဲ့ ကိုက်ညီတာကို ရှာဖွေမယ်
+                    # 2. ဒေတာ တိုက်စစ် ရှာဖွေခြင်း
                     for news in all_structured_news:
-                        # ရက်စွဲကို 2026-06-24 ပုံစံ သန့်စင်ခြင်း
                         news_date_clean = news['date'].replace('/', '-').strip()
                         news_company_lower = news['company'].lower()
                         news_content_lower = (news['content_mm'] + news['content_th']).lower()
@@ -541,7 +573,11 @@ elif menu_choice == "KMM Tractor AI Agent":
                                                  filter_date.strftime("%d-%m-%Y") in news_date_clean)
                                                  
                             if filter_company != "":
-                                match_company_ok = filter_company.lower() in news_company_lower
+                                f_co_lower = filter_company.lower()
+                                # သီးသန့် Brand Tab ထဲ ရောက်နေလျှင် သို့မဟုတ် စာသားကိုက်ညီလျှင် မှန်ကန်ကြောင်း ယူဆမည်
+                                match_company_ok = (target_sheet.lower() != "competitor news updates" or
+                                                     f_co_lower in news_company_lower or 
+                                                     f_co_lower in news_content_lower)
                                 
                             if match_date_ok and match_company_ok:
                                 match_found = True
@@ -559,7 +595,7 @@ elif menu_choice == "KMM Tractor AI Agent":
                         # (၄) စာသားရိုက်ထည့်ပြီး ရှာဖွေလျှင်
                         else:
                             q_lower = user_query.lower()
-                            if q_lower in news_company_lower or q_lower in news_content_lower:
+                            if q_lower in news_company_lower or q_lower in news_content_lower or q_lower in target_sheet.lower():
                                 match_found = True
                         
                         if match_found:
@@ -583,7 +619,7 @@ elif menu_choice == "KMM Tractor AI Agent":
                             st.write("")
                             
                         try:
-                            context_str = "\n".join([f"Date: {n['date']}, Co: {n['company']}, Text: {n['content_mm']}" for n in matched_news_list[:3]])
+                            context_str = "\n".join([f"Date: {n['date']}, Co: {n['company']}" for n in matched_news_list[:3]])
                             response = client.chat.completions.create(
                                 model="openai/gpt-4o-mini",
                                 messages=[
@@ -594,4 +630,4 @@ elif menu_choice == "KMM Tractor AI Agent":
                             st.info(response.choices[0].message.content)
                         except: pass
                     else:
-                        st.warning(f"⚠️ တောင်းပန်ပါတယ်ခင်ဗျာ၊ လူကြီးမင်းရှာဖွေထားသော '{user_query}' အတွက် သတင်းဒေတာ ရှာမတွေ့ပါ။ Sheet ထဲရှိ ရက်စွဲ သို့မဟုတ် စာသားများကို ပြန်လည်စစ်ဆေးပေးပါဦးခင်ဗျာ။")
+                        st.warning(f"⚠️ တောင်းပန်ပါတယ်ခင်ဗျာ၊ လူကြီးမင်းရှာဖွေထားသော '{user_query}' အတွက် Sheet Tab: [{target_sheet}] ထဲတွင် သတင်းဒေတာ ရှာမတွေ့ပါ။ ရက်စွဲ သို့မဟုတ် စာသားများကို ပြန်လည်စစ်ဆေးပေးပါဦးခင်ဗျာ။")
