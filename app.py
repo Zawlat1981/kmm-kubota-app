@@ -6,7 +6,14 @@ import urllib.parse  # URL Space Bug ကို ဖြေရှင်းရန်
 from openai import OpenAI
 
 # ၁။ Page Config
-st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout="centered") 
+st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout="centered")
+
+def handle_brand_change():
+    current_selection = st.session_state.main_page_brand_filter
+    if current_selection != "— ရွေးချယ်ပါ —":
+        st.session_state.dropdown_query = current_selection
+        # ဤနေရာတွင် Widget State ကို "— ရွေးချယ်ပါ —" သို့ Error မတက်ဘဲ ပြန်လည် Reset လုပ်ပေးနိုင်သည်
+        st.session_state.main_page_brand_filter = "— ရွေးချယ်ပါ —"
 
 # Google Sheet ID
 SHEET_ID = "1QqQvPKH7G0hqqhd_0V6cP40Htl8qdFEZ6nHBVe_53_g" 
@@ -383,8 +390,9 @@ elif menu_choice == "KMM Tractor AI Agent":
         with col_btn3:
             if st.button("📊 ၁ ပတ်စာ Report", use_container_width=True):
                 suggested_query = "ပြီးခဲ့တဲ့တစ်ပတ်စာ သတင်း Report ထုတ်ပေးပါ"
+                
         with col_btn4:
-            # Dropdown ထဲတွင် ပြသမည့် Brand စာရင်းများ
+            # 🎯 ပြင်ဆင်ပြီး - Dropdown ထဲတွင် ပြသမည့် Brand စာရင်းများ (Indentation ညှိပြီး)
             brand_list = ["— ရွေးချယ်ပါ —", "Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika"]
             
             # label_visibility="collapsed" ဖြင့် စာတန်းကို ဖျောက်ပြီး ခလုတ်များနှင့် အမြင့်ညှိထားသည်
@@ -392,16 +400,9 @@ elif menu_choice == "KMM Tractor AI Agent":
                 "Brand Filter", 
                 options=brand_list,
                 key="main_page_brand_filter",
-                label_visibility="collapsed"
+                label_visibility="collapsed",
+                on_change=handle_brand_change  # 🎯 Callback ကို စနစ်တကျ ချိတ်ဆက်ထားသည်
             )
-            
-            # Brand တစ်ခုခုကို ရွေးလိုက်တာနဲ့ ခလုတ်တစ်ခုလိုမျိုး တန်ဖိုးယူပြီး "— ရွေးချယ်ပါ —" သို့ ချက်ချင်းပြန်ရှင်းမည့်စနစ်
-            if selected_brand != "— ရွေးချယ်ပါ —":
-                st.session_state.dropdown_query = selected_brand
-                st.session_state.main_page_brand_filter = "— ရွေးချယ်ပါ —"
-                st.rerun()
-
-        st.write("")
         
         # --- 🔍 [ရွေးချယ်စရာများ Filters Box] ---
         with st.expander("🔍 ရွေးချယ်စရာများ (သတင်းများကို ရက်စွဲ သို့မဟုတ် ကုမ္ပဏီဖြင့် စစ်ထုတ်ရန်)", expanded=True):
