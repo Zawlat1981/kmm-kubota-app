@@ -505,7 +505,7 @@ elif menu_choice == "KMM Tractor AI Agent":
                         r_content_th = str(row.get('content_th', '')).strip()
                         r_content_mm = str(row.get('content_mm', '')).strip()
                         
-                        if r_date == '' and r_company == '' and r_content_th == '' and r_content_mm == '':
+                        if r_date == '' and r_company == '' and r_content_th == '' and r_content_mm == '': 
                             continue
                         
                         if r_date != '' or r_company != '':
