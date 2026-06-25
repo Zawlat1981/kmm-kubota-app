@@ -533,31 +533,15 @@ elif menu_choice == "KMM Tractor AI Agent":
                     if last_news_item is not None:
                         all_structured_news.append(last_news_item)
                     
-                    # 💡 [ယနေ့နှင့် မနေ့က ရက်စွဲများကို ကွန်ပျူတာ စနစ်ရက်စွဲအတိုင်း တိုက်စစ်ခြင်း]
-                    today_date_obj = datetime.date.today()
-                    yesterday_date_obj = today_date_obj - datetime.timedelta(days=1)
-                    
-                    # ပုံစံမျိုးစုံ (2026-06-24, 24-06-2026, 24/06/2026) အားလုံး မိစေရန် Formats ပြုလုပ်ခြင်း
-                    today_formats = [
-                        today_date_obj.strftime("%Y-%m-%d"), 
-                        today_date_obj.strftime("%d-%m-%Y"), 
-                        today_date_obj.strftime("%d/%m/%Y"),
-                        today_date_obj.strftime("%Y/%m/%d")
-                    ]
-                    yesterday_formats = [
-                        yesterday_date_obj.strftime("%Y-%m-%d"), 
-                        yesterday_date_obj.strftime("%d-%m-%Y"), 
-                        yesterday_date_obj.strftime("%d/%m/%Y"),
-                        yesterday_date_obj.strftime("%Y/%m/%d")
-                    ]
-                    
-                    # 🔍 ဒေတာတစ်ခုစီကို ပတ်ပတ်စက်စက် ရှာဖွေခြင်း (Slice မလုပ်ဘဲ All Structured News ထဲက ရှာပါသည်)
+                    # 🔍 ဒေတာတစ်ခုစီကို ပတ်ပတ်စက်စက် ရှာဖွေခြင်း
                     for news in all_structured_news:
-                        # နှိုင်းယှဉ်ရလွယ်ကူအောင် / ကို - ပြောင်းပြီး clean လုပ်ခြင်း
                         news_date_clean = news['date'].replace('/', '-').strip()
                         news_company_lower = news['company'].lower()
-                        news_content_lower = news['content_mm'].lower() + news['content_th'].lower()
+                        news_content_lower = (news['content_mm'] + news['content_th']).lower()
                         
+                        match_found = False
+                        
+                        # (၁) စစ်ထုတ်မှု ခလုတ် နှိပ်ထားလျှင်
                         if "စစ်ထုတ်မှု" in user_query:
                             match_date_ok = True
                             match_company_ok = True
@@ -569,76 +553,58 @@ elif menu_choice == "KMM Tractor AI Agent":
                                                  filter_date.strftime("%d/%m/%Y") in news['date'])
                                                  
                             if filter_company != "":
-                                match_company_ok = (filter_company.lower() in news_company_lower)
+                                match_company_ok = filter_company.lower() in news_company_lower
                                 
-                            if filter_company != "" and filter_date is not None:
-                                if match_company_ok and match_date_ok:
-                                    matched_news_list.append(news)
-                                elif match_company_ok: 
-                                    if news not in matched_news_list: matched_news_list.append(news)
-                            elif match_date_ok and match_company_ok:
-                                matched_news_list.append(news)
+                            if match_date_ok and match_company_ok:
+                                match_found = True
                                 
+                        # (၂) "ယနေ့သတင်း" ခလုတ် နှိပ်လျှင်
+                        elif "ယနေ့" in user_query or "ဒီနေ့" in user_query:
+                            if any(fmt in news_date_clean for fmt in today_formats):
+                                match_found = True
+                                
+                        # (၃) "မနေ့ကသတင်း" ခလုတ် နှိပ်လျှင်
+                        elif "မနေ့က" in user_query:
+                            if any(fmt in news_date_clean for fmt in yesterday_formats):
+                                match_found = True
+                                
+                        # (၄) စာသားရိုက်ထည့်ပြီး ရှာဖွေလျှင် (ဥပမာ - "Win Shwe Wah" သို့မဟုတ် "Report")
                         else:
-                            if "မနေ့က" in user_query:
-                                # ရက်စွဲ format တစ်ခုခုနဲ့ ကိုက်ညီမှုရှိမရှိ အစအဆုံး စစ်ဆေးခြင်း
-                                if any(fmt in news_date_clean for fmt in yesterday_formats) or any(fmt in news['date'] for fmt in yesterday_formats):
-                                    matched_news_list.append(news)
-                            elif "ယနေ့" in user_query or "ဒီနေ့" in user_query:
-                                if any(fmt in news_date_clean for fmt in today_formats) or any(fmt in news['date'] for fmt in today_formats):
-                                    matched_news_list.append(news)
-                            elif "report" in user_query.lower() or "ပတ်စာ" in user_query:
-                                # Report ဆိုလျှင် အောက်ဆုံးက နောက်ဆုံးရသမျှ သတင်းအပုဒ် ၅၀ အထိ ပြသရန်
-                                matched_news_list = all_structured_news[-50:]
-                                break
-                            else:
-                                clean_query = user_query.replace("သတင်း", "").replace("ပြပါ", "").strip().lower()
-                                if (clean_query in news_company_lower or 
-                                    clean_query in news_content_lower or 
-                                    news_company_lower in clean_query):
-                                    matched_news_list.append(news)
-
-                # --- ပြသခြင်းအပိုင်း ---
+                            q_lower = user_query.lower()
+                            if q_lower in news_company_lower or q_lower in news_content_lower:
+                                match_found = True
+                        
+                        if match_found:
+                            matched_news_list.append(news)
+                
+                # --- ရှာဖွေတွေ့ရှိသည့် သတင်းများကို ပြသခြင်း ---
                 with st.chat_message("assistant"):
                     if matched_news_list:
-                        title_text = f"📊 KMM COMPETITOR NEWS REPORT ({user_query})"
-                        st.markdown(f"### {title_text}")
+                        st.markdown(f"### 📰 '{user_query}' အတွက် ရှာဖွေတွေ့ရှိသော သတင်းများ ({len(matched_news_list)} စောင်)")
                         st.write("---")
                         
-                        unique_news = []
-                        for n in matched_news_list:
-                            if n not in unique_news: unique_news.append(n)
+                        for idx, news in enumerate(matched_news_list):
+                            with st.container(border=True):
+                                st.markdown(f"📅 **ရက်စွဲ:** {news['date']} | 🏢 **ကုမ္ပဏီ:** {news['company']}")
+                                if news['content_mm']:
+                                    st.markdown(f"🇲🇲 {news['content_mm']}")
+                                if news['content_th']:
+                                    st.markdown(f"🇹🇭 {news['content_th']}")
+                                if news['image_url'] and news['image_url'].startswith("http"):
+                                    st.image(news['image_url'], use_container_width=True)
+                            st.write("")
                             
-                        # အသစ်ဆုံးသတင်းကို အပေါ်ဆုံးကပြရန် Reversed လုပ်ထားပါသည်
-                        for idx, news in enumerate(reversed(unique_news)):
-                            brief_text = news['content_mm'][:100] + "..." if len(news['content_mm']) > 100 else news['content_mm']
-                            if not brief_text and news['content_th']:
-                                brief_text = news['content_th'][:100] + "..." if len(news['content_th']) > 100 else news['content_th']
-                                
-                            st.markdown(f"#### {idx+1}။ 🏢 **{news['company']}** ({news['date']})")
-                            st.write(f"📝 {brief_text}")
-                            
-                            img_url = news.get('image_url', '').split(',')[0].strip()
-                            if img_url and img_url.startswith("http"):
-                                st.image(img_url, width=150, caption="သတင်းဓာတ်ပုံအကျဉ်း")
-                            
-                            with st.expander("🔍 သတင်းအပြည့်အစုံနှင့် ပုံကို ထပ်မံအသေးစိတ်ကြည့်ရန်"):
-                                if news['content_mm']: 
-                                    st.markdown("**🇲🇲 မြန်မာဘာသာ**")
-                                    st.write(news['content_mm'])
-                                if news['content_th']: 
-                                    st.markdown("**🇹🇭 ภาษาไทย**")
-                                    st.write(news['content_th'])
-                                if news['promo'] and news['promo'] != '0':
-                                    st.info(f"💡 ပရိုမိုးရှင်း: {news['promo']}")
-                                    
-                                all_imgs = [i.strip() for i in news.get('image_url', '').split(',') if i.strip().startswith("http")]
-                                for img in all_imgs: 
-                                    st.image(img, use_container_width=True)
-                            st.write("---")
-                        
-                        st.session_state.messages.append({"role": "assistant", "content": f"📋 {user_query} အတွက် သတင်းအချက်အလက်များကို ရှာဖွေပြသပေးခဲ့ပြီးပါပြီ။"})
-                        st.rerun()
+                        # LLM ကို Summary သို့မဟုတ် နောက်ဆက်တွဲ စကားပြောရန် ခေါ်ခြင်း
+                        try:
+                            context_str = "\n".join([f"Date: {n['date']}, Co: {n['company']}, Text: {n['content_mm']}" for n in matched_news_list[:3]])
+                            response = client.chat.completions.create(
+                                model="openai/gpt-4o-mini",
+                                messages=[
+                                    {"role": "system", "content": "မင်းက KMM သတင်းလက်ထောက် AI ဖြစ်တယ်။ ပေးထားတဲ့ သတင်းအချက်အလက်ပေါ်မူတည်ပြီး လူကြီးမင်းအတွက် ဘာများထပ်မံကူညီပေးရမလဲလို့ မြန်မာလို ယဉ်ကျေးစွာ မေးပေးပါ။"},
+                                    {"role": "user", "content": f"User Query: {user_query}\nContext:\n{context_str}"}
+                                ]
+                            )
+                            st.info(response.choices[0].message.content)
+                        except: pass
                     else:
-                        st.warning(f"⚠️ တောင်းပန်ပါတယ်ခင်ဗျာ၊ လူကြီးမင်းရှာဖွေထားသော '{user_query}' အတွက် သတင်းဒေတာ ရှာမတွေ့ပါသဖြင့် Sheet ထဲရှိ ရက်စွဲ သို့မဟုတ် စာသားများကို ပြန်လည်စစ်ဆေးပေးပါဦးခင်ဗျာ။")
-                        st.session_state.messages.append({"role": "assistant", "content": f"{user_query} ရှာမတွေ့ပါ။"})
+                        st.warning(f"⚠️ တောင်းပန်ပါတယ်ခင်ဗျာ၊ လူကြီးမင်းရှာဖွေထားသော '{user_query}' အတွက် သတင်းဒေတာ ရှာမတွေ့ပါ။ Sheet ထဲရှိ ရက်စွဲ သို့မဟုတ် စာသားများကို ပြန်လည်စစ်ဆေးပေးပါဦးခင်ဗျာ။")
