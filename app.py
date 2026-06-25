@@ -443,7 +443,7 @@ elif menu_choice == "KMM Tractor AI Agent":
                     response = client.chat.completions.create(
                         model="openai/gpt-4o-mini",
                         messages=[
-                            {"role": "system", "content": system_prompt},
+                            {"role": "system", "content": system_prompt}, 
                             {"role": "user", "content": user_query}
                         ]
                     )
