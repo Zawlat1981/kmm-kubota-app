@@ -129,7 +129,7 @@ if menu_choice == "Brand Selection":
         st.warning("Sheet Not Found")
 
 # ==========================================
-# ၂။ COMPETITOR NEWS UPDATES MENU
+# ၂။ COMPETITOR NEWS UPDATES MENU (ပြင်ဆင်ပြီး)
 # ==========================================
 elif menu_choice == "Competitor News Updates":
     st.markdown("<h1 style='text-align: center; color: #0066cc;'>📊 Competitor News Updates & News Myanmar</h1>", unsafe_allow_html=True)
@@ -219,8 +219,6 @@ elif menu_choice == "Competitor News Updates":
                 grouped_data[last_news_item['date_key']] = []
             grouped_data[last_news_item['date_key']].append(last_news_item)
             
-        global_idx = 0 
-        
         if grouped_data:
             sorted_dates = sorted(grouped_data.keys(), reverse=True)
             filtered_grouped_data = {}
@@ -248,56 +246,102 @@ elif menu_choice == "Competitor News Updates":
                 if news_list_under_date:
                     filtered_grouped_data[d_key] = news_list_under_date
 
+            # 💡 [Conversational Pagination UI Integration]
             if filtered_grouped_data:
-                for date_key in sorted(filtered_grouped_data.keys(), reverse=True):
-                    st.markdown(f"<h2 style='color: #ff6600; background-color: #f0f7ff; padding: 10px; border-radius: 5px;'> Date: {date_key}</h2>", unsafe_allow_html=True)
-                    for news in filtered_grouped_data[date_key]:
-                        with st.container(border=True):
-                            st.subheader(f"🏢 {news['company']}")
-                            c_th = news.get('content_th', '').strip()
-                            if c_th:
-                                st.markdown("**🇹🇭 ภาษาไทย**")
-                                st.markdown(c_th.replace("\n", "  \n"))
-                            if c_th and news.get('content_mm', '').strip():
-                                st.write("---")
-                            c_mm = news.get('content_mm', '').strip()
-                            if c_mm:
-                                st.markdown("**🇲🇲 မြန်မာဘာသာ**")
-                                st.markdown(c_mm.replace("\n", "  \n"))
-                            
-                            img_data = news.get('image_url', '').strip()
-                            if img_data:
-                                img_list = [i.strip() for i in img_data.split(',')]
-                                st.write("---")
-                                for img in img_list:
-                                    if img.startswith("http"):
-                                        st.image(img, use_container_width=True) 
-                                        st.markdown(f"[🔍 ပုံကို အကြီးချဲ့ကြည့်ရန်]({img})")
-                            
-                            promo = news.get('promo', '')
-                            if promo not in ['', '0']: st.info(f"💡 {promo}")
-                            
-                            fb_link = news.get('facebook', '').strip()
-                            tt_link = news.get('tiktok', '').strip()
-                            tg_link = news.get('telegram', '').strip()
-                            if (fb_link and fb_link.startswith("http")) or (tt_link and tt_link.startswith("http")) or (tg_link and tg_link.startswith("http")):
-                                st.write("---")
-                                btn_col1, btn_col2, btn_col3 = st.columns(3)
-                                if fb_link and fb_link.startswith("http"):
-                                    with btn_col1: st.link_button("🔵 Facebook", fb_link, use_container_width=True)
-                                if tt_link and tt_link.startswith("http"):
-                                    with btn_col2: st.link_button("⚫ TikTok", tt_link, use_container_width=True)
-                                if tg_link and tg_link.startswith("http"):
-                                    with btn_col3: st.link_button("✈️ Telegram", tg_link, use_container_width=True)
-                            st.write("<br>", unsafe_allow_html=True)
-                            global_idx += 1 
+                # Query ပြောင်းလဲမှုရှိမရှိ စစ်ဆေးပြီး Session State သတ်မှတ်ခြင်း
+                current_query_state = (search_query, str(search_date))
+                if "news_display_count" not in st.session_state or st.session_state.get("news_last_query") != current_query_state:
+                    st.session_state.news_display_count = 7
+                    st.session_state.news_last_query = current_query_state
+
+                current_limit = st.session_state.news_display_count
+                total_filtered_items = sum(len(items) for items in filtered_grouped_data.values())
+                
+                items_displayed = 0
+                break_all = False
+                
+                with st.chat_message("assistant"):
+                    st.write(f"🔍 ရှာဖွေမှုရလဒ် စုစုပေါင်း ({total_filtered_items}) စောင်အနက်မှ အသစ်ဆုံးသတင်းများကို ဖော်ပြပေးလိုက်ပါတယ် ခင်ဗျာ။")
+                    st.write("---")
+                    
+                    for date_key in sorted(filtered_grouped_data.keys(), reverse=True):
+                        if break_all:
+                            break
+                        
+                        date_items = filtered_grouped_data[date_key]
+                        items_to_show_this_date = []
+                        
+                        for news in date_items:
+                            if items_displayed < current_limit:
+                                items_to_show_this_date.append(news)
+                                items_displayed += 1
+                            else:
+                                break_all = True
+                                break
+                        
+                        if items_to_show_this_date:
+                            st.markdown(f"<h2 style='color: #ff6600; background-color: #f0f7ff; padding: 10px; border-radius: 5px;'> Date: {date_key}</h2>", unsafe_allow_html=True)
+                            for news in items_to_show_this_date:
+                                with st.container(border=True):
+                                    st.subheader(f"🏢 {news['company']}")
+                                    c_th = news.get('content_th', '').strip()
+                                    if c_th:
+                                        st.markdown("**🇹🇭 ภาษาไทย**")
+                                        st.markdown(c_th.replace("\n", "  \n"))
+                                    if c_th and news.get('content_mm', '').strip():
+                                        st.write("---")
+                                    c_mm = news.get('content_mm', '').strip()
+                                    if c_mm:
+                                        st.markdown("**🇲🇲 မြန်မာဘာသာ**")
+                                        st.markdown(c_mm.replace("\n", "  \n"))
+                                        
+                                    img_data = news.get('image_url', '').strip()
+                                    if img_data:
+                                        img_list = [i.strip() for i in img_data.split(',')]
+                                        st.write("---")
+                                        for img in img_list:
+                                            if img.startswith("http"):
+                                                st.image(img, use_container_width=True) 
+                                                st.markdown(f"[🔍 ပုံကို အကြီးချဲ့ကြည့်ရန်]({img})")
+                                                
+                                    promo = news.get('promo', '')
+                                    if promo not in ['', '0']: st.info(f"💡 {promo}")
+                                    
+                                    fb_link = news.get('facebook', '').strip()
+                                    tt_link = news.get('tiktok', '').strip()
+                                    tg_link = news.get('telegram', '').strip()
+                                    if (fb_link and fb_link.startswith("http")) or (tt_link and tt_link.startswith("http")) or (tg_link and tg_link.startswith("http")):
+                                        st.write("---")
+                                        btn_col1, btn_col2, btn_col3 = st.columns(3)
+                                        if fb_link and fb_link.startswith("http"):
+                                            with btn_col1: st.link_button("🔵 Facebook", fb_link, use_container_width=True)
+                                        if tt_link and tt_link.startswith("http"):
+                                            with btn_col2: st.link_button("⚫ TikTok", tt_link, use_container_width=True)
+                                        if tg_link and tg_link.startswith("http"):
+                                            with btn_col3: st.link_button("✈️ Telegram", tg_link, use_container_width=True)
+                                    st.write("<br>", unsafe_allow_html=True)
+
+                    st.write("🤖 **လူကြီးမင်း ရှာဖွေနေတာ / သိလိုတာ မှန်ပါသလား ခင်ဗျာ။**")
+                    
+                    # နောက်ထပ် ပြစရာ သတင်းကျန်သေးရင် ခလုတ်ပြပေးခြင်း
+                    if items_displayed < total_filtered_items:
+                        col1, col2 = st.columns([2, 3])
+                        with col1:
+                            if st.button("👍? မှန်ပါတယ်၊ နောက်ထပ်ပြပါ", key="news_more_pagination_btn"):
+                                st.session_state.news_display_count += 7
+                                st.rerun()
+                        with col2:
+                            if st.button("👎? မဟုတ်ပါဘူး၊ တခြားဟာရှာမယ်", key="news_stop_pagination_btn"):
+                                st.write("🤖 လူကြီးမင်း သိလိုသော အကြောင်းအရာကို ထပ်မံ အသေးစိတ် ရိုက်ထည့်ပေးပါ ခင်ဗျာ။")
+                    else:
+                        st.info("👋 လူကြီးမင်း ရှာဖွေနေတဲ့ အကြောင်းအရာနဲ့ ပတ်သက်တဲ့ သတင်းအားလုံးကို ပြသပေးပြီးပါပြီ ခင်ဗျာ။")
             else:
                 st.info("❌ ရှာဖွေမှုရလဒ်မရှိပါ။")
     except Exception as e:
         st.error(f"Error loading data: {e}")
 
 # ==========================================
-# ၃။ KMM TRACTOR AI AGENT MENU (သတင်း Report ဒီဇိုင်း အဆင့်မြှင့်တင်ထားမှု)
+# ၃။ KMM TRACTOR AI AGENT MENU
 # ==========================================
 elif menu_choice == "KMM Tractor AI Agent":
     st.markdown("<h1 style='text-align: center; color: #ff6600;'>🤖 KMM Tractor AI Agent</h1>", unsafe_allow_html=True)
@@ -326,7 +370,7 @@ elif menu_choice == "KMM Tractor AI Agent":
                 st.markdown(user_query)
             st.session_state.messages.append({"role": "user", "content": user_query})
             
-            # --- [ပြင်ဆင်ချက်] 'ယနေ့' သို့မဟုတ် 'ဒီနေ့' ပါက ရက်စွဲပြောင်းလဲရန် ---
+            # --- 'ယနေ့' သို့မဟုတ် 'ဒီနေ့' ပါက ရက်စွဲပြောင်းလဲရန် ---
             today_date = datetime.date.today().strftime("%Y-%m-%d")
             search_keyword = user_query
             if "ယနေ့" in user_query or "ဒီနေ့" in user_query:
