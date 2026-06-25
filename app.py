@@ -129,7 +129,7 @@ if menu_choice == "Brand Selection":
         st.warning("Sheet Not Found")
 
 # ==========================================
-# ၂။ COMPETITOR NEWS UPDATES MENU (ပြင်ဆင်ပြီး)
+# ၂။ COMPETITOR NEWS UPDATES MENU
 # ==========================================
 elif menu_choice == "Competitor News Updates":
     st.markdown("<h1 style='text-align: center; color: #0066cc;'>📊 Competitor News Updates & News Myanmar</h1>", unsafe_allow_html=True)
@@ -246,9 +246,7 @@ elif menu_choice == "Competitor News Updates":
                 if news_list_under_date:
                     filtered_grouped_data[d_key] = news_list_under_date
 
-            # 💡 [Conversational Pagination UI Integration]
             if filtered_grouped_data:
-                # Query ပြောင်းလဲမှုရှိမရှိ စစ်ဆေးပြီး Session State သတ်မှတ်ခြင်း
                 current_query_state = (search_query, str(search_date))
                 if "news_display_count" not in st.session_state or st.session_state.get("news_last_query") != current_query_state:
                     st.session_state.news_display_count = 7
@@ -323,7 +321,6 @@ elif menu_choice == "Competitor News Updates":
 
                     st.write("🤖 **လူကြီးမင်း ရှာဖွေနေတာ / သိလိုတာ မှန်ပါသလား ခင်ဗျာ။**")
                     
-                    # နောက်ထပ် ပြစရာ သတင်းကျန်သေးရင် ခလုတ်ပြပေးခြင်း
                     if items_displayed < total_filtered_items:
                         col1, col2 = st.columns([2, 3])
                         with col1:
@@ -341,7 +338,7 @@ elif menu_choice == "Competitor News Updates":
         st.error(f"Error loading data: {e}")
 
 # ==========================================
-# ၃။ KMM TRACTOR AI AGENT MENU (Google Sheet Blank Rows အမှားပြင်ဆင်ပြီး)
+# ၃။ KMM TRACTOR AI AGENT MENU
 # ==========================================
 elif menu_choice == "KMM Tractor AI Agent":
     st.markdown("<h1 style='text-align: center; color: #ff6600;'>🤖 KMM Tractor AI Agent</h1>", unsafe_allow_html=True)
@@ -486,15 +483,18 @@ elif menu_choice == "KMM Tractor AI Agent":
                         except: pass
 
             # ==========================================================
-            # 模式 (B) - သတင်းမေးမြန်းမှုများကို Competitor News Updates တွင်သာ ရှာဖွေခြင်း
+            # 模式 (B) - Sheet Tabs အားလုံးကို တစ်ပြိုင်နက် သိမ်းကျုံးရှာဖွေခြင်း (ပြင်ဆင်ဖြည့်စွက်ပြီး)
             # ==========================================================
             else:
                 matched_news_list = []
                 
-                # 💡 ညွှန်ကြားချက်အသစ်အရ သတင်းနှင့်ပတ်သက်လျှင် Competitor News Updates တစ်ခုတည်း၌သာ ရှာဖွေမည်
-                all_sheets_to_search = ["Competitor News Updates"]
+                # ၁။ Google Sheet ထဲမှာ ရှိသမျှ Tabs နာမည်အားလုံး စာရင်း
+                all_sheets_to_search = [
+                    "Competitor News Updates", "Kubota", "Yanmar", 
+                    "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", 
+                    "YTO", "Dongfeng", "Mahindra", "Yamabisi", "Sonalika"
+                ]
                 
-                # ပြသပေးမည့် Status Message
                 status_placeholder = st.empty()
                 status_placeholder.text("⏳ Google Sheets အချက်အလက်အားလုံးကို Agent က ဝင်ရောက်ဖတ်ရှုနေပါသည်...")
                 
@@ -507,7 +507,6 @@ elif menu_choice == "KMM Tractor AI Agent":
                         df_sheet.columns = [str(c).strip().lower() for c in df_sheet.columns]
                         
                         for _, row in df_sheet.iterrows():
-                            # Date ကို စာသားအဖြစ် သန့်စင်ခြင်း
                             raw_date = row.get('date', '')
                             if pd.notna(raw_date) and hasattr(raw_date, 'strftime'):
                                 r_date = raw_date.strftime("%Y-%m-%d")
@@ -520,19 +519,17 @@ elif menu_choice == "KMM Tractor AI Agent":
                             r_promo = str(row.get('promo', '')).strip() if pd.notna(row.get('promo')) else ""
                             r_image = str(row.get('image_url', '')).strip() if pd.notna(row.get('image_url')) else ""
                             
-                            # ဒေတာတစ်ခုခု ပါဝင်နေလျှင် List ထဲထည့်မည်
                             if r_date or r_content_th or r_content_mm or r_company:
                                 all_combined_data.append({
                                     'source_sheet': sheet_name,
                                     'date': r_date if r_date and r_date != 'nan' else "No Date",
-                                    'company': r_company if r_company and r_company != 'nan' else sheet_name, # ကုမ္ပဏီလွတ်နေရင် Sheet နာမည်သုံးမယ်
+                                    'company': r_company if r_company and r_company != 'nan' else sheet_name,
                                     'content_th': r_content_th if r_content_th != 'nan' else "",
                                     'content_mm': r_content_mm if r_content_mm != 'nan' else "",
                                     'promo': r_promo if r_promo != 'nan' else "",
                                     'image_url': r_image if r_image != 'nan' else ""
                                 })
                 
-                # စာရင်းဖတ်ပြီးသွားရင် စာသားကို ဖျောက်လိုက်မယ်
                 status_placeholder.empty()
 
                 # ၃။ စုစည်းရရှိလာသော ဒေတာထုကြီးတစ်ခုလုံးထဲကမှ User ရိုက်သမျှ/နှိပ်သမျှကို စစ်ထုတ်မယ်
@@ -571,45 +568,83 @@ elif menu_choice == "KMM Tractor AI Agent":
                         if any(fmt in news_date_clean for fmt in yesterday_formats):
                             match_found = True
                             
-                    # (၄) စာသားရိုက်ထည့်ပြီး ရှာဖွေလျှင် (ဥပမာ - "dongfeng" ဟု ရိုက်ခြင်း)
+                    # (၄) "၁ ပတ်စာ Report" သို့မဟုတ် ရက်သတ္တပတ် Report
+                    elif "ပတ်စာ" in user_query or "report" in user_query:
+                        try:
+                            item_date_obj = pd.to_datetime(news_date_clean, errors='coerce').date()
+                            if pd.notna(item_date_obj):
+                                seven_days_ago = today_date_obj - datetime.timedelta(days=7)
+                                if seven_days_ago <= item_date_obj <= today_date_obj:
+                                    match_found = True
+                        except: pass
+                        
+                    # (၅) အထွေထွေ စာသားစကားလုံးဖြင့် ရှာဖွေခြင်း
                     else:
-                        q_lower = user_query.lower()
-                        if q_lower in company_lower or q_lower in sheet_lower or q_lower in content_lower:
+                        q_words = user_query.lower().split()
+                        if any(word in company_lower or word in sheet_lower or word in content_lower for word in q_words):
                             match_found = True
-                    
+                            
                     if match_found:
                         matched_news_list.append(item)
-            
-                # --- ၄။ ရှာဖွေတွေ့ရှိသည့် ရလဒ်များကို ပြသခြင်း ---
-                with st.chat_message("assistant"):
+                
+                # ၄။ ရလဒ်များကို AI Agent အား သုံးသပ်ခိုင်းပြီး ဖြေကြားခြင်း
+                with st.spinner("AI Agent မှ သတင်းအချက်အလက်များကို စိစစ်သုံးသပ်နေပါသည်..."):
                     if matched_news_list:
-                        st.markdown(f"### 🔍 '{user_query}' အတွက် ရှာဖွေတွေ့ရှိသော အချက်အလက်များ ({len(matched_news_list)} ခု)")
-                        st.write("---")
-                        
-                        for idx, item in enumerate(matched_news_list):
-                            with st.container(border=True):
-                                st.markdown(f"📅 **ရက်စွဲ:** {item['date']} | 🏢 **ကုမ္ပဏီ/အုပ်စု:** {item['company']} *(Sheet: {item['source_sheet']}* )")
-                                if item['content_mm']:
-                                    st.markdown(f"🇲🇲 {item['content_mm']}")
-                                if item['content_th']:
-                                    st.markdown(f"🇹🇭 {item['content_th']}")
-                                if item['promo'] and item['promo'] != "":
-                                    st.markdown(f"🎁 **Promo:** {item['promo']}")
-                                if item['image_url'] and item['image_url'].startswith("http"):
-                                    st.image(item['image_url'], use_container_width=True)
-                            st.write("")
+                        context_str = ""
+                        for idx, n in enumerate(matched_news_list[:15]): # Token Limit မကျော်စေရန် ထိပ်ဆုံး ၁၅ စောင်သာယူမည်
+                            context_str += f"Sheet: {n['source_sheet']} | Date: {n['date']} | Company: {n['company']}\n"
+                            if n['content_mm']: context_str += f"MM News: {n['content_mm']}\n"
+                            if n['content_th']: context_str += f"TH News: {n['content_th']}\n"
+                            if n['promo']: context_str += f"Promo: {n['promo']}\n"
+                            context_str += "---\n"
                             
-                        # LLM ကို တွေ့ရှိတဲ့ အချက်အလက်ပေါ် အခြေခံပြီး မြန်မာလို စကားပြောခိုင်းမည်
+                        system_prompt = (
+                            "မင်းက KMM Tractor အရောင်းဆိုင်ရဲ့ အကျိုးဆောင် AI Agent ဖြစ်ပါတယ်။ "
+                            "အောက်တွင် ပေးထားသော Google Sheet မှ သတင်းအချက်အလက်များ (Context) ကို အခြေခံပြီး "
+                            "အသုံးပြုသူရဲ့ မေးခွန်းကို မြန်မာဘာသာဖြင့် သေချာစွာ၊ ယဉ်ကျေးစွာနှင့် ပြည့်စုံစွာ ဖြေကြားပေးပါ။ "
+                            "အချက်အလက်ထဲတွင် ပါဝင်သော အဓိက ကုမ္ပဏီများ၊ ဈေးနှုန်း အပြောင်းအလဲများနှင့် ပရိုမိုးရှင်းများကို သုံးသပ်ပေးပါ။\n\n"
+                            f"[သတင်း အချက်အလက်များ]\n{context_str}"
+                        )
+                        
                         try:
-                            context_str = "\n".join([f"Sheet: {n['source_sheet']}, Date: {n['date']}, Text: {n['content_mm'][:100]}" for n in matched_news_list[:3]])
                             response = client.chat.completions.create(
                                 model="openai/gpt-4o-mini",
                                 messages=[
-                                    {"role": "system", "content": "မင်းက KMM Tractor AI Agent ဖြစ်တယ်။ ပေးထားတဲ့ Sheet အချက်အလက်တွေကို သုံးပြီး အစ်ကို့ရဲ့ မေးခွန်းကို မြန်မာလို တိုတိုတုတ်တုတ်နဲ့ ထိရောက်စွာ ဖြေကြားပေးပါ။"},
-                                    {"role": "user", "content": f"User Query: {user_query}\nContext:\n{context_str}"}
+                                    {"role": "system", "content": system_prompt},
+                                    {"role": "user", "content": user_query}
                                 ]
                             )
-                            st.info(response.choices[0].message.content)
-                        except: pass
+                            ai_reply = response.choices[0].message.content
+                            
+                            with st.chat_message("assistant"):
+                                st.markdown(ai_reply)
+                                
+                                # သတင်းထဲတွင် ပါဝင်သော ပုံများကိုပါ တစ်ပါတည်း ထုတ်ပြပေးခြင်း
+                                seen_images = set()
+                                for n in matched_news_list[:5]:
+                                    if n['image_url']:
+                                        imgs = [img.strip() for img in n['image_url'].split(',') if img.strip().startswith('http')]
+                                        for img in imgs:
+                                            if img not in seen_images:
+                                                st.image(img, use_container_width=True)
+                                                seen_images.add(img)
+                                                
+                            st.session_state.messages.append({"role": "assistant", "content": ai_reply})
+                        except Exception as e:
+                            st.error(f"AI တုံ့ပြန်မှုရယူရာတွင် အမှားအယွင်းရှိခဲ့ပါသည်: {e}")
                     else:
-                        st.warning(f"⚠️ တောင်းပန်ပါတယ်ခင်ဗျာ၊ Google Sheets တစ်ခုလုံးရှိ မည်သည့်စာမျက်နှာတွင်မှ '{user_query}' နှင့် ကိုက်ညီသော ဒေတာ ရှာမတွေ့ပါ။ စာလုံးပေါင်း သို့မဟုတ် ရက်စွဲကို ပြန်လည်စစ်ဆေးပေးပါဦးခင်ဗျာ။")
+                        with st.chat_message("assistant"):
+                            st.warning(f"⚠️ တောင်းပန်ပါတယ်ခင်ဗျာ၊ လူကြီးမင်းမေးမြန်းထားသော '{user_query}' နှင့်ပတ်သက်သည့် သတင်းဒေတာကို Sheet ထဲတွင် ရှာမတွေ့ပါသဖြင့် AI ၏ အထွေထွေဗဟုသုတအခြေခံဖြင့် ဖြေကြားပေးပါမည်။")
+                            try:
+                                response = client.chat.completions.create(
+                                    model="openai/gpt-4o-mini",
+                                    messages=[
+                                        {"role": "system", "content": "မင်းက KMM Tractor AI ဖြစ်တယ်။ လူကြီးမင်းမေးတာကို မြန်မာလို ယဉ်ကျေးစွာ ဖြေပေးပါ။"},
+                                        {"role": "user", "content": user_query}
+                                    ]
+                                )
+                                ai_reply = response.choices[0].message.content
+                                st.markdown(ai_reply)
+                                st.session_state.messages.append({"role": "assistant", "content": ai_reply})
+                            except Exception as e:
+                                st.error(f"Error: {e}")
