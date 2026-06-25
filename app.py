@@ -486,17 +486,13 @@ elif menu_choice == "KMM Tractor AI Agent":
                         except: pass
 
             # ==========================================================
-            # 模式 (B) - Sheet Tabs အားလုံးကို တစ်ပြိုင်နက် သိမ်းကျုံးရှာဖွေခြင်း
+            # 模式 (B) - သတင်းမေးမြန်းမှုများကို Competitor News Updates တွင်သာ ရှာဖွေခြင်း
             # ==========================================================
             else:
                 matched_news_list = []
                 
-                # ၁။ Google Sheet ထဲမှာ ရှိသမျှ Tabs နာမည်အားလုံး စာရင်း
-                all_sheets_to_search = [
-                    "Competitor News Updates", "Kubota", "Yanmar", 
-                    "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", 
-                    "YTO", "Dongfeng", "Mahindra", "Yamabisi", "Sonalika"
-                ]
+                # 💡 ညွှန်ကြားချက်အသစ်အရ သတင်းနှင့်ပတ်သက်လျှင် Competitor News Updates တစ်ခုတည်း၌သာ ရှာဖွေမည်
+                all_sheets_to_search = ["Competitor News Updates"]
                 
                 # ပြသပေးမည့် Status Message
                 status_placeholder = st.empty()
