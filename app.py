@@ -369,6 +369,11 @@ elif menu_choice == "KMM Tractor AI Agent":
         col_btn1, col_btn2, col_btn3, col_btn4 = st.columns(4)
         suggested_query = None
         
+        # Dropdown မှ ရွေးချယ်မှုရှိခဲ့ပါက တန်ဖိုးကို တစ်ကြိမ်ယူပြီး ပြန်ဖျက်ရန် စနစ်
+        if "dropdown_query" in st.session_state:
+            suggested_query = st.session_state.dropdown_query
+            del st.session_state.dropdown_query
+        
         with col_btn1:
             if st.button("📰 ယနေ့သတင်း", use_container_width=True):
                 suggested_query = "ယနေ့သတင်း"
@@ -379,8 +384,22 @@ elif menu_choice == "KMM Tractor AI Agent":
             if st.button("📊 ၁ ပတ်စာ Report", use_container_width=True):
                 suggested_query = "ပြီးခဲ့တဲ့တစ်ပတ်စာ သတင်း Report ထုတ်ပေးပါ"
         with col_btn4:
-            if st.button("🚜 M6040 ဈေးနှုန်း", use_container_width=True):
-                suggested_query = "M6040"
+            # Dropdown ထဲတွင် ပြသမည့် Brand စာရင်းများ
+            brand_list = ["— ရွေးချယ်ပါ —", "Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika"]
+            
+            # label_visibility="collapsed" ဖြင့် စာတန်းကို ဖျောက်ပြီး ခလုတ်များနှင့် အမြင့်ညှိထားသည်
+            selected_brand = st.selectbox(
+                "Brand Filter", 
+                options=brand_list,
+                key="main_page_brand_filter",
+                label_visibility="collapsed"
+            )
+            
+            # Brand တစ်ခုခုကို ရွေးလိုက်တာနဲ့ ခလုတ်တစ်ခုလိုမျိုး တန်ဖိုးယူပြီး "— ရွေးချယ်ပါ —" သို့ ချက်ချင်းပြန်ရှင်းမည့်စနစ်
+            if selected_brand != "— ရွေးချယ်ပါ —":
+                st.session_state.dropdown_query = selected_brand
+                st.session_state.main_page_brand_filter = "— ရွေးချယ်ပါ —"
+                st.rerun()
 
         st.write("")
         
