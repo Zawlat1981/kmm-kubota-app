@@ -486,7 +486,7 @@ elif menu_choice == "KMM Tractor AI Agent":
                         except: pass
 
             # ==========================================================
-            # 模式 (B) - သတင်း သီးသန့်မေးမြန်းခြင်း (Row-by-Row ဒေတာအပြည့် ဖတ်ရန်)
+            # 模式 (B) - သတင်း သီးသန့်မေးမြန်းခြင်း (Data Type လုံးဝမမှားစေရန် ပြင်ဆင်ပြီး)
             # ==========================================================
             else:
                 df_news = load_all_sheet_data("Competitor News Updates")
@@ -496,28 +496,34 @@ elif menu_choice == "KMM Tractor AI Agent":
                     df_news.columns = [str(c).strip().lower() for c in df_news.columns]
                     all_structured_news = []
                     
-                    # 1. ရိုးရှင်းသေချာစွာ Row တစ်လိုင်းချင်းစီကို Direct ဖတ်ပြီး List ထဲထည့်ခြင်း
+                    # 1. ရိုးရှင်းစွာ Row တစ်လိုင်းချင်းစီကို Direct ဖတ်ပြီး စာသားပြောင်းသိမ်းခြင်း
                     for _, row in df_news.iterrows():
-                        r_date = str(row.get('date', '')).strip()
-                        r_company = str(row.get('company', '')).strip()
-                        r_content_th = str(row.get('content_th', '')).strip()
-                        r_content_mm = str(row.get('content_mm', '')).strip()
-                        r_promo = str(row.get('promo', '')).strip()
-                        r_image = str(row.get('image_url', '')).strip()
+                        # Pandas က Date ကို Object အဖြစ် ဖတ်ခဲ့ရင် စာသားအဖြစ် မဖြစ်မနေ ပြောင်းပစ်မယ်
+                        raw_date = row.get('date', '')
+                        if pd.notna(raw_date) and hasattr(raw_date, 'strftime'):
+                            r_date = raw_date.strftime("%Y-%m-%d")
+                        else:
+                            r_date = str(raw_date).split(" ")[0].strip() if pd.notna(raw_date) else ""
+                            
+                        r_company = str(row.get('company', '')).strip() if pd.notna(row.get('company')) else ""
+                        r_content_th = str(row.get('content_th', '')).strip() if pd.notna(row.get('content_th')) else ""
+                        r_content_mm = str(row.get('content_mm', '')).strip() if pd.notna(row.get('content_mm')) else ""
+                        r_promo = str(row.get('promo', '')).strip() if pd.notna(row.get('promo')) else ""
+                        r_image = str(row.get('image_url', '')).strip() if pd.notna(row.get('image_url')) else ""
                         
-                        # လုံးဝ ဗလာဖြစ်နေတဲ့ Row မဟုတ်ရင် ဒေတာသိမ်းမယ်
                         if r_date or r_company or r_content_th or r_content_mm:
                             all_structured_news.append({
-                                'date': r_date if r_date else "No Date",
-                                'company': r_company if r_company else "Unknown",
-                                'content_th': r_content_th,
-                                'content_mm': r_content_mm,
-                                'promo': r_promo,
-                                'image_url': r_image
+                                'date': r_date if r_date and r_date != 'nan' else "No Date",
+                                'company': r_company if r_company and r_company != 'nan' else "Unknown",
+                                'content_th': r_content_th if r_content_th != 'nan' else "",
+                                'content_mm': r_content_mm if r_content_mm != 'nan' else "",
+                                'promo': r_promo if r_promo != 'nan' else "",
+                                'image_url': r_image if r_image != 'nan' else ""
                             })
                     
                     # 2. စုစည်းထားတဲ့ သတင်းတွေထဲကမှ User Query နဲ့ ကိုက်ညီတာကို ရှာဖွေမယ်
                     for news in all_structured_news:
+                        # ရက်စွဲကို 2026-06-24 ပုံစံ သန့်စင်ခြင်း
                         news_date_clean = news['date'].replace('/', '-').strip()
                         news_company_lower = news['company'].lower()
                         news_content_lower = (news['content_mm'] + news['content_th']).lower()
@@ -532,8 +538,7 @@ elif menu_choice == "KMM Tractor AI Agent":
                             if filter_date is not None:
                                 sel_date_str = filter_date.strftime("%Y-%m-%d")
                                 match_date_ok = (sel_date_str in news_date_clean or 
-                                                 filter_date.strftime("%d-%m-%Y") in news_date_clean or 
-                                                 filter_date.strftime("%d/%m/%Y") in news['date'])
+                                                 filter_date.strftime("%d-%m-%Y") in news_date_clean)
                                                  
                             if filter_company != "":
                                 match_company_ok = filter_company.lower() in news_company_lower
