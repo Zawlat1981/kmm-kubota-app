@@ -341,11 +341,11 @@ elif menu_choice == "Competitor News Updates":
         st.error(f"Error loading data: {e}")
 
 # ==========================================
-# ၃။ KMM TRACTOR AI AGENT MENU
+# ၃။ KMM TRACTOR AI AGENT MENU (မေးခွန်းခွဲခြားမှုစနစ် အဆင့်မြှင့်တင်ပြီး)
 # ==========================================
 elif menu_choice == "KMM Tractor AI Agent":
     st.markdown("<h1 style='text-align: center; color: #ff6600;'>🤖 KMM Tractor AI Agent</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #555;'>Tractor အမှတ်တံဆိပ်အားလုံး၏ ဈေးနှုန်းများနှင့် သတင်းများကို မေးမြန်းနိုင်ပါသည်</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #555;'>Tractor မော်ဒယ်များ၊ ဈေးနှုန်းများနှင့် ပြိုင်ဘက်သတင်းများကို စမတ်ကျကျ မေးမြန်းနိုင်ပါသည်</p>", unsafe_allow_html=True)
     st.write("---")
     
     if "OPENROUTER_API_KEY" in st.secrets:
@@ -363,92 +363,156 @@ elif menu_choice == "KMM Tractor AI Agent":
             
         for message in st.session_state.messages:
             with st.chat_message(message["role"]):
-                st.markdown(message["content"])
+                if isinstance(message["content"], str):
+                    st.markdown(message["content"])
                 
-        if user_query := st.chat_input("ဥပမာ - 'ယနေ့သတင်းအကျဉ်းချုပ်ပြပါ' သို့မဟုတ် 'ပြီးခဲ့တဲ့တစ်ပတ်စာ သတင်း Report ထုတ်ပေးပါ'"):
+        if user_query := st.chat_input("ဥပမာ - 'M6240 ဈေးဘယ်လောက်လဲ' သို့မဟုတ် 'မနေ့ကသတင်းပြပါ'"):
             with st.chat_message("user"):
                 st.markdown(user_query)
             st.session_state.messages.append({"role": "user", "content": user_query})
             
-            # --- 'ယနေ့' သို့မဟုတ် 'ဒီနေ့' ပါက ရက်စွဲပြောင်းလဲရန် ---
-            today_date = datetime.date.today().strftime("%Y-%m-%d")
-            search_keyword = user_query
-            if "ယနေ့" in user_query or "ဒီနေ့" in user_query:
-                search_keyword = today_date
+            # --- 💡 အဓိကပြင်ဆင်ချက်- User မေးခွန်းကို Intent (ရည်ရွယ်ချက်) ခွဲခြားခြင်း ---
+            # စကားလုံးများကို စစ်ထုတ်ပြီး သတင်းမေးတာလား၊ စက်ဈေးနှုန်းမေးတာလား ခွဲခြားမည်
+            is_news_intent = any(keyword in user_query for keyword in ["သတင်း", "news", "report", "တင်ထားတာ", "ယနေ့", "မနေ့က"])
             
-            context_tractor = ""
-            matched_brand_name = ""
+            today_date_obj = datetime.date.today()
+            today_date = today_date_obj.strftime("%Y-%m-%d")
+            yesterday_date = (today_date_obj - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
             
-            with st.spinner("အချက်အလက်များကို ရှာဖွေနေပါသည်..."):
-                for brand in ALL_BRANDS:
-                    df_brand = load_all_sheet_data(brand)
-                    if df_brand is not None and not df_brand.empty:
-                        matched_rows = df_brand[df_brand.astype(str).apply(lambda x: x.str.contains(search_keyword, case=False)).any(axis=1)]
-                        if not matched_rows.empty:
-                            context_tractor += f"\n--- Brand: {brand} ---\n" + matched_rows.to_string(index=False)
-                            matched_brand_name = brand
-            
-            # ပြိုင်ဘက်သတင်း Tab ကို Load လုပ်ခြင်း
-            df_news = load_all_sheet_data("Competitor News Updates")
-            context_news = ""
-            if df_news is not None and not df_news.empty:
-                # 'ယနေ့' လို့ မေးထားရင် အဲဒီနေ့ဒေတာကိုပဲ ဦးစားပေး စစ်ထုတ်မယ်
-                if search_keyword == today_date:
-                    matched_news_rows = df_news[df_news.astype(str).apply(lambda x: x.str.contains(search_keyword, case=False)).any(axis=1)]
-                    if not matched_news_rows.empty:
-                        context_news = matched_news_rows.to_string(index=False)
+            # ==========================================================
+            # ပုံစံ (က) - စက်မော်ဒယ် သို့မဟုတ် ဈေးနှုန်းမေးမြန်းခြင်း (is_news_intent မဟုတ်လျှင်)
+            # ==========================================================
+            if not is_news_intent:
+                context_tractor = ""
+                found_tractor_data = []
+                
+                with st.spinner("စက်ပစ္စည်းနှင့် ဈေးနှုန်းဒေတာများကို ရှာဖွေနေပါသည်..."):
+                    for brand in ALL_BRANDS:
+                        df_brand = load_all_sheet_data(brand)
+                        if df_brand is not None and not df_brand.empty:
+                            # User ရိုက်လိုက်တဲ့ စာသား (ဥပမာ - M6240) ပါဝင်တဲ့ Row ကို အမှတ်တံဆိပ်အားလုံးထဲ လိုက်ရှာမယ်
+                            matched_rows = df_brand[df_brand.astype(str).apply(lambda x: x.str.contains(user_query, case=False)).any(axis=1)]
+                            if not matched_rows.empty:
+                                for _, row in matched_rows.iterrows():
+                                    found_tractor_data.append({
+                                        "brand": brand,
+                                        "model": str(row.iloc[0]),
+                                        "price": str(row.iloc[1]),
+                                        "image": str(row.iloc[2]) if len(row) > 2 else ""
+                                    })
+                
+                with st.chat_message("assistant"):
+                    if found_tractor_data:
+                        st.markdown(f"### 🚜 {user_query} အတွက် ရှာဖွေတွေ့ရှိရသော မော်ဒယ်များနှင့် ဈေးနှုန်းများ")
+                        st.write("---")
+                        
+                        for idx, item in enumerate(found_tractor_data):
+                            col1, col2 = st.columns([1, 1])
+                            with col1:
+                                st.markdown(f"### {idx+1}။ **{item['model']}**")
+                                st.markdown(f"• **အမှတ်တံဆိပ် (Brand):** {item['brand']}")
+                                try:
+                                    p_val = float(str(item['price']).replace(',', '').strip())
+                                    st.markdown(f"• **အခြေခံဈေးနှုန်း (Base Price):** <span style='color:#ff6600; font-size:20px; font-weight:bold;'>{p_val:,.0f}</span> MMK", unsafe_allow_html=True)
+                                except:
+                                    st.markdown(f"• **ဈေးနှုန်း (Price):** {item['price']} MMK")
+                            
+                            with col2:
+                                if item['image'] and item['image'].startswith("http"):
+                                    st.image(item['image'], use_container_width=True)
+                            st.write("---")
+                        
+                        st.session_state.messages.append({"role": "assistant", "content": f"🚜 {user_query} နှင့် ပတ်သက်သည့် မော်ဒယ်နှင့် ဈေးနှုန်းအချက်အလက်များကို ပြသပေးခဲ့ပြီးပါပြီ။"})
                     else:
-                        context_news = df_news.tail(35).to_string(index=False)
-                else:
-                    # တစ်ပတ်စာ၊ တစ်လစာ သို့မဟုတ် အထွေထွေတောင်းဆိုမှုအတွက် နောက်ဆုံးသတင်း ၃၅ ကြောင်းလုံး ပေးလိုက်မည်
-                    context_news = df_news.tail(35).to_string(index=False)
-            
-            # System Prompt အား လှပသော Report ထုတ်ပေးရန် လမ်းညွှန်ခြင်း
-            system_prompt = f"""
-            မင်းက KMM (Kubota Maesot Myanmar) ရဲ့ သတင်းနဲ့ စျေးနှုန်းကျွမ်းကျင်တဲ့ အရောင်းဆိုင် AI Agent ဖြစ်တယ်။
-            ယနေ့ရက်စွဲသည် {today_date} ဖြစ်သည်။
+                        st.warning(f"⚠️ လူကြီးမင်းမေးမြန်းထားသော မော်ဒယ် '{user_query}' ကို စက်ဈေးနှုန်း List ထဲတွင် ရှာမတွေ့ပါသဖြင့် AI အား ထပ်မံမေးမြန်းပေးပါမည်။")
+                        # ဒေတာ တိုက်ရိုက်မတွေ့ရင် AI ကို သာမန်အတိုင်း ပတ်သက်တာ ဖြေခိုင်းမည်
+                        try:
+                            response = client.chat.completions.create(
+                                model="openai/gpt-4o-mini",
+                                messages=[{"role": "user", "content": user_query}]
+                            )
+                            st.write(response.choices[0].message.content)
+                        except: pass
 
-            မင်းဆီမှာ Google Sheet ကနေ ရယူထားတဲ့ ဒေတာတွေ ရှိပါတယ်။
-            [၁။ Tractor စျေးနှုန်းဒေတာ]: {context_tractor if context_tractor else "တိုက်ရိုက်ရှာမတွေ့ပါ။"}
-            [၂။ သတင်းဒေတာ (Competitor News Updates)]: {context_news if context_news else "သတင်းဒေတာ မရှိပါ။"}
+            # ==========================================================
+            # ပုံစံ (ခ) - သတင်း သီးသန့်မေးမြန်းခြင်း (is_news_intent ဖြစ်လျှင်)
+            # ==========================================================
+            else:
+                search_keyword = user_query
+                is_date_query = False
+                
+                if "မနေ့က" in user_query:
+                    search_keyword = yesterday_date
+                    is_date_query = True
+                elif "ယနေ့" in user_query or "ဒီနေ့" in user_query:
+                    search_keyword = today_date
+                    is_date_query = True
+                
+                df_news = load_all_sheet_data("Competitor News Updates")
+                matched_news_list = []
+                
+                if df_news is not None and not df_news.empty:
+                    df_news.columns = [str(c).strip().lower() for c in df_news.columns]
+                    current_date = "No Date"
+                    last_news_item = None
+                    all_structured_news = []
+                    
+                    for _, row in df_news.iterrows():
+                        r_date = str(row.get('date', '')).strip()
+                        r_company = str(row.get('company', '')).strip()
+                        r_content_th = str(row.get('content_th', '')).strip()
+                        r_content_mm = str(row.get('content_mm', '')).strip()
+                        
+                        if r_date == '' and r_company == '' and r_content_th == '' and r_content_mm == '':
+                            continue
+                        if r_date != '' or r_company != '':
+                            if r_date != '': current_date = r_date
+                            if last_news_item is not None:
+                                all_structured_news.append(last_news_item)
+                            last_news_item = {
+                                'date': current_date,
+                                'company': r_company if r_company != '' else '💵 Exchange Rate / News',
+                                'content_th': r_content_th,
+                                'content_mm': r_content_mm,
+                                'promo': str(row.get('promo', '')).strip(),
+                                'image_url': str(row.get('image_url', '')).strip()
+                            }
+                        else:
+                            if last_news_item is not None:
+                                if r_content_th: last_news_item['content_th'] = (last_news_item['content_th'] + "\n" + r_content_th).strip()
+                                if r_content_mm: last_news_item['content_mm'] = (last_news_item['content_mm'] + "\n" + r_content_mm).strip()
+                                if str(row.get('image_url', '')).strip(): last_news_item['image_url'] = str(row.get('image_url', '')).strip()
+                                if str(row.get('promo', '')).strip(): last_news_item['promo'] = str(row.get('promo', '')).strip()
+                    if last_news_item is not None:
+                        all_structured_news.append(last_news_item)
+                    
+                    for news in all_structured_news:
+                        if is_date_query:
+                            if search_keyword in news['date']:
+                                matched_news_list.append(news)
+                        else:
+                            if (search_keyword.lower() in news['company'].lower() or 
+                                search_keyword.lower() in news['content_mm'].lower() or 
+                                search_keyword.lower() in news['content_th'].lower()):
+                                matched_news_list.append(news)
 
-            အမေးအဖြေ စည်းကမ်းချက်များ -
-            ၁။ အသုံးပြုသူက 'ယနေ့သတင်း'၊ 'တစ်ပတ်စာသတင်း'၊ 'တစ်လစာသတင်း' သို့မဟုတ် 'Summary Report' တောင်းဆိုလာလျှင် အောက်ပါ **လှပသပ်ရပ်သော ဒီဇိုင်းပုံစံ** အတိုင်း မဖြစ်မနေ ထုတ်ပေးရမည်။
-            
-            ---
-            ### 📊 **KMM COMPETITOR NEWS SUMMARY REPORT**
-            **ထုတ်ပေးသည့်ရက်စွဲ:** {today_date} | **သတင်းကာလ:** [ယနေ့ / ပြီးခဲ့သည့် ၁ ပတ် / ၁ လ - သင့်တော်သလို ရေးရန်]
-
-            ---
-
-            #### 📈 ၁။ သတင်းအကျဉ်းချုပ် ဇယား (Quick Summary Table)
-            Markdown Table သုံးပြီး ရက်စွဲ၊ ကုမ္ပဏီ နှင့် အဓိကသတင်းခေါင်းစဉ်ကို ဇယားဖြင့် အရင်ပြပါ။
-            | ရက်စွဲ (Date) | ကုမ္ပဏီ / အဖွဲ့အစည်း | သတင်းအနှစ်ချုပ် (Brief) |
-            | :--- | :--- | :--- |
-            | YYYY-MM-DD | Kubota | ပရိုမိုးရှင်း အသစ်မိတ်ဆက်ခြင်း... |
-
-            #### 📝 ၂။ အသေးစိတ် အချက်အလက်များ (Detailed Updates)
-            ရက်စွဲအလိုက်/ကုမ္ပဏီအလိုက် သတင်းအချက်အလက်ကို Bullet points များဖြင့် ဖတ်ရလွယ်ကူအောင် ခွဲခြားရေးပါ။ 
-            - 🏢 **[ကုမ္ပဏီအမည်]** ([ရက်စွဲ])
-              - **အကြောင်းအရာ:** [မြန်မာလို ရှင်းလင်းစွာ ဘာသာပြန်ပေးရန်]
-              - 💡 **ပရိုမိုးရှင်း/ထူးခြားချက်:** [Promo ဒေတာရှိရင် ထည့်ရန်၊ မရှိရင် မထည့်ပါနဲ့]
-
-            ---
-            ၂။ Tractor မော်ဒယ် သို့မဟုတ် စျေးနှုန်းမေးလျှင် အထက်ပါ ဒေတာကို ကြည့်ပြီး ဈေးနှုန်းနှင့် အချက်အလက်ကို တိကျစွာ ဖြေပါ။ ဒေတာထဲမှာ မပါတာကို ကိုယ်တိုင် အထင်နဲ့ မဖြေပါနဲ့။
-            ၃။ ဒေတာထဲတွင် သတင်း သို့မဟုတ် စျေးနှုန်း လုံးဝရှာမတွေ့ပါက 'တောင်းပန်ပါတယ်ခင်ဗျာ၊ ဒေတာထဲမှာ ရှာမတွေ့ပါဘူး' ဟု ယဉ်ကျေးစွာ ပြောပါ။
-            """
-            
-            with st.chat_message("assistant"):
-                try:
-                    response = client.chat.completions.create(
-                        model="openai/gpt-4o-mini",
-                        messages=[
-                            {"role": "system", "content": system_prompt}, 
-                            {"role": "user", "content": user_query}
-                        ]
-                    )
-                    ai_reply = response.choices[0].message.content
-                    st.markdown(ai_reply)
-                    st.session_state.messages.append({"role": "assistant", "content": ai_reply})
-                except Exception as e:
-                    st.error(f"Error generating AI response: {e}")
+                with st.chat_message("assistant"):
+                    if matched_news_list:
+                        st.markdown(f"### 📅 {search_keyword} အတွက် ရှာဖွေတွေ့ရှိသော သတင်းများ")
+                        st.write("---")
+                        for idx, news in enumerate(matched_news_list):
+                            brief_text = news['content_mm'][:60] + "..." if len(news['content_mm']) > 60 else news['content_mm']
+                            st.markdown(f"#### 🏢 {news['company']} ({news['date']})")
+                            st.write(f"📝 {brief_text}")
+                            
+                            img_url = news.get('image_url', '').split(',')[0].strip()
+                            if img_url and img_url.startswith("http"):
+                                st.image(img_url, width=150)
+                            
+                            with st.expander("🔍 သတင်းအပြည့်အစုံနှင့် ပုံကို ထပ်မံအသေးစိတ်ကြည့်ရန်"):
+                                if news['content_mm']: st.write(news['content_mm'])
+                                all_imgs = [i.strip() for i in news.get('image_url', '').split(',') if i.strip().startswith("http")]
+                                for img in all_imgs: st.image(img, use_container_width=True)
+                            st.write("---")
+                    else:
+                        st.warning("⚠️ မေးမြန်းထားသော သတင်းအချက်အလက်ကို ရှာမတွေ့ပါခင်ဗျာ။")
