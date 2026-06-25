@@ -428,16 +428,40 @@ elif menu_choice == "KMM Tractor AI Agent":
             if not is_news_intent:
                 found_tractor_data = []
                 
+                # အသုံးပြုသူရိုက်လိုက်သော စာသားကို ကွက်လပ်နှင့် Dash များဖြတ်ပြီး ညှိနှိုင်းခြင်း (Normalize)
+                q_clean = "".join(user_query.split()).lower().replace("-", "").replace("_", "")
+                
                 with st.spinner("စက်ပစ္စည်းနှင့် ဈေးနှုန်းဒေတာများကို ရှာဖွေနေပါသည်..."):
                     for brand in ALL_BRANDS:
                         df_brand = load_all_sheet_data(brand)
                         if df_brand is not None and not df_brand.empty:
-                            matched_rows = df_brand[df_brand.astype(str).apply(lambda x: x.str.contains(user_query, case=False)).any(axis=1)]
-                            if not matched_rows.empty:
-                                for _, row in matched_rows.iterrows():
+                            
+                            # "Kubota DC70G Pro" ဟု တွဲရိုက်ခဲ့ပါက Brand အမည်အား ဖယ်ထုတ်၍ မော်ဒယ်သက်သက်ဖြင့် ရှာရန်
+                            brand_clean = brand.lower().replace("-", "").replace("_", "")
+                            q_model_only = q_clean.replace(brand_clean, "")
+                            
+                            for _, row in df_brand.iterrows():
+                                model_name = str(row.iloc[0]).strip()
+                                if model_name in ["0", "0.0", "nan", "Model", ""]:
+                                    continue
+                                    
+                                # Sheet ထဲမှ မော်ဒယ်အမည်ကိုလည်း ကွက်လပ်နှင့် Dash များဖြတ်၍ ညှိနှိုင်းခြင်း
+                                model_clean = "".join(model_name.split()).lower().replace("-", "").replace("_", "")
+                                
+                                match = False
+                                if q_model_only:
+                                    # Space ပါသည်ဖြစ်စေ၊ မပါသည်ဖြစ်စေ နှစ်ဖက်စလုံးကို နှိုင်းယှဉ်စစ်ဆေးခြင်း
+                                    if q_model_only in model_clean or model_clean in q_model_only:
+                                        match = True
+                                else:
+                                    # Brand အမည်သက်သက်သာ ရိုက်ရှာခဲ့ပါက ၎င်း Brand တစ်ခုလုံးကို ပြသရန်
+                                    if brand.lower() in user_query.lower():
+                                        match = True
+                                        
+                                if match:
                                     found_tractor_data.append({
                                         "brand": brand,
-                                        "model": str(row.iloc[0]),
+                                        "model": model_name,
                                         "price": str(row.iloc[1]),
                                         "image": str(row.iloc[2]) if len(row) > 2 else ""
                                     })
