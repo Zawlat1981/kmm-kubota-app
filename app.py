@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import time
 import datetime
+import urllib.parse  # URL Space Bug ကို ဖြေရှင်းရန် ထည့်သွင်းထားသည်
 from openai import OpenAI
 
 # ၁။ Page Config
@@ -16,17 +17,20 @@ ALL_BRANDS = ["Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Hollan
 # --- ဒေတာ Load လုပ်သည့် Function (UI ဘက်မှ သုံးရန်) ---
 @st.cache_data(ttl=60)
 def load_data(tab_name):
-    base_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=" 
+    # Sheet Name များတွင် ကွက်လပ် သို့မဟုတ် Special Character ပါက အလိုအလျောက် URL Format ပြောင်းပေးရန်
+    encoded_tab = urllib.parse.quote(tab_name)
+    base_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={encoded_tab}" 
     try:
-        df_tractor = pd.read_csv(base_url + tab_name).fillna(0)
+        df_tractor = pd.read_csv(base_url).fillna(0)
     except:
         df_tractor = pd.DataFrame()
     
     df_attach = pd.DataFrame()
     if tab_name in ["Kubota", "Yanmar"]:
         attachment_tab = f"Attachments_{tab_name}"
+        encoded_attach_tab = urllib.parse.quote(attachment_tab)
         try:
-            df_attach = pd.read_csv(base_url + attachment_tab).fillna(0)
+            df_attach = pd.read_csv(f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={encoded_attach_tab}").fillna(0)
         except:
             pass
     return df_tractor, df_attach
@@ -35,7 +39,9 @@ def load_data(tab_name):
 @st.cache_data(ttl=60)
 def load_all_sheet_data(tab_name):
     timestamp = int(time.time())
-    csv_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={tab_name}&cache_bust={timestamp}"
+    # ဤနေရာတွင် URL Space Break မဖြစ်အောင် အသေအချာ Encode လုပ်ပေးထားပါသည်
+    encoded_tab = urllib.parse.quote(tab_name)
+    csv_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={encoded_tab}&cache_bust={timestamp}"
     try:
         return pd.read_csv(csv_url)
     except:
@@ -135,11 +141,9 @@ elif menu_choice == "Competitor News Updates":
     st.markdown("<h1 style='text-align: center; color: #0066cc;'>📊 Competitor News Updates & News Myanmar</h1>", unsafe_allow_html=True)
     st.write("---")
     
-    timestamp = int(time.time())
-    comp_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Competitor%20News%20Updates&cache_bust={timestamp}"
+    df_comp = load_all_sheet_data("Competitor News Updates")
     
-    try:
-        df_comp = pd.read_csv(comp_url).fillna('')
+    if df_comp is not None and not df_comp.empty:
         df_comp.columns = [str(c).strip().lower() for c in df_comp.columns]
         
         st.markdown("### 🔍 သတင်းများ ပြန်လည်ရှာဖွေရန်/ค้นหาข่าวย้อนหลัง")
@@ -318,24 +322,22 @@ elif menu_choice == "Competitor News Updates":
                                         if tg_link and tg_link.startswith("http"):
                                             with btn_col3: st.link_button("✈️ Telegram", tg_link, use_container_width=True)
                                     st.write("<br>", unsafe_allow_html=True)
-
-                    st.write("🤖 **လူကြီးမင်း ရှာဖွေနေတာ / သိလိုတာ မှန်ပါသလား ခင်ဗျာ။**")
                     
                     if items_displayed < total_filtered_items:
                         col1, col2 = st.columns([2, 3])
                         with col1:
-                            if st.button("👍? မှန်ပါတယ်၊ နောက်ထပ်ပြပါ", key="news_more_pagination_btn"):
+                            if st.button("👍 မှန်ပါတယ်၊ နောက်ထပ်ပြပါ", key="news_more_pagination_btn"):
                                 st.session_state.news_display_count += 7
                                 st.rerun()
                         with col2:
-                            if st.button("👎? မဟုတ်ပါဘူး၊ တခြားဟာရှာမယ်", key="news_stop_pagination_btn"):
+                            if st.button("👎 မဟုတ်ပါဘူး၊ တခြားဟာရှာမယ်", key="news_stop_pagination_btn"):
                                 st.write("🤖 လူကြီးမင်း သိလိုသော အကြောင်းအရာကို ထပ်မံ အသေးစိတ် ရိုက်ထည့်ပေးပါ ခင်ဗျာ။")
                     else:
                         st.info("👋 လူကြီးမင်း ရှာဖွေနေတဲ့ အကြောင်းအရာနဲ့ ပတ်သက်တဲ့ သတင်းအားလုံးကို ပြသပေးပြီးပါပြီ ခင်ဗျာ။")
             else:
                 st.info("❌ ရှာဖွေမှုရလဒ်မရှိပါ။")
-    except Exception as e:
-        st.error(f"Error loading data: {e}")
+    else:
+        st.error("Error loading data from sheet.")
 
 # ==========================================
 # ၃။ KMM TRACTOR AI AGENT MENU
@@ -563,7 +565,14 @@ elif menu_choice == "KMM Tractor AI Agent":
                         
                         if filter_date is not None:
                             sel_date_str = filter_date.strftime("%Y-%m-%d")
-                            match_date_ok = (sel_date_str in news_date_clean or filter_date.strftime("%d-%m-%Y") in news_date_clean)
+                            alt_date_1 = filter_date.strftime("%d-%m-%Y")
+                            alt_date_2 = filter_date.strftime("%Y/%m/%d")
+                            alt_date_3 = filter_date.strftime("%d/%m/%Y")
+                            
+                            match_date_ok = (sel_date_str in news_date_clean or 
+                                             alt_date_1 in news_date_clean or
+                                             alt_date_2 in news_date_clean or
+                                             alt_date_3 in news_date_clean)
                                              
                         if filter_company != "":
                             f_co = filter_company.lower()
@@ -607,7 +616,6 @@ elif menu_choice == "KMM Tractor AI Agent":
                         st.markdown(f"### 📊 ရှာဖွေတွေ့ရှိရသော Competitor News အချက်အလက်များ ({len(matched_news_list)}) စောင်")
                         st.write("---")
                         
-                        # ရှာတွေ့သမျှ သတင်းအားလုံးကို ပုံ `1782371025998.jpg` ပါအတိုင်း Container ကတ်များဖြင့် ထုတ်ပြခြင်း
                         for news in matched_news_list:
                             with st.container(border=True):
                                 st.markdown(f"<h3 style='color: #0066cc; margin: 0;'>🏢 {news['company']}</h3>", unsafe_allow_html=True)
@@ -623,7 +631,6 @@ elif menu_choice == "KMM Tractor AI Agent":
                                     st.markdown("**🇲🇲 မြန်မာဘာသာ**")
                                     st.markdown(news['content_mm'].replace("\n", "  \n"))
                                     
-                                # ပုံများပါလာပါက အလိုအလျောက် Render လုပ်ပေးခြင်း
                                 if news['image_url']:
                                     st.write("---")
                                     img_list = [i.strip() for i in news['image_url'].split(',') if i.strip().startswith('http')]
@@ -634,7 +641,6 @@ elif menu_choice == "KMM Tractor AI Agent":
                                 if news['promo'] and news['promo'] != '0':
                                     st.info(f"💡 Promo: {news['promo']}")
                                     
-                                # Social Links များ ပါဝင်လာပါက ခလုတ်များ ဖန်တီးပေးခြင်း
                                 fb_link = news['facebook'].strip()
                                 tt_link = news['tiktok'].strip()
                                 tg_link = news['telegram'].strip()
@@ -648,7 +654,6 @@ elif menu_choice == "KMM Tractor AI Agent":
                                     if tg_link and tg_link.startswith("http"):
                                         with btn_col3: st.link_button("✈️ Telegram", tg_link, use_container_width=True)
                                         
-                        # OpenAI ဆီသို့လည်း Summary သုံးသပ်ချက်တောင်းခံခြင်း
                         context_str = "\n".join([f"Company: {n['company']} | Content: {n['content_mm']}" for n in matched_news_list[:5]])
                         try:
                             response = client.chat.completions.create(
