@@ -486,7 +486,7 @@ elif menu_choice == "KMM Tractor AI Agent":
                         except: pass
 
             # ==========================================================
-            # 模式 (B) - သတင်း သီးသန့်မေးမြန်းခြင်း (Row အားလုံး အဆုံးအထိ ရှာဖွေရန် ပြင်ဆင်ပြီး)
+            # 模式 (B) - သတင်း သီးသန့်မေးမြန်းခြင်း (Row-by-Row ဒေတာအပြည့် ဖတ်ရန်)
             # ==========================================================
             else:
                 df_news = load_all_sheet_data("Competitor News Updates")
@@ -494,46 +494,29 @@ elif menu_choice == "KMM Tractor AI Agent":
                 
                 if df_news is not None and not df_news.empty:
                     df_news.columns = [str(c).strip().lower() for c in df_news.columns]
-                    current_date = "No Date"
-                    current_company = "💵 Exchange Rate / News"
-                    last_news_item = None
                     all_structured_news = []
                     
+                    # 1. ရိုးရှင်းသေချာစွာ Row တစ်လိုင်းချင်းစီကို Direct ဖတ်ပြီး List ထဲထည့်ခြင်း
                     for _, row in df_news.iterrows():
                         r_date = str(row.get('date', '')).strip()
                         r_company = str(row.get('company', '')).strip()
                         r_content_th = str(row.get('content_th', '')).strip()
                         r_content_mm = str(row.get('content_mm', '')).strip()
+                        r_promo = str(row.get('promo', '')).strip()
+                        r_image = str(row.get('image_url', '')).strip()
                         
-                        if r_date == '' and r_company == '' and r_content_th == '' and r_content_mm == '': 
-                            continue
-                        
-                        if r_date != '' or r_company != '':
-                            if r_date != '': current_date = r_date
-                            if r_company != '': current_company = r_company
-                            
-                            if last_news_item is not None:
-                                all_structured_news.append(last_news_item)
-                            
-                            last_news_item = {
-                                'date': current_date,
-                                'company': current_company,
+                        # လုံးဝ ဗလာဖြစ်နေတဲ့ Row မဟုတ်ရင် ဒေတာသိမ်းမယ်
+                        if r_date or r_company or r_content_th or r_content_mm:
+                            all_structured_news.append({
+                                'date': r_date if r_date else "No Date",
+                                'company': r_company if r_company else "Unknown",
                                 'content_th': r_content_th,
                                 'content_mm': r_content_mm,
-                                'promo': str(row.get('promo', '')).strip(),
-                                'image_url': str(row.get('image_url', '')).strip()
-                            }
-                        else:
-                            if last_news_item is not None:
-                                if r_content_th: last_news_item['content_th'] = (last_news_item['content_th'] + "\n" + r_content_th).strip()
-                                if r_content_mm: last_news_item['content_mm'] = (last_news_item['content_mm'] + "\n" + r_content_mm).strip()
-                                if str(row.get('image_url', '')).strip(): last_news_item['image_url'] = str(row.get('image_url', '')).strip()
-                                if str(row.get('promo', '')).strip(): last_news_item['promo'] = str(row.get('promo', '')).strip()
-                                
-                    if last_news_item is not None:
-                        all_structured_news.append(last_news_item)
+                                'promo': r_promo,
+                                'image_url': r_image
+                            })
                     
-                    # 🔍 ဒေတာတစ်ခုစီကို ပတ်ပတ်စက်စက် ရှာဖွေခြင်း
+                    # 2. စုစည်းထားတဲ့ သတင်းတွေထဲကမှ User Query နဲ့ ကိုက်ညီတာကို ရှာဖွေမယ်
                     for news in all_structured_news:
                         news_date_clean = news['date'].replace('/', '-').strip()
                         news_company_lower = news['company'].lower()
@@ -568,7 +551,7 @@ elif menu_choice == "KMM Tractor AI Agent":
                             if any(fmt in news_date_clean for fmt in yesterday_formats):
                                 match_found = True
                                 
-                        # (၄) စာသားရိုက်ထည့်ပြီး ရှာဖွေလျှင် (ဥပမာ - "Win Shwe Wah" သို့မဟုတ် "Report")
+                        # (၄) စာသားရိုက်ထည့်ပြီး ရှာဖွေလျှင်
                         else:
                             q_lower = user_query.lower()
                             if q_lower in news_company_lower or q_lower in news_content_lower:
@@ -594,7 +577,6 @@ elif menu_choice == "KMM Tractor AI Agent":
                                     st.image(news['image_url'], use_container_width=True)
                             st.write("")
                             
-                        # LLM ကို Summary သို့မဟုတ် နောက်ဆက်တွဲ စကားပြောရန် ခေါ်ခြင်း
                         try:
                             context_str = "\n".join([f"Date: {n['date']}, Co: {n['company']}, Text: {n['content_mm']}" for n in matched_news_list[:3]])
                             response = client.chat.completions.create(
