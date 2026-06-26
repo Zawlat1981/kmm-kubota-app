@@ -10,7 +10,7 @@ st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout=
 
 def handle_brand_change():
     current_selection = st.session_state.main_page_brand_filter
-    if current_selection != "— ရွေးချယ်ပါ —":
+    if current_selection != "— ရွေးချယ်ပါ (เลือก) —":
         st.session_state.dropdown_query = current_selection
         # ဤနေရာတွင် Widget State ကို "— ရွေးချယ်ပါ —" သို့ Error မတက်ဘဲ ပြန်လည် Reset လုပ်ပေးနိုင်သည်
         st.session_state.main_page_brand_filter = "— ရွေးချယ်ပါ —"
@@ -351,7 +351,7 @@ elif menu_choice == "Competitor News Updates":
 # ==========================================
 elif menu_choice == "KMM Tractor AI Agent":
     st.markdown("<h1 style='text-align: center; color: #ff6600;'>🤖 KMM Tractor AI Agent</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #555;'>မေးခွန်းများကို အသင့်နှိပ်၍ဖြစ်စေ၊ ရွေးချယ်စရာ Filter များဖြင့်ဖြစ်စေ စမတ်ကျကျ မေးမြန်းနိုင်ပါသည်</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #555;'>မေးခွန်းများကို အသင့်နှိပ်၍ဖြစ်စေ၊ ရွေးချယ်စရာ Filter များဖြင့်ဖြစ်စေ မေးမြန်းနိုင်ပါသည် (สามารถสอบถามได้โดยการคลิกเลือกคำถามสำเร็จรูป หรือใช้ตัวกรอง)</p>", unsafe_allow_html=True)
     st.write("---")
     
     if "OPENROUTER_API_KEY" in st.secrets:
@@ -372,7 +372,7 @@ elif menu_choice == "KMM Tractor AI Agent":
                 st.markdown(message["content"])
 
         # --- 💡 [အသင့်မေးရန် မေးခွန်းတို ခလုတ်များ] ---
-        st.markdown("<small style='color: #888;'>💡 အောက်ပါ မေးခွန်းများကို အလွယ်တကူ ကလစ်နှိပ်၍ မေးမြန်းနိုင်ပါသည် -</small>", unsafe_allow_html=True)
+        st.markdown("<small style='color: #888;'>💡 အောက်ပါ မေးခွန်းများကို အလွယ်တကူ ကလစ်နှိပ်၍ မေးမြန်းနိုင်ပါသည် (สามารถคลิกเลือกคำถามด้านล่างนี้เพื่อสอบถามได้ง่ายๆ) -</small>", unsafe_allow_html=True)
         col_btn1, col_btn2, col_btn3, col_btn4 = st.columns(4)
         suggested_query = None
         
@@ -382,18 +382,18 @@ elif menu_choice == "KMM Tractor AI Agent":
             del st.session_state.dropdown_query
         
         with col_btn1:
-            if st.button("📰 ယနေ့သတင်း", use_container_width=True):
+            if st.button("📰 ယနေ့သတင်း (ข่าววันนี้)", use_container_width=True):
                 suggested_query = "ယနေ့သတင်း"
         with col_btn2:
-            if st.button("📅 မနေ့ကသတင်း", use_container_width=True):
+            if st.button("📅 မနေ့ကသတင်း (ข่าวเมื่อวาน)", use_container_width=True):
                 suggested_query = "မနေ့ကသတင်း"
         with col_btn3:
-            if st.button("📊 ၁ ပတ်စာ Report", use_container_width=True):
+            if st.button("📊 ၁ ပတ်စာ Report (รายงาน 1 สัปดาห์ )", use_container_width=True):
                 suggested_query = "ပြီးခဲ့တဲ့တစ်ပတ်စာ သတင်း Report ထုတ်ပေးပါ"
                 
         with col_btn4:
             # 🎯 ပြင်ဆင်ပြီး - Dropdown ထဲတွင် ပြသမည့် Brand စာရင်းများ (Indentation ညှိပြီး)
-            brand_list = ["— ရွေးချယ်ပါ —", "Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika"]
+            brand_list = ["— ရွေးချယ်ပါ (เลือก) —", "Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika"]
             
             # label_visibility="collapsed" ဖြင့် စာတန်းကို ဖျောက်ပြီး ခလုတ်များနှင့် အမြင့်ညှိထားသည်
             selected_brand = st.selectbox(
@@ -405,16 +405,16 @@ elif menu_choice == "KMM Tractor AI Agent":
             )
         
         # --- 🔍 [ရွေးချယ်စရာများ Filters Box] ---
-        with st.expander("🔍 ရွေးချယ်စရာများ (သတင်းများကို ရက်စွဲ သို့မဟုတ် ကုမ္ပဏီဖြင့် စစ်ထုတ်ရန်)", expanded=True):
+        with st.expander("🔍 ရွေးချယ်စရာများ (သတင်းများကို ရက်စွဲ သို့မဟုတ် ကုမ္ပဏီဖြင့် စစ်ထုတ်ရန်) / ตัวเลือกการค้นหา (ค้นหาข่าวตามวันที่หรือชื่อบริษัท)", expanded=True):
             col_filter1, col_filter2 = st.columns(2)
             
             with col_filter1:
-                filter_date = st.date_input("📅 ရက်စွဲ ရွေးချယ်ရန် (Date)", value=None, format="YYYY-MM-DD")
+                filter_date = st.date_input("📅 ရက်စွဲ ရွေးချယ်ရန် (เลือกวันที่)", value=None, format="YYYY-MM-DD")
             
             with col_filter2:
-                filter_company = st.text_input("🏢 ကုမ္ပဏီ/အဖွဲ့အစည်းအမည် ရိုက်ထည့်ရန် (ဥပမာ - Win Shwe Wah, Kubota)", value="").strip()
+                filter_company = st.text_input("🏢 ကုမ္ပဏီ/အဖွဲ့အစည်းအမည် ရိုက်ထည့်ရန် (กรอกชื่อบริษัทหรือองค์กร)", value="").strip()
             
-            search_by_filter = st.button("🔎 ရွေးချယ်ထားသော အချက်အလက်များဖြင့် ရှာဖွေမည်", type="primary", use_container_width=True)
+            search_by_filter = st.button("🔎 ရွေးချယ်ထားသော အချက်အလက်များဖြင့် ရှာဖွေမည် (ค้นหาด้วยข้อมูลที่เลือก)", type="primary", use_container_width=True)
             if search_by_filter:
                 if filter_date is not None and filter_company != "":
                     suggested_query = f"သတင်း စစ်ထုတ်မှု: {filter_date.strftime('%Y-%m-%d')} ရက်စွဲရှိ {filter_company} သတင်း"
