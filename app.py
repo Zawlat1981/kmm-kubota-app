@@ -6,7 +6,7 @@ import urllib.parse  # URL Space Bug ကို ဖြေရှင်းရန်
 from openai import OpenAI
 
 # ၁။ Page Config
-st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout="centered")
+st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout="centered") 
 
 def handle_brand_change():
     current_selection = st.session_state.main_page_brand_filter
