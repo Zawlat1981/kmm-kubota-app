@@ -1,91 +1,32 @@
 import streamlit as st
 import pandas as pd
-import time
 import datetime
-import urllib.parse  # URL Space Bug ကို ဖြေရှင်းရန် ထည့်သွင်းထားသည်
 from openai import OpenAI
 
-# ၁။ Page Config
-st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout="centered") 
+# ==========================================
+# ⚙️ GLOBAL CONFIGURATIONS & PLACEHOLDERS
+# (လူကြီးမင်း၏ Main Code ထဲရှိ အချက်အလက်များနှင့် ကိုက်ညီအောင် ချိန်ညှိနိုင်ပါသည်)
+# ==========================================
+ALL_BRANDS = ["Kubota", "Yanmar", "John-Deere", "New-Holland", "Mahindra", "Sonalika", "YTO", "Yamabisi", "DongFeng", "Win-Shwe-Wah(2nd)"]
 
-# --- 🎨 Custom CSS (အောက်ခြေ ခလုတ်အနီရောင်အတွက်) ---
-st.markdown("""
-    <style>
-    /* ရှာဖွေမည့် ခလုတ်ကို အနီရောင်ပြောင်းရန် */
-    div.stButton > button.red-btn {
-        background-color: #ff4b4b !important;
-        color: white !important;
-        border: none !important;
-        width: 100%;
-    }
-    div.stButton > button.red-btn:hover {
-        background-color: #ff3333 !important;
-        color: white !important;
-    }
-    </style>
-""", unsafe_allow_html=True)
+# Sidebar Selection Mockup (လူကြီးမင်း၏ Main Sidebar Menu နှင့် ချိတ်ဆက်ရန်)
+menu_choice = st.sidebar.radio("Menu Selection", ["Brand Selection", "Competitor News Updates", "KMM Tractor AI Agent"])
+selected_brand = st.sidebar.selectbox("Select Brand (For Menu 1)", ALL_BRANDS)
 
+# Callback Function Mockup
 def handle_brand_change():
-    current_selection = st.session_state.main_page_brand_filter
-    if current_selection != "— ရွေးချယ်ပါ (เลือก) —":
-        st.session_state.dropdown_query = current_selection
-        # ဤနေရာတွင် Widget State ကို "— ရွေးချယ်ပါ —" သို့ Error မတက်ဘဲ ပြန်လည် Reset လုပ်ပေးနိုင်သည်
-        st.session_state.main_page_brand_filter = "— ရွေးချယ်ပါ —"
+    if "main_page_brand_filter" in st.session_state and st.session_state.main_page_brand_filter != "— ရွေးချယ်ပါ (เลือก) —":
+        st.session_state.dropdown_query = f"သတင်း စစ်ထုတ်မှု: {st.session_state.main_page_brand_filter} Brand သတင်းများ"
 
-# Google Sheet ID
-SHEET_ID = "1QqQvPKH7G0hqqhd_0V6cP40Htl8qdFEZ6nHBVe_53_g" 
+# Data Loading Functions Mockup
+def load_data(brand_name):
+    # လူကြီးမင်း၏ Google Sheets ဖတ်သည့် Function နှင့် အစားထိုးရန်
+    return pd.DataFrame(), pd.DataFrame()
 
-# အသုံးပြုထားသော Brand စာရင်းအားလုံး (Tab အမည်များ)
-ALL_BRANDS = ["Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika", "Yamabisi", "DongFeng"]
+def load_all_sheet_data(sheet_name):
+    # လူကြီးမင်း၏ Google Sheets ဖတ်သည့် Function နှင့် အစားထိုးရန်
+    return pd.DataFrame()
 
-# --- ဒေတာ Load လုပ်သည့် Function (UI ဘက်မှ သုံးရန်) ---
-@st.cache_data(ttl=60)
-def load_data(tab_name):
-    # Sheet Name များတွင် ကွက်လပ် သို့မဟုတ် Special Character ပါက အလိုအလျောက် URL Format ပြောင်းပေးရန်
-    encoded_tab = urllib.parse.quote(tab_name)
-    base_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={encoded_tab}" 
-    try:
-        df_tractor = pd.read_csv(base_url).fillna(0)
-    except:
-        df_tractor = pd.DataFrame()
-    
-    df_attach = pd.DataFrame()
-    if tab_name in ["Kubota", "Yanmar"]:
-        attachment_tab = f"Attachments_{tab_name}"
-        encoded_attach_tab = urllib.parse.quote(attachment_tab)
-        try:
-            df_attach = pd.read_csv(f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={encoded_attach_tab}").fillna(0)
-        except:
-            pass
-    return df_tractor, df_attach
-
-# --- ဒေတာ Load လုပ်သည့် Function (AI Agent အတွက် သီးသန့် Sheet ဖတ်ရန်) ---
-@st.cache_data(ttl=60)
-def load_all_sheet_data(tab_name):
-    timestamp = int(time.time())
-    # ဤနေရာတွင် URL Space Break မဖြစ်အောင် အသေအချာ Encode လုပ်ပေးထားပါသည်
-    encoded_tab = urllib.parse.quote(tab_name)
-    csv_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={encoded_tab}&cache_bust={timestamp}"
-    try:
-        return pd.read_csv(csv_url)
-    except:
-        return None
-
-# --- Sidebar Menu ---
-with st.sidebar:
-    st.markdown("## 🚜 KMM Service")
-    menu_choice = st.radio(
-        "သွားလိုရာကို ရွေးချယ်ပါ (กรุณาเลือกเมนู) -", 
-        ["Brand Selection", "Competitor News Updates", "KMM Tractor AI Agent"]
-    )
-    st.write("---")
-    
-    if menu_choice == "Brand Selection":
-        st.header("🔍 Filter")
-        selected_brand = st.selectbox(
-            "အမှတ်တံဆိပ် ရွေးချယ်ပါ (กรุณาเลือกยี่ห้อ) -", 
-            ALL_BRANDS
-        )
 
 # ==========================================
 # ၁။ BRAND SELECTION MENU
@@ -409,16 +350,16 @@ elif menu_choice == "KMM Tractor AI Agent":
                 suggested_query = "ပြီးခဲ့တဲ့တစ်ပတ်စာ သတင်း Report ထုတ်ပေးပါ"
                 
         with col_btn4:
-        # 🎯 Dropdown ထဲတွင် ပြသမည့် Brand စာရင်းများ
-        brand_list = ["— ရွေးချယ်ပါ (เลือก) —", "Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika"]
-        
-        selected_brand = st.selectbox(
-            "Brand Filter", 
-            options=brand_list,
-            key="main_page_brand_filter",
-            label_visibility="collapsed",
-            on_change=handle_brand_change
-        )
+            # 🎯 Dropdown ထဲတွင် ပြသမည့် Brand စာရင်းများ (အကွာအဝေး Indentation ညှိပြီး)
+            brand_list = ["— ရွေးချယ်ပါ (เลือก) —", "Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika"]
+            
+            selected_brand_filter = st.selectbox(
+                "Brand Filter", 
+                options=brand_list,
+                key="main_page_brand_filter",
+                label_visibility="collapsed",
+                on_change=handle_brand_change
+            )
     
     # --- 🔍 [ရွေးချယ်စရာများ Filters Box] ---
     with st.expander("🔍 ရွေးချယ်စရာများ (သတင်းများကို ရက်စွဲ သို့မဟုတ် ကုမ္ပဏီဖြင့် စစ်ထုတ်ရန်)", expanded=True):
@@ -431,7 +372,6 @@ elif menu_choice == "KMM Tractor AI Agent":
             filter_company = st.text_input("🏢 ကုမ္ပဏီ/အဖွဲ့အစည်းအမည် ရိုက်ထည့်ရန်", value="", help="กรอกชื่อบริษัทหรือองค์กร").strip()
             
         st.write("") # နေရာလွတ်ခံခြင်း
-        
         st.markdown('<div class="red-button">', unsafe_allow_html=True)
         
         search_by_filter = st.button(
@@ -439,10 +379,8 @@ elif menu_choice == "KMM Tractor AI Agent":
             help="ค้นหาด้วยข้อมูลที่เลือก", 
             use_container_width=True
         )
+        st.markdown('</div>', unsafe_allow_html=True)
         
-        st.markdown('</div>', unsafe_allow_html=True) # HTML ပိတ်ရန်
-        
-        # ✨ ပြင်ဆင်ချက် (၁) - st.markdown နှင့် တစ်တန်းတည်း (8 Spaces) ပြန်ညှိထားပါသည်
         if search_by_filter:
             if filter_date is not None and filter_company != "":
                 suggested_query = f"သတင်း စစ်ထုတ်မှု: {filter_date.strftime('%Y-%m-%d')} ရက်စွဲရှိ {filter_company} သတင်း"
@@ -454,10 +392,8 @@ elif menu_choice == "KMM Tractor AI Agent":
                 st.info("💡 အချက်အလက်များကို စစ်ထုတ်ရန် ရက်စွဲတစ်ခုခု ရွေးချယ်ပေးပါ သို့မဟုတ် ကုမ္ပဏီအမည် ရိုက်ထည့်ပေးပါခင်ဗျာ။")
 
     # =========================================================================
-    # ✨ ပြင်ဆင်ချက် (၂) - Chat Input အပိုင်းကို st.expander ရဲ့ အပြင်ဘက် (4 Spaces) သို့ ပြန်ထုတ်ထားပါသည်
+    # ✨ Chat Input အပိုင်းကို st.expander ရဲ့ အပြင်ဘက် (4 Spaces) သို့ ထုတ်ထားခြင်း
     # =========================================================================
-
-    # Chat Input
     user_input = st.chat_input("ဥပမာ - 'M6240 ဈေးဘယ်လောက်လဲ' သို့မဟုတ် အပေါ်က စစ်ထုတ်မှုများကို အသုံးပြုပါ")
     user_query = suggested_query if suggested_query else user_input
             
@@ -479,16 +415,12 @@ elif menu_choice == "KMM Tractor AI Agent":
         # ==========================================================
         if not is_news_intent:
             found_tractor_data = []
-            
-            # အသုံးပြုသူရိုက်လိုက်သော စာသားကို ကွက်လပ်နှင့် Dash များဖြတ်ပြီး ညှိနှိုင်းခြင်း (Normalize)
             q_clean = "".join(user_query.split()).lower().replace("-", "").replace("_", "")
             
             with st.spinner("စက်ပစ္စည်းနှင့် ဈေးနှုန်းဒေတာများကို ရှာဖွေနေပါသည်..."):
                 for brand in ALL_BRANDS:
                     df_brand = load_all_sheet_data(brand)
                     if df_brand is not None and not df_brand.empty:
-                        
-                        # "Kubota DC70G Pro" ဟု တွဲရိုက်ခဲ့ပါက Brand အမည်အား ဖယ်ထုတ်၍ မော်ဒယ်သက်သက်ဖြင့် ရှာရန်
                         brand_clean = brand.lower().replace("-", "").replace("_", "")
                         q_model_only = q_clean.replace(brand_clean, "")
                         
@@ -497,16 +429,12 @@ elif menu_choice == "KMM Tractor AI Agent":
                             if model_name in ["0", "0.0", "nan", "Model", ""]:
                                 continue
                                 
-                            # Sheet ထဲမှ မော်ဒယ်အမည်ကိုလည်း ကွက်လပ်နှင့် Dash များဖြတ်၍ ညှိနှိုင်းခြင်း
                             model_clean = "".join(model_name.split()).lower().replace("-", "").replace("_", "")
-                            
                             match = False
                             if q_model_only:
-                                # Space ပါသည်ဖြစ်စေ၊ မပါသည်ဖြစ်စေ နှစ်ဖက်စလုံးကို နှိုင်းယှဉ်စစ်ဆေးခြင်း
                                 if q_model_only in model_clean or model_clean in q_model_only:
                                     match = True
                             else:
-                                # Brand အမည်သက်သက်သာ ရိုက်ရှာခဲ့ပါက ၎င်း Brand တစ်ခုလုံးကို ပြသရန်
                                 if brand.lower() in user_query.lower():
                                     match = True
                                     
@@ -560,14 +488,13 @@ elif menu_choice == "KMM Tractor AI Agent":
                         st.session_state.messages.append({"role": "assistant", "content": ai_reply})
                     except: pass
 
-# ==========================================================
-        # 模式 (B) - Competitor News Updates ကို တိုက်ရိုက် UI Cards ဖြင့် ထုတ်ပြခြင်း (ပြင်ဆင်ပြီး)
+        # ==========================================================
+        # 模式 (B) - Competitor News Updates ကို တိုက်ရိုက် UI Cards ဖြင့် ထုတ်ပြခြင်း
         # ==========================================================
         else:
             status_placeholder = st.empty()
             status_placeholder.text("⏳ Competitor News Updates ရှီတ်ထဲမှ အချက်အလက်များကို Agent က စုစည်းနေပါသည်...")
             
-            # ၁။ Competitor News Updates Sheet ကို Grouping ပုံစံအတိုင်း စနစ်တကျဖတ်မယ်
             df_comp = load_all_sheet_data("Competitor News Updates")
             grouped_news = []
             
@@ -582,11 +509,9 @@ elif menu_choice == "KMM Tractor AI Agent":
                     r_content_th = str(row.get('content_th', '')).strip()
                     r_content_mm = str(row.get('content_mm', '')).strip()
                     
-                    # လိုင်းအလွတ်ဖြစ်ပါက ကျော်မည်
                     if r_date == '' and r_company == '' and r_content_th == '' and r_content_mm == '':
                         continue
                     
-                    # ✨ ပြင်ဆင်ချက်: Indentation ကို continue နှင့် တစ်တန်းတည်း ပြန်ညှိထားပါသည်
                     if r_date != '' or r_company != '':
                         if r_date != '':
                             current_date = r_date
@@ -594,7 +519,6 @@ elif menu_choice == "KMM Tractor AI Agent":
                         if last_news_item is not None:
                             grouped_news.append(last_news_item)
                         
-                        # ✨ ပြင်ဆင်ချက်: Dictionary တန်ဖိုးများကို အပြည့်အစုံ ဖြည့်စွက်ပြီး ပိတ်ထားပါသည်
                         last_news_item = {
                             'date': current_date,
                             'company': r_company if r_company != '' else '💵 Exchange Rate / News',
@@ -607,7 +531,6 @@ elif menu_choice == "KMM Tractor AI Agent":
                             'image_url': str(row.get('image_url', '')).strip()
                         }
                     else:
-                        # စာသားအဆက်များကို လိုက်သိမ်းပေးမည့် အပိုင်း
                         if last_news_item is not None:
                             if r_content_th != '':
                                 last_news_item['content_th'] = (last_news_item['content_th'] + "\n" + r_content_th).strip()
@@ -616,28 +539,22 @@ elif menu_choice == "KMM Tractor AI Agent":
                             if str(row.get('image_url', '')).strip() != '':
                                 last_news_item['image_url'] = str(row.get('image_url', '')).strip()
                 
-                # Loop ပြီးဆုံးချိန်တွင် နောက်ဆုံးကျန်ခဲ့သော သတင်းကိုပါ ထည့်သွင်းရန်
                 if last_news_item is not None:
                     grouped_news.append(last_news_item)
                 
-                status_placeholder.empty() # Loading စာသားကို ဖျောက်လိုက်ပါမည်
+                status_placeholder.empty() 
                 
-                # ၂။ User ရဲ့ မေးခွန်း (user_query) အရ ဒေတာများကို Filter လုပ်ခြင်း
                 matched_news = []
                 q_clean = user_query.lower()
                 
                 for news in grouped_news:
-                    # 'ယနေ့' သို့မဟုတ် 'ဒီနေ့' ရှာဖွေမှုဖြစ်ပါက
                     if any(x in q_clean for x in ["ယနေ့", "ဒီနေ့", "today"]):
                         if news['date'] in today_formats:
                             matched_news.append(news)
-                    # 'မနေ့က' ရှာဖွေမှုဖြစ်ပါက
                     elif any(x in q_clean for x in ["မနေ့က", "yesterday"]):
                         if news['date'] in yesterday_formats:
                             matched_news.append(news)
-                    # 'စစ်ထုတ်မှု' ခလုတ်ဖြင့် ရှာဖွေခြင်း သို့မဟုတ် သတ်မှတ် ကုမ္ပဏီ/စာသား ပါဝင်မှု ရှာဖွေခြင်း
                     else:
-                        # ဥပမာ- 'သတင်း စစ်ထုတ်မှု: 2026-05-27' သို့မဟုတ် 'Kubota' စသည်ဖြင့် ပါဝင်မှု ရှိမရှိ စစ်ဆေးခြင်း
                         if (q_clean in news['company'].lower() or 
                             q_clean in news['content_th'].lower() or 
                             q_clean in news['content_mm'].lower() or 
@@ -645,7 +562,6 @@ elif menu_choice == "KMM Tractor AI Agent":
                             "report" in q_clean):
                             matched_news.append(news)
                 
-                # ၃။ ရှာဖွေတွေ့ရှိသည့် သတင်းများကို UI Cards ပုံစံဖြင့် Chat ထဲတွင် ထုတ်ပြခြင်း
                 with st.chat_message("assistant"):
                     if matched_news:
                         st.markdown(f"### 📰 '{user_query}' နှင့်ပတ်သက်ပြီး ရှာဖွေတွေ့ရှိသမျှ သတင်းများ:")
@@ -662,14 +578,12 @@ elif menu_choice == "KMM Tractor AI Agent":
                                     st.markdown("**🇲🇲 မြန်မာဘာသာ:**")
                                     st.markdown(news['content_mm'].replace("\n", "  \n"))
                                 
-                                # ပုံများပါဝင်ပါက ဖော်ပြပေးရန်
                                 if news['image_url'] and news['image_url'] != '0':
                                     img_list = [i.strip() for i in news['image_url'].split(',')] 
                                     for img in img_list:
                                         if img.startswith("http"):
                                             st.image(img, use_container_width=True)
                                 
-                                # Promotion နှင့် Social Links များ ပြသရန်
                                 if news['promo'] and news['promo'] != '0':
                                     st.info(f"💡 {news['promo']}")
                                     
