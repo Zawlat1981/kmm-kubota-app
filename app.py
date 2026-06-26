@@ -103,10 +103,10 @@ if menu_choice == "Brand Selection":
             st.image(img_url, use_container_width=True)
             st.markdown(f"[🔍 ပုံကို အကြီးချဲ့ကြည့်ရန် (သို့မဟုတ်) Download ဆွဲရန် နှိပ်ပါ/คลิกเพื่อดูรูปภาพขนาดใหญ่ หรือ ดาวน์โหลด]({img_url})")
             
-        st.markdown(f"### 💰 စက်ဈေးနှုန်း: **{base_price:,.0f}** MMK")
+        st.markdown(f"### 💰 စက်ဈေးနှုန်း(ราคารถ): **{base_price:,.0f}** MMK")
         st.write("---")
         
-        st.subheader("🛠 နောက်တွဲများ ရွေးချယ်ရန် (Implement)")
+        st.subheader("🛠 နောက်တွဲများ ရွေးချယ်ရန်(Implement)")
         selected_att_total = 0
         if not df_attach.empty:
             filtered_att = df_attach[df_attach.iloc[:, 0].astype(str) == selected_model]
@@ -157,9 +157,9 @@ elif menu_choice == "Competitor News Updates":
         search_col1, search_col2 = st.columns(2)
         
         with search_col1:
-            search_query = st.text_input("📝 သတင်းခေါင်းစဉ်/ကုမ္ပဏီ/အကြောင်းအရာဖြင့် ရှာရန်", "")
+            search_query = st.text_input("📝 သတင်းခေါင်းစဉ်/ကုမ္ပဏီ/အကြောင်းအရာဖြင့် ရှာရန်(ตัวเลือกการค้นหา (ค้นหาข่าวตามวันที่หรือชื่อบริษัท))", "")
         with search_col2:
-            search_date = st.date_input("📅 ရက်စွဲဖြင့် ရွေးချယ်ရန်", value=None, format="YYYY-MM-DD")
+            search_date = st.date_input("📅 ရက်စွဲဖြင့် ရှာရန်(ค้นหาตามวันที่)", value=None, format="YYYY-MM-DD")
         st.write("---")
         
         grouped_data = {}  
