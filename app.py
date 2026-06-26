@@ -383,13 +383,13 @@ elif menu_choice == "KMM Tractor AI Agent":
         
         with col_btn1:
             if st.button("📰 ข่าววันนี้", use_container_width=True):
-                suggested_query = "ข่าววันนี้"
+                suggested_query = "ယနေ့သတင်း"
         with col_btn2:
             if st.button("📅 ข่าวเมื่อวาน", use_container_width=True):
-                suggested_query = "ข่าวเมื่อวาน"
+                suggested_query = "မနေ့ကသတင်း"
         with col_btn3:
             if st.button("📊 รายงาน 1 สัปดาห์", use_container_width=True):
-                suggested_query = "ออกรายงานข่าวประจำสัปดาห์ที่ผ่านมา"
+                suggested_query = "ပြီးခဲ့တဲ့တစ်ပတ်စာ သတင်း Report ထုတ်ပေးပါ"
                 
         with col_btn4:
             # 🎯 ပြင်ဆင်ပြီး - Dropdown ထဲတွင် ပြသမည့် Brand စာရင်းများ (Indentation ညှိပြီး)
