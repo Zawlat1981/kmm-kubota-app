@@ -664,7 +664,7 @@ elif menu_choice == "KMM Tractor AI Agent":
                                 
                                 # ပုံများပါဝင်ပါက ဖော်ပြပေးရန်
                                 if news['image_url'] and news['image_url'] != '0':
-                                    img_list = [i.strip() for i in news['image_url'].split(',')]
+                                    img_list = [i.strip() for i in news['image_url'].split(',')] 
                                     for img in img_list:
                                         if img.startswith("http"):
                                             st.image(img, use_container_width=True)
