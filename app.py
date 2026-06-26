@@ -351,7 +351,7 @@ elif menu_choice == "Competitor News Updates":
 # ==========================================
 elif menu_choice == "KMM Tractor AI Agent":
     st.markdown("<h1 style='text-align: center; color: #ff6600;'>🤖 KMM Tractor AI Agent</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #555;'>မေးခွန်းများကို အသင့်နှိပ်၍ဖြစ်စေ၊ ရွေးချယ်စရာ Filter များဖြင့်ဖြစ်စေ စမတ်ကျကျ မေးမြန်းနိုင်ပါသည်</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #555;'>สามารถสอบถามได้โดยการคลิกเลือกคำถามสำเร็จรูป หรือใช้ตัวกรอง</p>", unsafe_allow_html=True)
     st.write("---")
     
     if "OPENROUTER_API_KEY" in st.secrets:
@@ -382,18 +382,18 @@ elif menu_choice == "KMM Tractor AI Agent":
             del st.session_state.dropdown_query
         
         with col_btn1:
-            if st.button("📰 ယနေ့သတင်း", use_container_width=True):
+            if st.button("📰 ข่าววันนี้", use_container_width=True):
                 suggested_query = "ယနေ့သတင်း"
         with col_btn2:
-            if st.button("📅 မနေ့ကသတင်း", use_container_width=True):
+            if st.button("📅 ข่าวเมื่อวาน", use_container_width=True):
                 suggested_query = "မနေ့ကသတင်း"
         with col_btn3:
-            if st.button("📊 ၁ ပတ်စာ Report", use_container_width=True):
+            if st.button("📊 รายงาน 1 สัปดาห์", use_container_width=True):
                 suggested_query = "ပြီးခဲ့တဲ့တစ်ပတ်စာ သတင်း Report ထုတ်ပေးပါ"
                 
         with col_btn4:
             # 🎯 ပြင်ဆင်ပြီး - Dropdown ထဲတွင် ပြသမည့် Brand စာရင်းများ (Indentation ညှိပြီး)
-            brand_list = ["— ရွေးချယ်ပါ —", "Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika"]
+            brand_list = ["— เลือก —", "Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika"]
             
             # label_visibility="collapsed" ဖြင့် စာတန်းကို ဖျောက်ပြီး ခလုတ်များနှင့် အမြင့်ညှိထားသည်
             selected_brand = st.selectbox(
