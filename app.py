@@ -382,10 +382,10 @@ elif menu_choice == "KMM Tractor AI Agent":
             del st.session_state.dropdown_query
         
         with col_btn1:
-            if st.button("📰 ယနေ့သတင်း", use_container_width=True):
+            if st.button("📰 ข่าววันนี้", use_container_width=True):
                 suggested_query = "ข่าววันนี้"
         with col_btn2:
-            if st.button("📅 မနေ့ကသတင်း", use_container_width=True):
+            if st.button("📅 ข่าวเมื่อวาน", use_container_width=True):
                 suggested_query = "ข่าวเมื่อวาน"
         with col_btn3:
             if st.button("📊 รายงาน 1 สัปดาห์", use_container_width=True):
