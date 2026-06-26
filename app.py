@@ -10,7 +10,7 @@ st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout=
 
 def handle_brand_change():
     current_selection = st.session_state.main_page_brand_filter
-    if current_selection != "— ရွေးချယ်ပါ —":
+    if current_selection != "— เลือก —":
         st.session_state.dropdown_query = current_selection
         # ဤနေရာတွင် Widget State ကို "— ရွေးချယ်ပါ —" သို့ Error မတက်ဘဲ ပြန်လည် Reset လုပ်ပေးနိုင်သည်
         st.session_state.main_page_brand_filter = "— ရွေးချယ်ပါ —"
@@ -106,7 +106,7 @@ if menu_choice == "Brand Selection":
         st.markdown(f"### 💰 စက်ဈေးနှုန်း: **{base_price:,.0f}** MMK")
         st.write("---")
         
-        st.subheader("🛠 နောက်တွဲများ ရွေးချယ်ရန်")
+        st.subheader("🛠 နောက်တွဲများ ရွေးချယ်ရန် (Implement)")
         selected_att_total = 0
         if not df_attach.empty:
             filtered_att = df_attach[df_attach.iloc[:, 0].astype(str) == selected_model]
@@ -122,8 +122,8 @@ if menu_choice == "Brand Selection":
                                 options.append({"label": f"{row[m_col]} (+{p:,.0f} MMK)", "price": p})
                             except: continue
                     if options:
-                        c = st.selectbox(f"{label}:", ["မယူပါ"] + [o["label"] for o in options], key=f"{label}_{selected_model}")
-                        if c != "မယူပါ":
+                        c = st.selectbox(f"{label}:", ["မယူပါ(ไม่เอา)"] + [o["label"] for o in options], key=f"{label}_{selected_model}")
+                        if c != "မယူပါ(ไม่เอา)":
                             return next(item["price"] for item in options if item["label"] == c)
                 return 0
             c1, c2 = st.columns(2)
@@ -137,7 +137,7 @@ if menu_choice == "Brand Selection":
                 selected_att_total += add_att_ui("Sowing", "Transplanter_Model1", "Transplanter_Price")
         
         grand_total = base_price + selected_att_total
-        st.success(f"## 📄 စုစုပေါင်း: {grand_total:,.0f} MMK")
+        st.success(f"## 📄 စုစုပေါင်း(ยอดรวมทั้งหมด): {grand_total:,.0f} MMK")
     else:
         st.warning("Sheet Not Found")
 
