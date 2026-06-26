@@ -8,6 +8,23 @@ from openai import OpenAI
 # ၁။ Page Config
 st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout="centered") 
 
+# --- 🎨 Custom CSS (အောက်ခြေ ခလုတ်အနီရောင်အတွက်) ---
+st.markdown("""
+    <style>
+    /* ရှာဖွေမည့် ခလုတ်ကို အနီရောင်ပြောင်းရန် */
+    div.stButton > button.red-btn {
+        background-color: #ff4b4b !important;
+        color: white !important;
+        border: none !important;
+        width: 100%;
+    }
+    div.stButton > button.red-btn:hover {
+        background-color: #ff3333 !important;
+        color: white !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 def handle_brand_change():
     current_selection = st.session_state.main_page_brand_filter
     if current_selection != "— ရွေးချယ်ပါ (เลือก) —":
@@ -392,29 +409,41 @@ elif menu_choice == "KMM Tractor AI Agent":
                 suggested_query = "ပြီးခဲ့တဲ့တစ်ပတ်စာ သတင်း Report ထုတ်ပေးပါ"
                 
         with col_btn4:
-            # 🎯 ပြင်ဆင်ပြီး - Dropdown ထဲတွင် ပြသမည့် Brand စာရင်းများ (Indentation ညှိပြီး)
-            brand_list = ["— ရွေးချယ်ပါ (เลือก) —", "Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika"]
-            
-            # label_visibility="collapsed" ဖြင့် စာတန်းကို ဖျောက်ပြီး ခလုတ်များနှင့် အမြင့်ညှိထားသည်
-            selected_brand = st.selectbox(
-                "Brand Filter", 
-                options=brand_list,
-                key="main_page_brand_filter",
-                label_visibility="collapsed",
-                on_change=handle_brand_change  # 🎯 Callback ကို စနစ်တကျ ချိတ်ဆက်ထားသည်
-            )
+        # 🎯 Dropdown ထဲတွင် ပြသမည့် Brand စာရင်းများ
+        brand_list = ["— ရွေးချယ်ပါ (เลือก) —", "Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika"]
         
-        # --- 🔍 [ရွေးချယ်စရာများ Filters Box] ---
-        with st.expander("🔍 ရွေးချယ်စရာများ (သတင်းများကို ရက်စွဲ သို့မဟုတ် ကုမ္ပဏီဖြင့် စစ်ထုတ်ရန်) / ตัวเลือกการค้นหา (ค้นหาข่าวตามวันที่หรือชื่อบริษัท)", expanded=True):
-            col_filter1, col_filter2 = st.columns(2)
+        selected_brand = st.selectbox(
+            "Brand Filter", 
+            options=brand_list,
+            key="main_page_brand_filter",
+            label_visibility="collapsed",
+            on_change=handle_brand_change
+        )
+    
+    # --- 🔍 [ရွေးချယ်စရာများ Filters Box] ---
+    # Expander ကို col_btn4 ရဲ့ အပြင်ဘက် ပုံမှန်လိုင်းမှာ ပြန်စပါမယ်
+    with st.expander("🔍 ရွေးချယ်စရာများ (သတင်းများကို ရက်စွဲ သို့မဟုတ် ကုမ္ပဏီဖြင့် စစ်ထုတ်ရန်)", expanded=True):
+        col_filter1, col_filter2 = st.columns(2)
+        
+        # 💡 အောက်ကစာကြောင်းတွေကို Expander ထဲရောက်အောင် ညာဘက်ကို ပိုတွန်းထားပါတယ်
+        with col_filter1:
+            filter_date = st.date_input("📅 ရက်စွဲ ရွေးချယ်ရန်", value=None, format="YYYY-MM-DD", help="เลือกวันที่")
             
-            with col_filter1:
-                filter_date = st.date_input("📅 ရက်စွဲ ရွေးချယ်ရန် (เลือกวันที่)", value=None, format="YYYY-MM-DD")
+        with col_filter2:
+            filter_company = st.text_input("🏢 ကုမ္ပဏီ/အဖွဲ့အစည်းအမည် ရိုက်ထည့်ရန်", value="", help="กรอกชื่อบริษัทหรือองค์กร").strip()
             
-            with col_filter2:
-                filter_company = st.text_input("🏢 ကုမ္ပဏီ/အဖွဲ့အစည်းအမည် ရိုက်ထည့်ရန် (กรอกชื่อบริษัทหรือองค์กร)", value="").strip()
-            
-            search_by_filter = st.button("🔎 ရွေးချယ်ထားသော အချက်အလက်များဖြင့် ရှာဖွေမည် (ค้นหาด้วยข้อมูลที่เลือก)", type="primary", use_container_width=True)
+        st.write("") # နေရာလွတ်ခံခြင်း
+        
+        # ခလုတ်နီကို Expander သေတ္တာထဲမှာပဲ လှလှပပ ပေါ်စေရန် ဤနေရာတွင် ထည့်ပါသည်
+        st.markdown('<div class="red-button">', unsafe_allow_html=True)
+        
+        search_by_filter = st.button(
+            "🔎 ရွေးချယ်ထားသော အချက်အလက်များဖြင့် ရှာဖွေမည်", 
+            help="ค้นหาด้วยข้อมูลที่เลือก", 
+            use_container_width=True
+        )
+        
+        st.markdown('</div>', unsafe_allow_html=True) # HTML ပိတ်ရန်
             if search_by_filter:
                 if filter_date is not None and filter_company != "":
                     suggested_query = f"သတင်း စစ်ထုတ်မှု: {filter_date.strftime('%Y-%m-%d')} ရက်စွဲရှိ {filter_company} သတင်း"
