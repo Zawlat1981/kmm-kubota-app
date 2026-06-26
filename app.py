@@ -409,12 +409,12 @@ elif menu_choice == "KMM Tractor AI Agent":
             col_filter1, col_filter2 = st.columns(2)
             
             with col_filter1:
-                filter_date = st.date_input("📅 ရက်စွဲ ရွေးချယ်ရန် (Date)", value=None, format="YYYY-MM-DD")
+                filter_date = st.date_input("📅 เลือกวันที่ (Date)", value=None, format="YYYY-MM-DD")
             
             with col_filter2:
-                filter_company = st.text_input("🏢 ကုမ္ပဏီ/အဖွဲ့အစည်းအမည် ရိုက်ထည့်ရန် (ဥပမာ - Win Shwe Wah, Kubota)", value="").strip()
+                filter_company = st.text_input("🏢 กรอกชื่อบริษัท/องค์กร (ဥပမာ - Win Shwe Wah, Kubota)", value="").strip()
             
-            search_by_filter = st.button("🔎 ရွေးချယ်ထားသော အချက်အလက်များဖြင့် ရှာဖွေမည်", type="primary", use_container_width=True)
+            search_by_filter = st.button("🔎 ค้นหาด้วยข้อมูลที่เลือก", type="primary", use_container_width=True)
             if search_by_filter:
                 if filter_date is not None and filter_company != "":
                     suggested_query = f"သတင်း စစ်ထုတ်မှု: {filter_date.strftime('%Y-%m-%d')} ရက်စွဲရှိ {filter_company} သတင်း"
