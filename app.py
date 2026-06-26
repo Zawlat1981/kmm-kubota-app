@@ -10,10 +10,10 @@ st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout=
 
 def handle_brand_change():
     current_selection = st.session_state.main_page_brand_filter
-    if current_selection != "— เลือก —":
+    if current_selection != "— ရွေးချယ်ပါ —":
         st.session_state.dropdown_query = current_selection
         # ဤနေရာတွင် Widget State ကို "— ရွေးချယ်ပါ —" သို့ Error မတက်ဘဲ ပြန်လည် Reset လုပ်ပေးနိုင်သည်
-        st.session_state.main_page_brand_filter = "— เลือก —"
+        st.session_state.main_page_brand_filter = "— ရွေးချယ်ပါ —"
 
 # Google Sheet ID
 SHEET_ID = "1QqQvPKH7G0hqqhd_0V6cP40Htl8qdFEZ6nHBVe_53_g" 
@@ -90,7 +90,7 @@ if menu_choice == "Brand Selection":
 
         model_list = df_tractor.iloc[:, 0].astype(str).tolist()
         model_list = [m for m in model_list if m not in ["0", "0.0", "nan", "Model"]]
-        selected_model = st.selectbox(f"{selected_brand} เลือกรุ่น (Model) -", model_list)
+        selected_model = st.selectbox(f"{selected_brand} မော်ဒယ်ကို ရွေးပါ -", model_list)
         t_info = df_tractor[df_tractor.iloc[:, 0].astype(str) == selected_model].iloc[0]
         
         try:
@@ -101,12 +101,12 @@ if menu_choice == "Brand Selection":
         img_url = str(t_info.iloc[2])
         if img_url and img_url.startswith("http"):
             st.image(img_url, use_container_width=True)
-            st.markdown(f"[🔍 ပုံကို Download ဆွဲရန် နှိပ်ပါ/คลิกเพื่อดูรูปภาพขนาดใหญ่ หรือ ดาวน์โหลด]({img_url})")
+            st.markdown(f"[🔍 ပုံကို အကြီးချဲ့ကြည့်ရန် (သို့မဟုတ်) Download ဆွဲရန် နှိပ်ပါ/คลิกเพื่อดูรูปภาพขนาดใหญ่ หรือ ดาวน์โหลด]({img_url})")
             
-        st.markdown(f"### 💰 ราคารถ: **{base_price:,.0f}** MMK")
+        st.markdown(f"### 💰 စက်ဈေးနှုန်း: **{base_price:,.0f}** MMK")
         st.write("---")
         
-        st.subheader("🛠 เลือกอุปกรณ์ต่อพ่วง")
+        st.subheader("🛠 နောက်တွဲများ ရွေးချယ်ရန်")
         selected_att_total = 0
         if not df_attach.empty:
             filtered_att = df_attach[df_attach.iloc[:, 0].astype(str) == selected_model]
@@ -122,8 +122,8 @@ if menu_choice == "Brand Selection":
                                 options.append({"label": f"{row[m_col]} (+{p:,.0f} MMK)", "price": p})
                             except: continue
                     if options:
-                        c = st.selectbox(f"{label}:", ["ไม่เลือก"] + [o["label"] for o in options], key=f"{label}_{selected_model}")
-                        if c != "ไม่เลือก":
+                        c = st.selectbox(f"{label}:", ["မယူပါ"] + [o["label"] for o in options], key=f"{label}_{selected_model}")
+                        if c != "မယူပါ":
                             return next(item["price"] for item in options if item["label"] == c)
                 return 0
             c1, c2 = st.columns(2)
@@ -137,7 +137,7 @@ if menu_choice == "Brand Selection":
                 selected_att_total += add_att_ui("Sowing", "Transplanter_Model1", "Transplanter_Price")
         
         grand_total = base_price + selected_att_total
-        st.success(f"## 📄 รวมทั้งสิ้น: {grand_total:,.0f} MMK")
+        st.success(f"## 📄 စုစုပေါင်း: {grand_total:,.0f} MMK")
     else:
         st.warning("Sheet Not Found")
 
@@ -157,9 +157,9 @@ elif menu_choice == "Competitor News Updates":
         search_col1, search_col2 = st.columns(2)
         
         with search_col1:
-            search_query = st.text_input("📝 ค้นหาจากหัวข้อข่าว/บริษัท/เนื้อหา", "")
+            search_query = st.text_input("📝 သတင်းခေါင်းစဉ်/ကုမ္ပဏီ/အကြောင်းအရာဖြင့် ရှာရန်", "")
         with search_col2:
-            search_date = st.date_input("📅 ค้นหาตามวันที่", value=None, format="YYYY-MM-DD")
+            search_date = st.date_input("📅 ရက်စွဲဖြင့် ရွေးချယ်ရန်", value=None, format="YYYY-MM-DD")
         st.write("---")
         
         grouped_data = {}  
@@ -270,7 +270,7 @@ elif menu_choice == "Competitor News Updates":
                 break_all = False
                 
                 with st.chat_message("assistant"):
-                    st.write(f"🔍 แสดงข่าวล่าสุดจากผลการค้นหาทั้งหมด ({total_filtered_items}) รายการครับ")
+                    st.write(f"🔍 ရှာဖွေမှုရလဒ် စုစုပေါင်း ({total_filtered_items}) စောင်အနက်မှ အသစ်ဆုံးသတင်းများကို ဖော်ပြပေးလိုက်ပါတယ် ခင်ဗျာ။")
                     st.write("---")
                     
                     for date_key in sorted(filtered_grouped_data.keys(), reverse=True):
@@ -311,7 +311,7 @@ elif menu_choice == "Competitor News Updates":
                                         for img in img_list:
                                             if img.startswith("http"):
                                                 st.image(img, use_container_width=True) 
-                                                st.markdown(f"[🔍 ดูรูปใหญ่]({img})")
+                                                st.markdown(f"[🔍 ပုံကို အကြီးချဲ့ကြည့်ရန်]({img})")
                                                 
                                     promo = news.get('promo', '')
                                     if promo not in ['', '0']: st.info(f"💡 {promo}")
@@ -333,16 +333,16 @@ elif menu_choice == "Competitor News Updates":
                     if items_displayed < total_filtered_items:
                         col1, col2 = st.columns([2, 3])
                         with col1:
-                            if st.button("👍 ถูกต้องครับ แสดงเพิ่มเติม", key="news_more_pagination_btn"):
+                            if st.button("👍 မှန်ပါတယ်၊ နောက်ထပ်ပြပါ", key="news_more_pagination_btn"):
                                 st.session_state.news_display_count += 7
                                 st.rerun()
                         with col2:
-                            if st.button("👎 ไม่ใช่ครับ ค้นหาใหม่", key="news_stop_pagination_btn"):
-                                st.write("🤖 กรุณาพิมพ์รายละเอียดเพิ่มเติมเกี่ยวกับเรื่องที่คุณต้องการทราบครับ")
+                            if st.button("👎 မဟုတ်ပါဘူး၊ တခြားဟာရှာမယ်", key="news_stop_pagination_btn"):
+                                st.write("🤖 လူကြီးမင်း သိလိုသော အကြောင်းအရာကို ထပ်မံ အသေးစိတ် ရိုက်ထည့်ပေးပါ ခင်ဗျာ။")
                     else:
-                        st.info("👋 แสดงข่าวทั้งหมดเกี่ยวกับเรื่องที่คุณค้นหาเรียบร้อยแล้วครับ")
+                        st.info("👋 လူကြီးမင်း ရှာဖွေနေတဲ့ အကြောင်းအရာနဲ့ ပတ်သက်တဲ့ သတင်းအားလုံးကို ပြသပေးပြီးပါပြီ ခင်ဗျာ။")
             else:
-                st.info("❌ ไม่พบผลลัพธ์การค้นหาครับ")
+                st.info("❌ ရှာဖွေမှုရလဒ်မရှိပါ။")
     else:
         st.error("Error loading data from sheet.")
 
@@ -351,7 +351,7 @@ elif menu_choice == "Competitor News Updates":
 # ==========================================
 elif menu_choice == "KMM Tractor AI Agent":
     st.markdown("<h1 style='text-align: center; color: #ff6600;'>🤖 KMM Tractor AI Agent</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #555;'>สามารถสอบถามได้โดยการคลิกเลือกคำถามสำเร็จรูป หรือใช้ตัวกรอง</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #555;'>မေးခွန်းများကို အသင့်နှိပ်၍ဖြစ်စေ၊ ရွေးချယ်စရာ Filter များဖြင့်ဖြစ်စေ စမတ်ကျကျ မေးမြန်းနိုင်ပါသည်</p>", unsafe_allow_html=True)
     st.write("---")
     
     if "OPENROUTER_API_KEY" in st.secrets:
@@ -372,7 +372,7 @@ elif menu_choice == "KMM Tractor AI Agent":
                 st.markdown(message["content"])
 
         # --- 💡 [အသင့်မေးရန် မေးခွန်းတို ခလုတ်များ] ---
-        st.markdown("<small style='color: #888;'>💡 คุณสามารถคลิกคำถามด้านล่างเพื่อสอบถามได้ง่ายๆ ครับ -</small>", unsafe_allow_html=True)
+        st.markdown("<small style='color: #888;'>💡 အောက်ပါ မေးခွန်းများကို အလွယ်တကူ ကလစ်နှိပ်၍ မေးမြန်းနိုင်ပါသည် -</small>", unsafe_allow_html=True)
         col_btn1, col_btn2, col_btn3, col_btn4 = st.columns(4)
         suggested_query = None
         
@@ -382,18 +382,18 @@ elif menu_choice == "KMM Tractor AI Agent":
             del st.session_state.dropdown_query
         
         with col_btn1:
-            if st.button("📰 ข่าววันนี้", use_container_width=True):
+            if st.button("📰 ယနေ့သတင်း", use_container_width=True):
                 suggested_query = "ယနေ့သတင်း"
         with col_btn2:
-            if st.button("📅 ข่าวเมื่อวาน", use_container_width=True):
+            if st.button("📅 မနေ့ကသတင်း", use_container_width=True):
                 suggested_query = "မနေ့ကသတင်း"
         with col_btn3:
-            if st.button("📊 รายงาน 1 สัปดาห์", use_container_width=True):
+            if st.button("📊 ၁ ပတ်စာ Report", use_container_width=True):
                 suggested_query = "ပြီးခဲ့တဲ့တစ်ပတ်စာ သတင်း Report ထုတ်ပေးပါ"
                 
         with col_btn4:
             # 🎯 ပြင်ဆင်ပြီး - Dropdown ထဲတွင် ပြသမည့် Brand စာရင်းများ (Indentation ညှိပြီး)
-            brand_list = ["— เลือก —", "Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika"]
+            brand_list = ["— ရွေးချယ်ပါ —", "Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika"]
             
             # label_visibility="collapsed" ဖြင့် စာတန်းကို ဖျောက်ပြီး ခလုတ်များနှင့် အမြင့်ညှိထားသည်
             selected_brand = st.selectbox(
@@ -405,16 +405,16 @@ elif menu_choice == "KMM Tractor AI Agent":
             )
         
         # --- 🔍 [ရွေးချယ်စရာများ Filters Box] ---
-        with st.expander("🔍 ตัวเลือกการค้นหา (ค้นหาข่าวตามวันที่หรือชื่อบริษัท)", expanded=True):
+        with st.expander("🔍 ရွေးချယ်စရာများ (သတင်းများကို ရက်စွဲ သို့မဟုတ် ကုမ္ပဏီဖြင့် စစ်ထုတ်ရန်)", expanded=True):
             col_filter1, col_filter2 = st.columns(2)
             
             with col_filter1:
-                filter_date = st.date_input("📅 ค้นหาตามวันที่ (Date)", value=None, format="YYYY-MM-DD")
+                filter_date = st.date_input("📅 ရက်စွဲ ရွေးချယ်ရန် (Date)", value=None, format="YYYY-MM-DD")
             
             with col_filter2:
-                filter_company = st.text_input("🏢 พิมพ์ชื่อบริษัท/องค์กรเพื่อค้นหา (ตัวอย่าง - Win Shwe Wah, Kubota)", value="").strip()
+                filter_company = st.text_input("🏢 ကုမ္ပဏီ/အဖွဲ့အစည်းအမည် ရိုက်ထည့်ရန် (ဥပမာ - Win Shwe Wah, Kubota)", value="").strip()
             
-            search_by_filter = st.button("🔎 ค้นหาด้วยข้อมูลที่เลือก", type="primary", use_container_width=True)
+            search_by_filter = st.button("🔎 ရွေးချယ်ထားသော အချက်အလက်များဖြင့် ရှာဖွေမည်", type="primary", use_container_width=True)
             if search_by_filter:
                 if filter_date is not None and filter_company != "":
                     suggested_query = f"သတင်း စစ်ထုတ်မှု: {filter_date.strftime('%Y-%m-%d')} ရက်စွဲရှိ {filter_company} သတင်း"
@@ -423,10 +423,10 @@ elif menu_choice == "KMM Tractor AI Agent":
                 elif filter_company != "":
                     suggested_query = f"သတင်း စစ်ထုတ်မှု: {filter_company} ကုမ္ပဏီ၏ သတင်းများ"
                 else:
-                    st.info("💡 กรุณาเลือกวันที่หรือกรอกชื่อบริษัทเพื่อกรองข้อมูลครับ")
+                    st.info("💡 အချက်အလက်များကို စစ်ထုတ်ရန် ရက်စွဲတစ်ခု ရွေးချယ်ပေးပါ သို့မဟုတ် ကုမ္ပဏီအမည် ရိုက်ထည့်ပေးပါခင်ဗျာ။")
 
         # Chat Input
-        user_input = st.chat_input("ตัวอย่าง - 'M6240")
+        user_input = st.chat_input("ဥပမာ - 'M6240 ဈေးဘယ်လောက်လဲ' သို့မဟုတ် အပေါ်က စစ်ထုတ်မှုများကို အသုံးပြုပါ")
         user_query = suggested_query if suggested_query else user_input
                 
         if user_query:
@@ -451,7 +451,7 @@ elif menu_choice == "KMM Tractor AI Agent":
                 # အသုံးပြုသူရိုက်လိုက်သော စာသားကို ကွက်လပ်နှင့် Dash များဖြတ်ပြီး ညှိနှိုင်းခြင်း (Normalize)
                 q_clean = "".join(user_query.split()).lower().replace("-", "").replace("_", "")
                 
-                with st.spinner("กำลังค้นหาข้อมูลเครื่องจักรและราคา..."):
+                with st.spinner("စက်ပစ္စည်းနှင့် ဈေးနှုန်းဒေတာများကို ရှာဖွေနေပါသည်..."):
                     for brand in ALL_BRANDS:
                         df_brand = load_all_sheet_data(brand)
                         if df_brand is not None and not df_brand.empty:
@@ -488,19 +488,19 @@ elif menu_choice == "KMM Tractor AI Agent":
                 
                 with st.chat_message("assistant"):
                     if found_tractor_data:
-                        st.markdown(f"### 🚜 รุ่นและราคาที่พบสำหรับ \"{user_query}\"")
+                        st.markdown(f"### 🚜 {user_query} အတွက် ရှာဖွေတွေ့ရှိရသော မော်ဒယ်များနှင့် ဈေးနှုန်းများ")
                         st.write("---")
                         
                         for idx, item in enumerate(found_tractor_data):
                             col1, col2 = st.columns([1, 1])
                             with col1:
                                 st.markdown(f"### {idx+1}။ **{item['model']}**")
-                                st.markdown(f"• **ยี่ห้อ (Brand):** {item['brand']}")
+                                st.markdown(f"• **အမှတ်တံဆိပ် (Brand):** {item['brand']}")
                                 try:
                                     p_val = float(str(item['price']).replace(',', '').strip())
-                                    st.markdown(f"• **ราคาเริ่มต้น (Base Price):** <span style='color:#ff6600; font-size:22px; font-weight:bold;'>{p_val:,.0f}</span> MMK", unsafe_allow_html=True)
+                                    st.markdown(f"• **အခြေခံဈေးနှုန်း (Base Price):** <span style='color:#ff6600; font-size:22px; font-weight:bold;'>{p_val:,.0f}</span> MMK", unsafe_allow_html=True)
                                 except:
-                                    st.markdown(f"• **ราคา (Price):** {item['price']} MMK")
+                                    st.markdown(f"• **ဈေးနှုန်း (Price):** {item['price']} MMK")
                             
                             with col2:
                                 if item['image'] and item['image'].startswith("http"):
@@ -510,11 +510,11 @@ elif menu_choice == "KMM Tractor AI Agent":
                         try:
                             response = client.chat.completions.create(
                                 model="openai/gpt-4o-mini",
-                                messages=[{"role": "system", "content": "ผมคือ AI ฝ่ายขายจาก KMM ครับ ระบบได้แสดงราคาเครื่องจักรเรียบร้อยแล้ว มีอะไรให้ผมช่วยเหลือเพิ่มเติมอีกไหมครับ"}, {"role": "user", "content": user_query}]
+                                messages=[{"role": "system", "content": "မင်းက KMM အရောင်းဆိုင် AI ဖြစ်တယ်။ စက်ဈေးနှုန်းပြပြီးပြီဖြစ်လို့ လူကြီးမင်းအတွက် ဘာများထပ်မံကူညီပေးရမလဲလို့ မြန်မာလို ယဉ်ကျေးစွာ မေးပေးပါ။"}, {"role": "user", "content": user_query}]
                             )
                             ai_reply = response.choices[0].message.content
                             st.info(ai_reply)
-                            st.session_state.messages.append({"role": "assistant", "content": f"🚜 {user_query} ระบบได้แสดงข้อมูลและราคาเครื่องจักรเรียบร้อยแล้วครับ"})
+                            st.session_state.messages.append({"role": "assistant", "content": f"🚜 {user_query} စက်ဈေးနှုန်းနှင့် အချက်အလက်များကို ပြသပေးခဲ့ပြီးပါပြီ။"})
                         except: pass
                     else:
                         st.warning(f"⚠️ တောင်းပန်ပါတယ်ခင်ဗျာ၊ လူကြီးမင်းမေးမြန်းထားသော မော်ဒယ် '{user_query}' ကို စက်ဈေးနှုန်း List ထဲတွင် ရှာမတွေ့ပါသဖြင့် AI အား ထပ်မံမေးမြန်းပေးပါမည်။")
