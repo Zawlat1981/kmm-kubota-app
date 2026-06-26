@@ -106,7 +106,7 @@ if menu_choice == "Brand Selection":
         st.markdown(f"### 💰 စက်ဈေးနှုန်း(ราคารถ): **{base_price:,.0f}** MMK")
         st.write("---")
         
-        st.subheader("🛠 နောက်တွဲများ ရွေးချယ်ရန်(Implement)")
+        st.subheader("🛠 နောက်တွဲများ ရွေးချယ်ရန်(เลือก Implement)")
         selected_att_total = 0
         if not df_attach.empty:
             filtered_att = df_attach[df_attach.iloc[:, 0].astype(str) == selected_model]
