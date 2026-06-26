@@ -372,7 +372,7 @@ elif menu_choice == "KMM Tractor AI Agent":
                 st.markdown(message["content"])
 
         # --- 💡 [အသင့်မေးရန် မေးခွန်းတို ခလုတ်များ] ---
-        st.markdown("<small style='color: #888;'>💡 အောက်ပါ မေးခွန်းများကို အလွယ်တကူ ကလစ်နှိပ်၍ မေးမြန်းနိုင်ပါသည် -</small>", unsafe_allow_html=True)
+        st.markdown("<small style='color: #888;'>💡 คุณสามารถคลิกคำถามด้านล่างเพื่อสอบถามได้ง่ายๆ ครับ -</small>", unsafe_allow_html=True)
         col_btn1, col_btn2, col_btn3, col_btn4 = st.columns(4)
         suggested_query = None
         
@@ -405,7 +405,7 @@ elif menu_choice == "KMM Tractor AI Agent":
             )
         
         # --- 🔍 [ရွေးချယ်စရာများ Filters Box] ---
-        with st.expander("🔍 ရွေးချယ်စရာများ (သတင်းများကို ရက်စွဲ သို့မဟုတ် ကုမ္ပဏီဖြင့် စစ်ထုတ်ရန်)", expanded=True):
+        with st.expander("🔍 ရွေးချယ်စရာများ (ค้นหาข่าวตามวันที่หรือชื่อบริษัท)", expanded=True):
             col_filter1, col_filter2 = st.columns(2)
             
             with col_filter1:
