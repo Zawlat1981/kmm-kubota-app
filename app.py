@@ -90,7 +90,7 @@ if menu_choice == "Brand Selection":
 
         model_list = df_tractor.iloc[:, 0].astype(str).tolist()
         model_list = [m for m in model_list if m not in ["0", "0.0", "nan", "Model"]]
-        selected_model = st.selectbox(f"{selected_brand} မော်ဒယ်ကို ရွေးပါ -", model_list)
+        selected_model = st.selectbox(f"{selected_brand} မော်ဒယ်ကို ရွေးပါ(เลือก Model) -", model_list)
         t_info = df_tractor[df_tractor.iloc[:, 0].astype(str) == selected_model].iloc[0]
         
         try:
@@ -426,7 +426,7 @@ elif menu_choice == "KMM Tractor AI Agent":
                     st.info("💡 အချက်အလက်များကို စစ်ထုတ်ရန် ရက်စွဲတစ်ခု ရွေးချယ်ပေးပါ သို့မဟုတ် ကုမ္ပဏီအမည် ရိုက်ထည့်ပေးပါခင်ဗျာ။")
 
         # Chat Input
-        user_input = st.chat_input("ဥပမာ - 'M6240 ဈေးဘယ်လောက်လဲ' သို့မဟုတ် အပေါ်က စစ်ထုတ်မှုများကို အသုံးပြုပါ")
+        user_input = st.chat_input("ဥပမာ - 'M6240 (Model)' သို့မဟုတ် အပေါ်က စစ်ထုတ်မှုများကို အသုံးပြုပါ")
         user_query = suggested_query if suggested_query else user_input
                 
         if user_query:
