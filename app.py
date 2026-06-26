@@ -11,7 +11,7 @@ ALL_BRANDS = ["Kubota", "Yanmar", "John-Deere", "New-Holland", "Mahindra", "Sona
 
 # Sidebar Selection Mockup (လူကြီးမင်း၏ Main Sidebar Menu နှင့် ချိတ်ဆက်ရန်)
 menu_choice = st.sidebar.radio("Menu Selection", ["Brand Selection", "Competitor News Updates", "KMM Tractor AI Agent"])
-selected_brand = st.sidebar.selectbox("Select Brand (For Menu 1)", ALL_BRANDS)
+selected_brand = st.sidebar.selectbox("Select Brand (For Menu 1)", ALL_BRANDS) 
 
 # Callback Function Mockup
 def handle_brand_change():
