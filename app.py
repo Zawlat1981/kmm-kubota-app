@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import time
 import datetime
-import urllib.parse  # URL Space Bug ကို ဖြေရှင်းရန် ထည့်သွင်းထားသည်
+import urllib.parse  # URL Space Bug ကို ဖြေရှင်းရန် ထည့်သွင်းထားသည် 
 from openai import OpenAI
 
 # ၁။ Page Config
