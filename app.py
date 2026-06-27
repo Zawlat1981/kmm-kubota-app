@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import time
 import datetime
-import urllib.parse
+import urllib.parse  
 from openai import OpenAI
 from duckduckgo_search import DDGS  
 
@@ -443,163 +443,208 @@ elif menu_choice == "KMM Tractor AI Agent":
             with st.chat_message("user"):
                 st.markdown(user_query)
             st.session_state.messages.append({"role": "user", "content": user_query})
-
-    # ၂။ Database (Sheets/News) ထဲတွင် ရှာဖွေခြင်း
-            answer = search_in_kmm_database(user_query) 
-
-       if answer and len(answer) > 20: 
-           with st.chat_message("assistant"):
-               st.markdown(answer)
-             st.session_state.messages.append({"role": "assistant", "content": answer})
-       else:
-        # ၃။ အဖြေမရှိပါက Search Tool ကိုသုံးပါ
-           with st.spinner("အွန်လိုင်းမှ အချက်အလက်များကို ရှာဖွေနေပါသည်..."):
-            search_results = search_google(user_query) 
             
-            final_response = client.chat.completions.create(
-                model="openai/gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": "မင်းသည် KMM Company ၏ AI ဖြစ်သည်။ ပေးထားသော Search ရလဒ်များကို အခြေခံ၍ မေးခွန်းကို မြန်မာဘာသာဖြင့် တိကျစွာ ဖြေဆိုပါ။"},
-                    {"role": "user", "content": f"Search ရလဒ်များ: {search_results}\n\nမေးခွန်း: {user_query}"}
-                ]
-            )
-            ai_reply = final_response.choices[0].message.content
+            is_news_intent = any(keyword in user_query for keyword in ["သတင်း", "news", "report", "တင်ထားတာ", "ယနေ့", "မနေ့က", "ဒီနေ့", "စစ်ထုတ်မှု"])
             
-           with st.chat_message("assistant"):
-                st.markdown(ai_reply)
-                st.session_state.messages.append({"role": "assistant", "content": ai_reply})
-
-    # ၄။ သတင်းရှာဖွေခြင်းအတွက် Logic ကို ဒီနေရာမှာပဲ သီးသန့်ထားပါ
-    is_news_intent = any(keyword in user_query for keyword in ["သတင်း", "news", "report", "တင်ထားတာ", "ယနေ့", "မနေ့က", "ဒီနေ့"])
-    if is_news_intent:
-        today_date_obj = datetime.date.today()
+            today_date_obj = datetime.date.today()
             yesterday_date_obj = today_date_obj - datetime.timedelta(days=1)
             
             today_formats = [today_date_obj.strftime("%Y-%m-%d"), today_date_obj.strftime("%d-%m-%Y"), today_date_obj.strftime("%d/%m/%Y")]
             yesterday_formats = [yesterday_date_obj.strftime("%Y-%m-%d"), yesterday_date_obj.strftime("%d-%m-%Y"), yesterday_date_obj.strftime("%d/%m/%Y")]
 
-# ==========================================================
-# 模式 (A) - စက်မော်ဒယ် သို့မဟုတ် ဈေးနှုန်းမေးမြန်းခြင်း
-# ==========================================================
-if not is_news_intent:
-    found_tractor_data = []
-    # Normalize user query
-    q_clean = "".join(user_query.split()).lower().replace("-", "").replace("_", "")
-    
-    with st.spinner("စက်ပစ္စည်းနှင့် ဈေးနှုန်းဒေတာများကို ရှာဖွေနေပါသည်..."):
-        for brand in ALL_BRANDS:
-            df_brand = load_all_sheet_data(brand)
-            if df_brand is not None and not df_brand.empty:
-                brand_clean = brand.lower().replace("-", "").replace("_", "")
-                q_model_only = q_clean.replace(brand_clean, "")
+            # ==========================================================
+            # 模式 (A) - စက်မော်ဒယ် သို့မဟုတ် ဈေးနှုန်းမေးမြန်းခြင်း
+            # ==========================================================
+            if not is_news_intent:
+                found_tractor_data = []
                 
-                for _, row in df_brand.iterrows():
-                    model_name = str(row.iloc[0]).strip()
-                    if model_name in ["0", "0.0", "nan", "Model", ""]:
-                        continue
-                        
-                    model_clean = "".join(model_name.split()).lower().replace("-", "").replace("_", "")
-                    
-                    match = False
-                    if q_model_only:
-                        if q_model_only in model_clean or model_clean in q_model_only:
-                            match = True
-                    elif brand.lower() in user_query.lower():
-                        match = True
+                # အသုံးပြုသူရိုက်လိုက်သော စာသားကို ကွက်လပ်နှင့် Dash များဖြတ်ပြီး ညှိနှိုင်းခြင်း (Normalize)
+                q_clean = "".join(user_query.split()).lower().replace("-", "").replace("_", "")
+                
+                with st.spinner("စက်ပစ္စည်းနှင့် ဈေးနှုန်းဒေတာများကို ရှာဖွေနေပါသည်..."):
+                    for brand in ALL_BRANDS:
+                        df_brand = load_all_sheet_data(brand)
+                        if df_brand is not None and not df_brand.empty:
+                            
+                            # "Kubota DC70G Pro" ဟု တွဲရိုက်ခဲ့ပါက Brand အမည်အား ဖယ်ထုတ်၍ မော်ဒယ်သက်သက်ဖြင့် ရှာရန်
+                            brand_clean = brand.lower().replace("-", "").replace("_", "")
+                            q_model_only = q_clean.replace(brand_clean, "")
+                            
+                            for _, row in df_brand.iterrows():
+                                model_name = str(row.iloc[0]).strip()
+                                if model_name in ["0", "0.0", "nan", "Model", ""]:
+                                    continue
+                                    
+                                # Sheet ထဲမှ မော်ဒယ်အမည်ကိုလည်း ကွက်လပ်နှင့် Dash များဖြတ်၍ ညှိနှိုင်းခြင်း
+                                model_clean = "".join(model_name.split()).lower().replace("-", "").replace("_", "")
                                 
-                    if match:
-                        found_tractor_data.append({
-                            "brand": brand,
-                            "model": model_name,
-                            "price": str(row.iloc[1]),
-                            "image": str(row.iloc[2]) if len(row) > 2 else ""
-                        })
-    
-    with st.chat_message("assistant"):
-        if found_tractor_data:
-            st.markdown(f"### 🚜 '{user_query}' အတွက် ရှာဖွေတွေ့ရှိရသော မော်ဒယ်များ")
-            st.divider()
-            
-            for idx, item in enumerate(found_tractor_data):
-                col1, col2 = st.columns([2, 1])
-                with col1:
-                    st.markdown(f"### {idx+1}။ **{item['model']}**")
-                    st.markdown(f"• **Brand:** {item['brand']}")
-                    try:
-                        p_val = float(item['price'].replace(',', '').strip())
-                        st.markdown(f"• **ဈေးနှုန်း:** :orange[**{p_val:,.0f} MMK**]")
-                    except:
-                        st.markdown(f"• **ဈေးနှုန်း:** {item['price']} MMK")
+                                match = False
+                                if q_model_only:
+                                    # Space ပါသည်ဖြစ်စေ၊ မပါသည်ဖြစ်စေ နှစ်ဖက်စလုံးကို နှိုင်းယှဉ်စစ်ဆေးခြင်း
+                                    if q_model_only in model_clean or model_clean in q_model_only:
+                                        match = True
+                                else:
+                                    # Brand အမည်သက်သက်သာ ရိုက်ရှာခဲ့ပါက ၎င်း Brand တစ်ခုလုံးကို ပြသရန်
+                                    if brand.lower() in user_query.lower():
+                                        match = True
+                                        
+                                if match:
+                                    found_tractor_data.append({
+                                        "brand": brand,
+                                        "model": model_name,
+                                        "price": str(row.iloc[1]),
+                                        "image": str(row.iloc[2]) if len(row) > 2 else ""
+                                    })
                 
-                with col2:
-                    if item['image'] and item['image'].startswith("http"):
-                        st.image(item['image'], use_container_width=True)
-                st.divider()
-            
-            # AI Reply after showing data
-            try:
-                response = client.chat.completions.create(
-                    model="openai/gpt-4o-mini",
-                    messages=[{"role": "system", "content": "မင်းက KMM အရောင်းဆိုင် AI ဖြစ်တယ်။ စက်ဈေးနှုန်းပြပြီးပြီဖြစ်လို့ လူကြီးမင်းအတွက် ဘာများထပ်မံကူညီပေးရမလဲလို့ မြန်မာလို ယဉ်ကျေးစွာ မေးပေးပါ။"}, {"role": "user", "content": user_query}]
-                )
-                st.info(response.choices[0].message.content)
-            except: pass
-        else:
-            st.warning(f"⚠️ တောင်းပန်ပါတယ်၊ '{user_query}' ကို ရှာမတွေ့ပါ။ အင်တာနက်မှ ထပ်မံရှာဖွေပေးပါမည်။")
-            # Fallback search if not found
-            try:
-                response = client.chat.completions.create(
-                    model="openai/gpt-4o-mini",
-                    messages=[{"role": "user", "content": user_query}]
-                )
-                st.markdown(response.choices[0].message.content)
-            except: pass
+                with st.chat_message("assistant"):
+                    if found_tractor_data:
+                        st.markdown(f"### 🚜 {user_query} အတွက် ရှာဖွေတွေ့ရှိရသော မော်ဒယ်များနှင့် ဈေးနှုန်းများ")
+                        st.write("---")
+                        
+                        for idx, item in enumerate(found_tractor_data):
+                            col1, col2 = st.columns([1, 1])
+                            with col1:
+                                st.markdown(f"### {idx+1}။ **{item['model']}**")
+                                st.markdown(f"• **အမှတ်တံဆိပ် (Brand):** {item['brand']}")
+                                try:
+                                    p_val = float(str(item['price']).replace(',', '').strip())
+                                    st.markdown(f"• **အခြေခံဈေးနှုန်း (Base Price):** <span style='color:#ff6600; font-size:22px; font-weight:bold;'>{p_val:,.0f}</span> MMK", unsafe_allow_html=True)
+                                except:
+                                    st.markdown(f"• **ဈေးနှုန်း (Price):** {item['price']} MMK")
+                            
+                            with col2:
+                                if item['image'] and item['image'].startswith("http"):
+                                    st.image(item['image'], use_container_width=True)
+                            st.write("---")
+                        
+                        try:
+                            response = client.chat.completions.create(
+                                model="openai/gpt-4o-mini",
+                                messages=[{"role": "system", "content": "မင်းက KMM အရောင်းဆိုင် AI ဖြစ်တယ်။ စက်ဈေးနှုန်းပြပြီးပြီဖြစ်လို့ လူကြီးမင်းအတွက် ဘာများထပ်မံကူညီပေးရမလဲလို့ မြန်မာလို ယဉ်ကျေးစွာ မေးပေးပါ။"}, {"role": "user", "content": user_query}]
+                            )
+                            ai_reply = response.choices[0].message.content
+                            st.info(ai_reply)
+                            st.session_state.messages.append({"role": "assistant", "content": f"🚜 {user_query} စက်ဈေးနှုန်းနှင့် အချက်အလက်များကို ပြသပေးခဲ့ပြီးပါပြီ။"})
+                        except: pass
+                    else:
+                        st.warning(f"⚠️ တောင်းပန်ပါတယ်ခင်ဗျာ၊ လူကြီးမင်းမေးမြန်းထားသော မော်ဒယ် '{user_query}' ကို စက်ဈေးနှုန်း List ထဲတွင် ရှာမတွေ့ပါသဖြင့် AI အား ထပ်မံမေးမြန်းပေးပါမည်။")
+                        try:
+                            response = client.chat.completions.create(
+                                model="openai/gpt-4o-mini",
+                                messages=[{"role": "user", "content": user_query}]
+                            )
+                            ai_reply = response.choices[0].message.content
+                            st.markdown(ai_reply)
+                            st.session_state.messages.append({"role": "assistant", "content": ai_reply})
+                        except: pass
 
-# ==========================================================
-# 模式 (B) - Competitor News Updates
-# ==========================================================
-else:
-    status_placeholder = st.empty()
-    status_placeholder.text("⏳ Competitor News Updates ကို စုစည်းနေပါသည်...")
-    
-    df_comp = load_all_sheet_data("Competitor News Updates")
-    grouped_news = []
-    
-    if df_comp is not None and not df_comp.empty:
-        df_comp.columns = [str(c).strip().lower() for c in df_comp.columns]
-        current_date = "No Date"
-        last_news_item = None
-        
-        for _, row in df_comp.iterrows():
-            r_date, r_company = str(row.get('date', '')).strip(), str(row.get('company', '')).strip()
-            r_content_th, r_content_mm = str(row.get('content_th', '')).strip(), str(row.get('content_mm', '')).strip()
-            
-            if not any([r_date, r_company, r_content_th, r_content_mm]): continue
+            # 模式 (B) - Competitor News Updates ကို တိုက်ရိုက် UI Cards ဖြင့် ထုတ်ပြခြင်း (ကွက်တိပြင်ဆင်ပြီး)
+            # ==========================================================
+            else:
+                matched_news_list = []
                 
-            if r_date or r_company:
-                if last_news_item: grouped_news.append(last_news_item)
-                current_date = r_date if r_date else current_date
-                last_news_item = {
-                    'date': current_date, 'company': r_company or '💵 Exchange Rate / News',
-                    'content_th': r_content_th, 'content_mm': r_content_mm
-                }
-            elif last_news_item:
-                if r_content_th: last_news_item['content_th'] += "\n" + r_content_th
-                if r_content_mm: last_news_item['content_mm'] += "\n" + r_content_mm
-        if last_news_item: grouped_news.append(last_news_item)
-    
-    status_placeholder.empty()
+                status_placeholder = st.empty()
+                status_placeholder.text("⏳ Competitor News Updates ရှီတ်ထဲမှ အချက်အလက်များကို Agent က စုစည်းနေပါသည်...")
+                
+                # ၁။ Competitor News Updates Sheet ကို Grouping ပုံစံအတိုင်း စနစ်တကျဖတ်မယ်
+                df_comp = load_all_sheet_data("Competitor News Updates")
+                grouped_news = []
+                
+                if df_comp is not None and not df_comp.empty:
+                    df_comp.columns = [str(c).strip().lower() for c in df_comp.columns]
+                    current_date = "No Date"
+                    last_news_item = None
+                    
+                    for _, row in df_comp.iterrows():
+                        r_date = str(row.get('date', '')).strip()
+                        r_company = str(row.get('company', '')).strip()
+                        r_content_th = str(row.get('content_th', '')).strip()
+                        r_content_mm = str(row.get('content_mm', '')).strip()
+                        
+                        if r_date == '' and r_company == '' and r_content_th == '' and r_content_mm == '':
+                            continue
+                            
+                        if r_date != '' or r_company != '':
+                            if r_date != '':
+                                current_date = r_date
+                            if last_news_item is not None:
+                                grouped_news.append(last_news_item)
+                            
+                            last_news_item = {
+                                'date': current_date,
+                                'company': r_company if r_company != '' else '💵 Exchange Rate / News',
+                                'content_th': r_content_th,
+                                'content_mm': r_content_mm,
+                                'promo': str(row.get('promo', '')).strip(),
+                                'facebook': str(row.get('facebook', '')).strip(),
+                                'tiktok': str(row.get('tiktok', '')).strip(),
+                                'telegram': str(row.get('telegram', '')).strip(),
+                                'image_url': str(row.get('image_url', '')).strip() 
+                            }
+                        else:
+                            if last_news_item is not None:
+                                if r_content_th != '':
+                                    last_news_item['content_th'] = (last_news_item['content_th'] + "\n" + r_content_th).strip()
+                                if r_content_mm != '':
+                                    last_news_item['content_mm'] = (last_news_item['content_mm'] + "\n" + r_content_mm).strip()
+                    
+                    if last_news_item is not None:
+                        grouped_news.append(last_news_item)
+                
+                status_placeholder.empty()
 
-    # Filter logic
-    matched_news_list = [n for n in grouped_news if any(w in (n['company']+n['content_mm']+n['content_th']).lower() for w in user_query.lower().split())] if "စစ်ထုတ်မှု" not in user_query else grouped_news
-    
-    with st.chat_message("assistant"):
-        if matched_news_list:
-            st.markdown(f"### 📊 ရှာဖွေတွေ့ရှိရသော သတင်း ({len(matched_news_list)} စောင်)")
-            for news in matched_news_list:
-                with st.container(border=True):
-                    st.markdown(f"**🏢 {news['company']}** | 📅 {news['date']}")
-                    st.markdown(news['content_mm'])
-        else:
-            google_result = search_google(user_query)
-            st.info(google_result)
+                # ၂။ နေ့စွဲ သို့မဟုတ် ရှာဖွေမှုစကားလုံးအတိုင်း ကိုက်ညီတာကို စစ်ထုတ်မယ်
+                for news in grouped_news:
+                    news_date_clean = news['date'].replace('/', '-').strip()
+                    company_lower = news['company'].lower()
+                    content_lower = (news['content_mm'] + news['content_th']).lower()
+                    
+                    match_found = False
+                    
+                    if "စစ်ထုတ်မှု" in user_query:
+                        match_date_ok = True
+                        match_company_ok = True
+                        if filter_date is not None:
+                            sel_date_str = filter_date.strftime("%Y-%m-%d")
+                            match_date_ok = (sel_date_str in news_date_clean)
+                        if filter_company != "":
+                            f_co = filter_company.lower()
+                            match_company_ok = (f_co in company_lower or f_co in content_lower)
+                        if match_date_ok and match_company_ok: match_found = True
+                    elif any(word in user_query for word in ["ယနေ့", "ဒီနေ့", "မနေ့က", "ပတ်စာ", "report"]):
+                        match_found = True
+                    else:
+                        q_words = user_query.lower().split()
+                        if any(word in company_lower or word in content_lower for word in q_words):
+                            match_found = True
+                            
+                    if match_found:
+                        matched_news_list.append(news)
+                
+                # ၃။ ရလဒ်ထွက်ပေါ်လာမှုကို UI Card များဖြင့် တိုက်ရိုက် လှပစွာ ထုတ်ပြခြင်း
+                with st.chat_message("assistant"):
+                    if matched_news_list:
+                        st.markdown(f"### 📊 ရှာဖွေတွေ့ရှိရသော Competitor News ({len(matched_news_list)}) စောင်")
+                        for news in matched_news_list:
+                            with st.container(border=True):
+                                st.markdown(f"**🏢 {news['company']}** | 📅 {news['date']}")
+                                if news['content_mm']: st.markdown(news['content_mm'])
+                        
+                        # AI Summary
+                        context_str = "\n".join([f"- {n['company']}: {n['content_mm']}" for n in matched_news_list[:3]])
+                        response = client.chat.completions.create(model="openai/gpt-4o-mini", messages=[{"role": "system", "content": "မြန်မာလို ရှင်းပြပေးပါ။"}, {"role": "user", "content": f"ဒီသတင်းတွေကို အကျဉ်းချုပ်ပေးပါ: {context_str}"}])
+                        st.info(response.choices[0].message.content)
+
+                    else:
+                        # Sheet မှာ မရှိရင် DuckDuckGo သုံးမယ်
+                        with st.status("အင်တာနက်ပေါ်မှ ရှာဖွေနေပါသည်...", expanded=True) as status:
+                            google_result = search_google(user_query)
+                            response = client.chat.completions.create(
+                                model="openai/gpt-4o-mini",
+                                messages=[
+                                    {"role": "system", "content": "မင်းက အသိပညာပေး AI ဖြစ်တယ်။ ပေးထားသော Search ရလဒ်များကို အခြေခံ၍ မြန်မာလို ပြည့်စုံအောင်ဖြေပေးပါ။"},
+                                    {"role": "user", "content": f"မေးခွန်း: {user_query}\n\nSearch ရလဒ်များ: {google_result}"}
+                                ]
+                            )
+                            st.info(response.choices[0].message.content)
+                            status.update(label="ပြီးဆုံးပါပြီ", state="complete")
