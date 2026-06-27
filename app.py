@@ -442,11 +442,11 @@ elif menu_choice == "KMM Tractor AI Agent":
         if user_query:
     # ၁။ User Message ကို တစ်ခါပဲ Appending လုပ်ပါ
            with st.chat_message("user"):
-           st.markdown(user_query)
-           st.session_state.messages.append({"role": "user", "content": user_query})
+            st.markdown(user_query)
+            st.session_state.messages.append({"role": "user", "content": user_query})
 
     # ၂။ Database (Sheets/News) ထဲတွင် ရှာဖွေခြင်း
-           answer = search_in_kmm_database(user_query) 
+            answer = search_in_kmm_database(user_query) 
 
     if answer and len(answer) > 20: 
         with st.chat_message("assistant"):
