@@ -4,7 +4,7 @@ import time
 import datetime
 import urllib.parse  
 from openai import OpenAI
-from duckduckgo_search import DDGS  
+from duckduckgo_search import DDGS 
 
 # Search Function အသစ်
 def search_google(query):
