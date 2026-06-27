@@ -436,7 +436,7 @@ elif menu_choice == "KMM Tractor AI Agent":
                     st.info("💡 အချက်အလက်များကို စစ်ထုတ်ရန် ရက်စွဲတစ်ခု ရွေးချယ်ပေးပါ သို့မဟုတ် ကုမ္ပဏီအမည် ရိုက်ထည့်ပေးပါခင်ဗျာ။")
 
         # Chat Input
-        user_input = st.chat_input("ဥပမာ - 'M6240 (Model)' သို့မဟုတ် အပေါ်က စစ်ထုတ်မှုများကို အသုံးပြုပါ")
+        user_input = st.chat_input("You can ask any Question")
         user_query = suggested_query if suggested_query else user_input
                 
         if user_query:
