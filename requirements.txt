@@ -2,4 +2,4 @@ streamlit
 pandas
 openai
 requests
-duckduckgo-search
+duckduckgo-search>=8.1.1
