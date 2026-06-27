@@ -440,21 +440,20 @@ elif menu_choice == "KMM Tractor AI Agent":
         user_query = suggested_query if suggested_query else user_input
                 
         if user_query:
-    # ၁။ User Message ကို တစ်ခါပဲ Appending လုပ်ပါ
-           with st.chat_message("user"):
-            st.markdown(user_query)
+            with st.chat_message("user"):
+                st.markdown(user_query)
             st.session_state.messages.append({"role": "user", "content": user_query})
 
     # ၂။ Database (Sheets/News) ထဲတွင် ရှာဖွေခြင်း
             answer = search_in_kmm_database(user_query) 
 
-    if answer and len(answer) > 20: 
-        with st.chat_message("assistant"):
-            st.markdown(answer)
-            st.session_state.messages.append({"role": "assistant", "content": answer})
-    else:
+       if answer and len(answer) > 20: 
+           with st.chat_message("assistant"):
+               st.markdown(answer)
+             st.session_state.messages.append({"role": "assistant", "content": answer})
+       else:
         # ၃။ အဖြေမရှိပါက Search Tool ကိုသုံးပါ
-        with st.spinner("အွန်လိုင်းမှ အချက်အလက်များကို ရှာဖွေနေပါသည်..."):
+           with st.spinner("အွန်လိုင်းမှ အချက်အလက်များကို ရှာဖွေနေပါသည်..."):
             search_results = search_google(user_query) 
             
             final_response = client.chat.completions.create(
@@ -466,7 +465,7 @@ elif menu_choice == "KMM Tractor AI Agent":
             )
             ai_reply = final_response.choices[0].message.content
             
-            with st.chat_message("assistant"):
+           with st.chat_message("assistant"):
                 st.markdown(ai_reply)
                 st.session_state.messages.append({"role": "assistant", "content": ai_reply})
 
@@ -479,7 +478,7 @@ elif menu_choice == "KMM Tractor AI Agent":
             today_formats = [today_date_obj.strftime("%Y-%m-%d"), today_date_obj.strftime("%d-%m-%Y"), today_date_obj.strftime("%d/%m/%Y")]
             yesterday_formats = [yesterday_date_obj.strftime("%Y-%m-%d"), yesterday_date_obj.strftime("%d-%m-%Y"), yesterday_date_obj.strftime("%d/%m/%Y")]
 
-            # ==========================================================
+# ==========================================================
 # 模式 (A) - စက်မော်ဒယ် သို့မဟုတ် ဈေးနှုန်းမေးမြန်းခြင်း
 # ==========================================================
 if not is_news_intent:
