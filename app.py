@@ -4,7 +4,17 @@ import time
 import datetime
 import urllib.parse  # URL Space Bug ကို ဖြေရှင်းရန် ထည့်သွင်းထားသည်
 from openai import OpenAI
+from duckduckgo_search import DDGS  # Library မရှိသေးရင်: pip install duckduckgo-search
 
+# Search Function အသစ်
+def search_google(query):
+    try:
+        with DDGS() as ddgs:
+            results = [r for r in ddgs.text(query, max_results=4)]
+            content = "\n".join([f"Source: {r['href']}\nInfo: {r['body']}" for r in results])
+            return content
+    except Exception as e:
+        return f"ရှာဖွေရာတွင် အမှားဖြစ်သည်: {str(e)}"
 # ၁။ Page Config
 st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout="centered")
 
@@ -528,7 +538,6 @@ elif menu_choice == "KMM Tractor AI Agent":
                             st.session_state.messages.append({"role": "assistant", "content": ai_reply})
                         except: pass
 
-            # ==========================================================
             # 模式 (B) - Competitor News Updates ကို တိုက်ရိုက် UI Cards ဖြင့် ထုတ်ပြခြင်း (ကွက်တိပြင်ဆင်ပြီး)
             # ==========================================================
             else:
@@ -578,17 +587,7 @@ elif menu_choice == "KMM Tractor AI Agent":
                                     last_news_item['content_th'] = (last_news_item['content_th'] + "\n" + r_content_th).strip()
                                 if r_content_mm != '':
                                     last_news_item['content_mm'] = (last_news_item['content_mm'] + "\n" + r_content_mm).strip()
-                                if str(row.get('image_url', '')).strip() != '':
-                                    last_news_item['image_url'] = str(row.get('image_url', '')).strip()
-                                if str(row.get('promo', '')).strip() != '':
-                                    last_news_item['promo'] = str(row.get('promo', '')).strip()
-                                if str(row.get('facebook', '')).strip() != '':
-                                    last_news_item['facebook'] = str(row.get('facebook', '')).strip()
-                                if str(row.get('tiktok', '')).strip() != '':
-                                    last_news_item['tiktok'] = str(row.get('tiktok', '')).strip()
-                                if str(row.get('telegram', '')).strip() != '':
-                                    last_news_item['telegram'] = str(row.get('telegram', '')).strip()
-                                    
+                    
                     if last_news_item is not None:
                         grouped_news.append(last_news_item)
                 
@@ -602,50 +601,18 @@ elif menu_choice == "KMM Tractor AI Agent":
                     
                     match_found = False
                     
-                    # (က) Filter သုံးပြီး နေ့စွဲဖြင့် တိုက်ရိုက်စစ်ထုတ်ခြင်း
                     if "စစ်ထုတ်မှု" in user_query:
                         match_date_ok = True
                         match_company_ok = True
-                        
                         if filter_date is not None:
                             sel_date_str = filter_date.strftime("%Y-%m-%d")
-                            alt_date_1 = filter_date.strftime("%d-%m-%Y")
-                            alt_date_2 = filter_date.strftime("%Y/%m/%d")
-                            alt_date_3 = filter_date.strftime("%d/%m/%Y")
-                            
-                            match_date_ok = (sel_date_str in news_date_clean or 
-                                             alt_date_1 in news_date_clean or
-                                             alt_date_2 in news_date_clean or
-                                             alt_date_3 in news_date_clean)
-                                             
+                            match_date_ok = (sel_date_str in news_date_clean)
                         if filter_company != "":
                             f_co = filter_company.lower()
                             match_company_ok = (f_co in company_lower or f_co in content_lower)
-                            
-                        if match_date_ok and match_company_ok:
-                            match_found = True
-                            
-                    # (ခ) "ယနေ့သတင်း" နှိပ်လျှင်
-                    elif "ယနေ့" in user_query or "ဒီနေ့" in user_query:
-                        if any(fmt in news_date_clean for fmt in today_formats):
-                            match_found = True
-                            
-                    # (ဂ) "မနေ့ကသတင်း" နှိပ်လျှင်
-                    elif "မနေ့က" in user_query:
-                        if any(fmt in news_date_clean for fmt in yesterday_formats):
-                            match_found = True
-                            
-                    # (ဃ) "၁ ပတ်စာ Report" နှိပ်လျှင်
-                    elif "ပတ်စာ" in user_query or "report" in user_query:
-                        try:
-                            item_date_obj = pd.to_datetime(news_date_clean, errors='coerce').date()
-                            if pd.notna(item_date_obj):
-                                seven_days_ago = today_date_obj - datetime.timedelta(days=7)
-                                if seven_days_ago <= item_date_obj <= today_date_obj:
-                                    match_found = True
-                        except: pass
-                        
-                    # (င) စာသားရိုက်ပြီး ရှာဖွေခြင်း
+                        if match_date_ok and match_company_ok: match_found = True
+                    elif any(word in user_query for word in ["ယနေ့", "ဒီနေ့", "မနေ့က", "ပတ်စာ", "report"]):
+                        match_found = True
                     else:
                         q_words = user_query.lower().split()
                         if any(word in company_lower or word in content_lower for word in q_words):
@@ -657,64 +624,27 @@ elif menu_choice == "KMM Tractor AI Agent":
                 # ၃။ ရလဒ်ထွက်ပေါ်လာမှုကို UI Card များဖြင့် တိုက်ရိုက် လှပစွာ ထုတ်ပြခြင်း
                 with st.chat_message("assistant"):
                     if matched_news_list:
-                        st.markdown(f"### 📊 ရှာဖွေတွေ့ရှိရသော Competitor News အချက်အလက်များ ({len(matched_news_list)}) စောင်")
-                        st.write("---")
-                        
+                        st.markdown(f"### 📊 ရှာဖွေတွေ့ရှိရသော Competitor News ({len(matched_news_list)}) စောင်")
                         for news in matched_news_list:
                             with st.container(border=True):
-                                st.markdown(f"<h3 style='color: #0066cc; margin: 0;'>🏢 {news['company']}</h3>", unsafe_allow_html=True)
-                                st.markdown(f"<small style='color: #888;'>📅 Date: {news['date']}</small>", unsafe_allow_html=True)
-                                st.write("---")
-                                
-                                if news['content_th']:
-                                    st.markdown("**🇹🇭 ภาษาไทย**")
-                                    st.markdown(news['content_th'].replace("\n", "  \n"))
-                                if news['content_th'] and news['content_mm']:
-                                    st.write("---")
-                                if news['content_mm']:
-                                    st.markdown("**🇲🇲 မြန်မာဘာသာ**")
-                                    st.markdown(news['content_mm'].replace("\n", "  \n"))
-                                    
-                                if news['image_url']:
-                                    st.write("---")
-                                    img_list = [i.strip() for i in news['image_url'].split(',') if i.strip().startswith('http')]
-                                    for img in img_list:
-                                        st.image(img, use_container_width=True)
-                                        st.markdown(f"[🔍 ပုံကို အကြီးချဲ့ကြည့်ရန်]({img})")
-                                        
-                                if news['promo'] and news['promo'] != '0':
-                                    st.info(f"💡 Promo: {news['promo']}")
-                                    
-                                fb_link = news['facebook'].strip()
-                                tt_link = news['tiktok'].strip()
-                                tg_link = news['telegram'].strip()
-                                if (fb_link and fb_link.startswith("http")) or (tt_link and tt_link.startswith("http")) or (tg_link and tg_link.startswith("http")):
-                                    st.write("---")
-                                    btn_col1, btn_col2, btn_col3 = st.columns(3)
-                                    if fb_link and fb_link.startswith("http"):
-                                        with btn_col1: st.link_button("🔵 Facebook", fb_link, use_container_width=True)
-                                    if tt_link and tt_link.startswith("http"):
-                                        with btn_col2: st.link_button("⚫ TikTok", tt_link, use_container_width=True)
-                                    if tg_link and tg_link.startswith("http"):
-                                        with btn_col3: st.link_button("✈️ Telegram", tg_link, use_container_width=True)
-                                        
-                        context_str = "\n".join([f"Company: {n['company']} | Content: {n['content_mm']}" for n in matched_news_list[:5]])
-                        try:
+                                st.markdown(f"**🏢 {news['company']}** | 📅 {news['date']}")
+                                if news['content_mm']: st.markdown(news['content_mm'])
+                        
+                        # AI Summary
+                        context_str = "\n".join([f"- {n['company']}: {n['content_mm']}" for n in matched_news_list[:3]])
+                        response = client.chat.completions.create(model="openai/gpt-4o-mini", messages=[{"role": "system", "content": "မြန်မာလို ရှင်းပြပေးပါ။"}, {"role": "user", "content": f"ဒီသတင်းတွေကို အကျဉ်းချုပ်ပေးပါ: {context_str}"}])
+                        st.info(response.choices[0].message.content)
+
+                    else:
+                        # Sheet မှာ မရှိရင် DuckDuckGo သုံးမယ်
+                        with st.status("အင်တာနက်ပေါ်မှ ရှာဖွေနေပါသည်...", expanded=True) as status:
+                            google_result = search_google(user_query)
                             response = client.chat.completions.create(
                                 model="openai/gpt-4o-mini",
                                 messages=[
-                                    {"role": "system", "content": "မင်းက KMM အရောင်းဆိုင် AI ဖြစ်တယ်။ အထက်ပါ သတင်းအချက်အလက်များကို ပြသပေးပြီးပြီဖြစ်ကြောင်းနှင့် လိုအပ်သည်များကို မြန်မာလို ယဉ်ကျေးစွာ ပြောကြားပေးပါ။"},
-                                    {"role": "user", "content": user_query}
+                                    {"role": "system", "content": "မင်းက အသိပညာပေး AI ဖြစ်တယ်။ ပေးထားသော Search ရလဒ်များကို အခြေခံ၍ မြန်မာလို ပြည့်စုံအောင်ဖြေပေးပါ။"},
+                                    {"role": "user", "content": f"မေးခွန်း: {user_query}\n\nSearch ရလဒ်များ: {google_result}"}
                                 ]
                             )
                             st.info(response.choices[0].message.content)
-                        except: pass
-                    else:
-                        st.warning(f"⚠️ တောင်းပန်ပါတယ်ခင်ဗျာ၊ လူကြီးမင်း ရွေးချယ်ထားသော ရက်စွဲ/အချက်အလက်အတိုင်း သတင်းဒေတာ ရှာမတွေ့ပါသဖြင့် AI အခြေခံဖြင့်သာ ဖြေကြားပေးပါမည်။")
-                        try:
-                            response = client.chat.completions.create(
-                                model="openai/gpt-4o-mini",
-                                messages=[{"role": "user", "content": user_query}]
-                            )
-                            st.markdown(response.choices[0].message.content)
-                        except: pass
+                            status.update(label="ပြီးဆုံးပါပြီ", state="complete")
