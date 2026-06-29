@@ -19,6 +19,14 @@ ALL_BRANDS = [
     "New-Holland", "YTO", "Mahindra", "Sonalika", "Yamabisi", "DongFeng"
 ]
 
+# OpenRouter တွင် အလုပ်လုပ်သော Free Models (fallback chain)
+FREE_MODELS = [
+    "meta-llama/llama-3.1-8b-instruct:free",
+    "mistralai/mistral-7b-instruct:free",
+    "deepseek/deepseek-r1:free",
+    "qwen/qwen-2.5-7b-instruct:free",
+]
+
 # ==========================================
 # ၃။ Callback Function
 # ==========================================
@@ -667,37 +675,44 @@ elif menu_choice == "KMM Tractor AI Agent":
                         st.warning(f"AI ဖြေကြားမှု မအောင်မြင်ပါ: {e}")
 
                 else:
-                    # Tractor မတွေ့ပါက — Perplexity Sonar (web search) ဖြင့် လက်ရှိ update အဖြေပေးသည်
-                    try:
-                        history_messages = [
-                            {
-                                "role": "system",
-                                "content": (
-                                    "မင်းက KMM Kubota အရောင်းဆိုင် AI Assistant ဖြစ်တယ်။ "
-                                    "မေးလာသမျှကို web မှ ရှာဖွေပြီး လက်ရှိ update ဖြစ်တဲ့ "
-                                    "အချက်အလက်တွေနဲ့သာ ဖြေကြားပေးပါ။ "
-                                    "မသေချာတဲ့ အချက်အလက်တွေကို မဆင်မြင်ဘဲ မဖြေပါနဲ့။ "
-                                    "မြန်မာဘာသာ သို့မဟုတ် ထိုင်းဘာသာဖြင့် ယဉ်ကျေးစွာ ဖြေကြားပေးပါ။"
-                                ),
-                            }
-                        ]
-                        for msg in st.session_state.messages[:-1]:
-                            history_messages.append({
-                                "role": msg["role"],
-                                "content": msg["content"]
-                            })
-                        history_messages.append({"role": "user", "content": user_query})
+                    # Tractor မတွေ့ပါက — Free models fallback chain ဖြင့် ဖြေကြားသည်
+                    history_messages = [
+                        {
+                            "role": "system",
+                            "content": (
+                                "မင်းက KMM Kubota အရောင်းဆိုင် AI Assistant ဖြစ်တယ်။ "
+                                "Tractor၊ စိုက်ပျိုးရေး၊ စက်ပစ္စည်း၊ ဈေးကွက်နှင့် "
+                                "အထေါ်ထွေမေးခွန်းများကို မြန်မာ/ထိုင်းဘာသာဖြင့် "
+                                "ရှင်းလင်းယဉ်ကျေးစွာ ဖြေကြားပေးပါ။"
+                            ),
+                        }
+                    ]
+                    for msg in st.session_state.messages[:-1]:
+                        history_messages.append({
+                            "role": msg["role"],
+                            "content": msg["content"]
+                        })
+                    history_messages.append({"role": "user", "content": user_query})
 
-                        with st.spinner("အင်တာနက်မှ လက်ရှိ အချက်အလက်များ ရှာဖွေနေပါသည်..."):
-                            response = client.chat.completions.create(
-                                model="google/gemini-flash-1.5",  # Free tier — grounding ပါဝင်သော model
-                                messages=history_messages
-                            )
-                        ai_reply = response.choices[0].message.content
+                    ai_reply = None
+                    with st.spinner("AI က ဖြေကြားနေပါသည်..."):
+                        for model_id in FREE_MODELS:
+                            try:
+                                response = client.chat.completions.create(
+                                    model=model_id,
+                                    messages=history_messages,
+                                    max_tokens=1024,
+                                )
+                                ai_reply = response.choices[0].message.content
+                                break
+                            except Exception:
+                                continue
+
+                    if ai_reply:
                         st.markdown(ai_reply)
                         st.session_state.messages.append({"role": "assistant", "content": ai_reply})
-                    except Exception as e:
-                        st.warning(f"AI ဖြေကြားမှု မအောင်မြင်ပါ: {e}")
+                    else:
+                        st.warning("⚠️ AI ဖြေကြားမှု မအောင်မြင်ပါ။ OpenRouter credits စစ်ဆေးပေးပါ ခင်ဗျာ။")
 
         # ==========================================================
         # Mode B — Competitor News ရှာဖွေပြသခြင်း
@@ -806,34 +821,41 @@ elif menu_choice == "KMM Tractor AI Agent":
                         st.warning(f"AI ဖြေကြားမှု မအောင်မြင်ပါ: {e}")
 
                 else:
-                    # News မတွေ့ပါက — Perplexity Sonar (web search) ဖြင့် လက်ရှိ update အဖြေပေးသည်
-                    try:
-                        history_messages = [
-                            {
-                                "role": "system",
-                                "content": (
-                                    "မင်းက KMM Kubota အရောင်းဆိုင် AI Assistant ဖြစ်တယ်။ "
-                                    "မေးလာသမျှကို web မှ ရှာဖွေပြီး လက်ရှိ update ဖြစ်တဲ့ "
-                                    "အချက်အလက်တွေနဲ့သာ ဖြေကြားပေးပါ။ "
-                                    "မသေချာတဲ့ အချက်အလက်တွေကို မဆင်မြင်ဘဲ မဖြေပါနဲ့။ "
-                                    "မြန်မာဘာသာ သို့မဟုတ် ထိုင်းဘာသာဖြင့် ယဉ်ကျေးစွာ ဖြေကြားပေးပါ။"
-                                ),
-                            }
-                        ]
-                        for msg in st.session_state.messages[:-1]:
-                            history_messages.append({
-                                "role": msg["role"],
-                                "content": msg["content"]
-                            })
-                        history_messages.append({"role": "user", "content": user_query})
+                    # News မတွေ့ပါက — Free models fallback chain ဖြင့် ဖြေကြားသည်
+                    history_messages = [
+                        {
+                            "role": "system",
+                            "content": (
+                                "မင်းက KMM Kubota အရောင်းဆိုင် AI Assistant ဖြစ်တယ်။ "
+                                "Tractor၊ စိုက်ပျိုးရေး၊ စက်ပစ္စည်း၊ ဈေးကွက်နှင့် "
+                                "အထေါ်ထွေမေးခွန်းများကို မြန်မာ/ထိုင်းဘာသာဖြင့် "
+                                "ရှင်းလင်းယဉ်ကျေးစွာ ဖြေကြားပေးပါ။"
+                            ),
+                        }
+                    ]
+                    for msg in st.session_state.messages[:-1]:
+                        history_messages.append({
+                            "role": msg["role"],
+                            "content": msg["content"]
+                        })
+                    history_messages.append({"role": "user", "content": user_query})
 
-                        with st.spinner("အင်တာနက်မှ လက်ရှိ အချက်အလက်များ ရှာဖွေနေပါသည်..."):
-                            response = client.chat.completions.create(
-                                model="google/gemini-flash-1.5",  # Free tier — grounding ပါဝင်သော model
-                                messages=history_messages
-                            )
-                        ai_reply = response.choices[0].message.content
+                    ai_reply = None
+                    with st.spinner("AI က ဖြေကြားနေပါသည်..."):
+                        for model_id in FREE_MODELS:
+                            try:
+                                response = client.chat.completions.create(
+                                    model=model_id,
+                                    messages=history_messages,
+                                    max_tokens=1024,
+                                )
+                                ai_reply = response.choices[0].message.content
+                                break
+                            except Exception:
+                                continue
+
+                    if ai_reply:
                         st.markdown(ai_reply)
                         st.session_state.messages.append({"role": "assistant", "content": ai_reply})
-                    except Exception as e:
-                        st.warning(f"AI ဖြေကြားမှု မအောင်မြင်ပါ: {e}")
+                    else:
+                        st.warning("⚠️ AI ဖြေကြားမှု မအောင်မြင်ပါ။ OpenRouter credits စစ်ဆေးပေးပါ ခင်ဗျာ။")
