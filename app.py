@@ -7,7 +7,7 @@ from openai import OpenAI
 # ==========================================
 # ၁။ Page Config
 # ==========================================
-st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout="centered") 
+st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout="centered")
 
 # ==========================================
 # ၂။ Constants
@@ -178,8 +178,8 @@ def render_news_card(news):
                     st.image(img, use_container_width=True)
                     st.markdown(f"[🔍 ပုံကို အကြီးချဲ့ကြည့်ရန်]({img})")
 
-        promo = news.get('promo', '')
-        if promo and promo != '0':
+        promo = str(news.get('promo', '')).strip()
+        if promo and promo not in ('0', '0.0', 'nan', 'None', ''):
             st.info(f"💡 {promo}")
 
         fb_link = news.get('facebook', '').strip()
