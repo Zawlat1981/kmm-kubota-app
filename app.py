@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import datetime
 import urllib.parse
-from openai import OpenAI
+import google.generativeai as genai
 
 # ==========================================
 # ၁။ Page Config
@@ -19,13 +19,8 @@ ALL_BRANDS = [
     "New-Holland", "YTO", "Mahindra", "Sonalika", "Yamabisi", "DongFeng"
 ]
 
-# OpenRouter တွင် အလုပ်လုပ်သော Free Models (fallback chain)
-FREE_MODELS = [
-    "meta-llama/llama-3.1-8b-instruct:free",
-    "mistralai/mistral-7b-instruct:free",
-    "deepseek/deepseek-r1:free",
-    "qwen/qwen-2.5-7b-instruct:free",
-]
+# OpenRouter တွင် အလုပ်လုပ်သော Free Models (fallback chain) — မလိုတော့ပါ
+# Google Gemini API သို့ ပြောင်းထားသည်
 
 # ==========================================
 # ၃။ Callback Function
@@ -216,12 +211,42 @@ def render_news_card(news):
 
 
 # ==========================================
-# ၅။ OpenRouter Client Setup
+# ၅။ Google Gemini API Setup (Free tier — တစ်နေ့ 1,500 requests)
 # ==========================================
-api_key = st.secrets.get("OPENROUTER_API_KEY", "")
-client = None
-if api_key:
-    client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=api_key)
+gemini_api_key = st.secrets.get("GEMINI_API_KEY", "")
+gemini_model = None
+if gemini_api_key:
+    genai.configure(api_key=gemini_api_key)
+    gemini_model = genai.GenerativeModel(
+        model_name="gemini-1.5-flash",
+        system_instruction=(
+            "မင်းက KMM Kubota အရောင်းဆိုင် AI Assistant ဖြစ်တယ်။ "
+            "Tractor၊ စိုက်ပျိုးရေး၊ စက်ပစ္စည်း၊ ဈေးကွက်နှင့် "
+            "အထေါ်ထွေမေးခွန်းများကို မြန်မာ/ထိုင်းဘာသာဖြင့် "
+            "ရှင်းလင်းယဉ်ကျေးစွာ ဖြေကြားပေးပါ။"
+        )
+    )
+
+
+def ask_gemini(user_query: str, history: list) -> str:
+    """
+    Gemini ထံ မေးမြန်းပြီး အဖြေကို string အဖြစ် ပြန်ပေးသည်။
+    history က [{"role": "user"/"model", "parts": "..."}] ပုံစံဖြစ်သည်။
+    """
+    if gemini_model is None:
+        return "⚠️ GEMINI_API_KEY မသတ်မှတ်ရသေးပါ။ Streamlit Secrets ထဲတွင် ဖြည့်ပေးပါ ခင်ဗျာ။"
+    try:
+        # session_state messages ကို Gemini format သို့ ပြောင်းသည်
+        gemini_history = []
+        for msg in history:
+            role = "model" if msg["role"] == "assistant" else "user"
+            gemini_history.append({"role": role, "parts": msg["content"]})
+
+        chat = gemini_model.start_chat(history=gemini_history[:-1])
+        response = chat.send_message(user_query)
+        return response.text
+    except Exception as e:
+        return f"⚠️ AI ဖြေကြားမှု မအောင်မြင်ပါ: {e}"
 
 # ==========================================
 # ၆။ Sidebar Menu
@@ -484,8 +509,8 @@ elif menu_choice == "KMM Tractor AI Agent":
     )
     st.write("---")
 
-    if not client:
-        st.warning("⚠️ OpenRouter API Key ထည့်သွင်းရန် လိုအပ်နေပါသည်။ Streamlit Secrets ထဲတွင် ဖြည့်စွက်ပေးပါ။")
+    if not gemini_model:
+        st.warning("⚠️ GEMINI_API_KEY မသတ်မှတ်ရသေးပါ။ Streamlit Secrets ထဲတွင် GEMINI_API_KEY ဖြည့်ပေးပါ ခင်ဗျာ။")
         st.stop()
 
     if "messages" not in st.session_state:
@@ -651,21 +676,10 @@ elif menu_choice == "KMM Tractor AI Agent":
                         st.write("---")
 
                     try:
-                        response = client.chat.completions.create(
-                            model="openai/gpt-4o-mini",
-                            messages=[
-                                {
-                                    "role": "system",
-                                    "content": (
-                                        "မင်းက KMM အရောင်းဆိုင် AI ဖြစ်တယ်။ "
-                                        "စက်ဈေးနှုန်းပြပြီးပြီဖြစ်လို့ ဘာများ ထပ်မံကူညီပေးရမလဲလို့ "
-                                        "မြန်မာလို ယဉ်ကျေးစွာ မေးပေးပါ။"
-                                    ),
-                                },
-                                {"role": "user", "content": user_query},
-                            ],
+                        ai_reply = ask_gemini(
+                            "စက်ဈေးနှုန်းပြပြီးပြီဖြစ်လို့ ဘာများ ထပ်မံကူညီပေးရမလဲလို့ မြန်မာလို ယဉ်ကျေးစွာ မေးပေးပါ။",
+                            st.session_state.messages
                         )
-                        ai_reply = response.choices[0].message.content
                         st.info(ai_reply)
                         st.session_state.messages.append({
                             "role": "assistant",
@@ -675,44 +689,11 @@ elif menu_choice == "KMM Tractor AI Agent":
                         st.warning(f"AI ဖြေကြားမှု မအောင်မြင်ပါ: {e}")
 
                 else:
-                    # Tractor မတွေ့ပါက — Free models fallback chain ဖြင့် ဖြေကြားသည်
-                    history_messages = [
-                        {
-                            "role": "system",
-                            "content": (
-                                "မင်းက KMM Kubota အရောင်းဆိုင် AI Assistant ဖြစ်တယ်။ "
-                                "Tractor၊ စိုက်ပျိုးရေး၊ စက်ပစ္စည်း၊ ဈေးကွက်နှင့် "
-                                "အထေါ်ထွေမေးခွန်းများကို မြန်မာ/ထိုင်းဘာသာဖြင့် "
-                                "ရှင်းလင်းယဉ်ကျေးစွာ ဖြေကြားပေးပါ။"
-                            ),
-                        }
-                    ]
-                    for msg in st.session_state.messages[:-1]:
-                        history_messages.append({
-                            "role": msg["role"],
-                            "content": msg["content"]
-                        })
-                    history_messages.append({"role": "user", "content": user_query})
-
-                    ai_reply = None
+                    # Tractor မတွေ့ပါက — Gemini ဖြင့် ဖြေကြားသည်
                     with st.spinner("AI က ဖြေကြားနေပါသည်..."):
-                        for model_id in FREE_MODELS:
-                            try:
-                                response = client.chat.completions.create(
-                                    model=model_id,
-                                    messages=history_messages,
-                                    max_tokens=1024,
-                                )
-                                ai_reply = response.choices[0].message.content
-                                break
-                            except Exception:
-                                continue
-
-                    if ai_reply:
-                        st.markdown(ai_reply)
-                        st.session_state.messages.append({"role": "assistant", "content": ai_reply})
-                    else:
-                        st.warning("⚠️ AI ဖြေကြားမှု မအောင်မြင်ပါ။ OpenRouter credits စစ်ဆေးပေးပါ ခင်ဗျာ။")
+                        ai_reply = ask_gemini(user_query, st.session_state.messages)
+                    st.markdown(ai_reply)
+                    st.session_state.messages.append({"role": "assistant", "content": ai_reply})
 
         # ==========================================================
         # Mode B — Competitor News ရှာဖွေပြသခြင်း
@@ -803,59 +784,17 @@ elif menu_choice == "KMM Tractor AI Agent":
                         for n in matched_news_list[:5]
                     ])
                     try:
-                        response = client.chat.completions.create(
-                            model="openai/gpt-4o-mini",
-                            messages=[
-                                {
-                                    "role": "system",
-                                    "content": (
-                                        "မင်းက KMM အရောင်းဆိုင် AI ဖြစ်တယ်။ "
-                                        "သတင်းများကို ပြသပေးပြီးပြီ။ မြန်မာလို ယဉ်ကျေးစွာ ပြောကြားပေးပါ။"
-                                    ),
-                                },
-                                {"role": "user", "content": user_query},
-                            ],
+                        ai_reply = ask_gemini(
+                            "သတင်းများကို ပြသပေးပြီးပြီ။ မြန်မာလို ယဉ်ကျေးစွာ အကျဉ်းချုပ်ပြောကြားပေးပါ။",
+                            st.session_state.messages
                         )
-                        st.info(response.choices[0].message.content)
+                        st.info(ai_reply)
                     except Exception as e:
                         st.warning(f"AI ဖြေကြားမှု မအောင်မြင်ပါ: {e}")
 
                 else:
-                    # News မတွေ့ပါက — Free models fallback chain ဖြင့် ဖြေကြားသည်
-                    history_messages = [
-                        {
-                            "role": "system",
-                            "content": (
-                                "မင်းက KMM Kubota အရောင်းဆိုင် AI Assistant ဖြစ်တယ်။ "
-                                "Tractor၊ စိုက်ပျိုးရေး၊ စက်ပစ္စည်း၊ ဈေးကွက်နှင့် "
-                                "အထေါ်ထွေမေးခွန်းများကို မြန်မာ/ထိုင်းဘာသာဖြင့် "
-                                "ရှင်းလင်းယဉ်ကျေးစွာ ဖြေကြားပေးပါ။"
-                            ),
-                        }
-                    ]
-                    for msg in st.session_state.messages[:-1]:
-                        history_messages.append({
-                            "role": msg["role"],
-                            "content": msg["content"]
-                        })
-                    history_messages.append({"role": "user", "content": user_query})
-
-                    ai_reply = None
+                    # News မတွေ့ပါက — Gemini ဖြင့် ဖြေကြားသည်
                     with st.spinner("AI က ဖြေကြားနေပါသည်..."):
-                        for model_id in FREE_MODELS:
-                            try:
-                                response = client.chat.completions.create(
-                                    model=model_id,
-                                    messages=history_messages,
-                                    max_tokens=1024,
-                                )
-                                ai_reply = response.choices[0].message.content
-                                break
-                            except Exception:
-                                continue
-
-                    if ai_reply:
-                        st.markdown(ai_reply)
-                        st.session_state.messages.append({"role": "assistant", "content": ai_reply})
-                    else:
-                        st.warning("⚠️ AI ဖြေကြားမှု မအောင်မြင်ပါ။ OpenRouter credits စစ်ဆေးပေးပါ ခင်ဗျာ။")
+                        ai_reply = ask_gemini(user_query, st.session_state.messages)
+                    st.markdown(ai_reply)
+                    st.session_state.messages.append({"role": "assistant", "content": ai_reply})
