@@ -1,5 +1,6 @@
 streamlit
 pandas
 openai
+google-generativeai
 requests
 duckduckgo-search>=8.1.1
