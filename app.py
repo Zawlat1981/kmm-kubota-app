@@ -542,14 +542,14 @@ elif menu_choice == "KMM Tractor AI Agent":
                     f"သတင်း စစ်ထုတ်မှု: {filter_date.strftime('%Y-%m-%d')} ရက်စွဲရှိ {filter_company} သတင်း"
                 )
             elif filter_date is not None:
-                suggested_query = f"သတင်း စစ်ထုတ်မှု: {filter_date.strftime('%Y-%m-%d')} ရက်စွဲရှိ သတင်းများ"
+                suggested_query = f"သတင်း တွေ့ရှိမှု: {filter_date.strftime('%Y-%m-%d')} ရက်စွဲရှိ သတင်းများ"
             elif filter_company:
-                suggested_query = f"သတင်း စစ်ထုတ်မှု: {filter_company} ကုမ္ပဏီ၏ သတင်းများ"
+                suggested_query = f"သတင်း တွေ့ရှိမှု: {filter_company} ကုမ္ပဏီ၏ သတင်းများ"
             else:
                 st.info("💡 ရက်စွဲတစ်ခု ရွေးချယ်ပေးပါ သို့မဟုတ် ကုမ္ပဏီအမည် ရိုက်ထည့်ပေးပါ ခင်ဗျာ။")
 
     # --- Chat Input ---
-    user_input = st.chat_input("ဥပမာ - 'M6240' သို့မဟုတ် အပေါ်က စစ်ထုတ်မှုများကို အသုံးပြုပါ")
+    user_input = st.chat_input(" Model or Company Name & Other questions")
     user_query = suggested_query if suggested_query else user_input
 
     if user_query:
