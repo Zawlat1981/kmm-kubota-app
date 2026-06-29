@@ -542,9 +542,9 @@ elif menu_choice == "KMM Tractor AI Agent":
                     f"သတင်း စစ်ထုတ်မှု: {filter_date.strftime('%Y-%m-%d')} ရက်စွဲရှိ {filter_company} သတင်း"
                 )
             elif filter_date is not None:
-                suggested_query = f"သတင်း တွေ့ရှိမှု: {filter_date.strftime('%Y-%m-%d')} ရက်စွဲရှိ သတင်းများ"
+                suggested_query = f"သတင်း စစ်ထုတ်မှု: {filter_date.strftime('%Y-%m-%d')} ရက်စွဲရှိ သတင်းများ"
             elif filter_company:
-                suggested_query = f"သတင်း တွေ့ရှိမှု: {filter_company} ကုမ္ပဏီ၏ သတင်းများ"
+                suggested_query = f"သတင်း စစ်ထုတ်မှု: {filter_company} ကုမ္ပဏီ၏ သတင်းများ"
             else:
                 st.info("💡 ရက်စွဲတစ်ခု ရွေးချယ်ပေးပါ သို့မဟုတ် ကုမ္ပဏီအမည် ရိုက်ထည့်ပေးပါ ခင်ဗျာ။")
 
@@ -557,19 +557,12 @@ elif menu_choice == "KMM Tractor AI Agent":
             st.markdown(user_query)
         st.session_state.messages.append({"role": "user", "content": user_query})
 
-        today_date_obj = datetime.date.today()
+        # Myanmar/Thailand Timezone (UTC+7) ကို သေချာသတ်မှတ်သည်
+        # Streamlit Cloud က UTC ဖြင့် run သောကြောင့် +7 နာရီ ထည့်ရသည်
+        tz_offset = datetime.timezone(datetime.timedelta(hours=7))
+        now_local = datetime.datetime.now(tz=tz_offset)
+        today_date_obj = now_local.date()
         yesterday_date_obj = today_date_obj - datetime.timedelta(days=1)
-
-        today_formats = [
-            today_date_obj.strftime("%Y-%m-%d"),
-            today_date_obj.strftime("%d-%m-%Y"),
-            today_date_obj.strftime("%d/%m/%Y"),
-        ]
-        yesterday_formats = [
-            yesterday_date_obj.strftime("%Y-%m-%d"),
-            yesterday_date_obj.strftime("%d-%m-%Y"),
-            yesterday_date_obj.strftime("%d/%m/%Y"),
-        ]
 
         is_news_intent = any(
             keyword in user_query
@@ -695,23 +688,36 @@ elif menu_choice == "KMM Tractor AI Agent":
             matched_news_list = []
 
             for news in all_news:
-                news_date_clean = news['date'].replace('/', '-').strip()
+                news_date_raw = news['date'].strip()
                 company_lower = news['company'].lower()
                 content_lower = (news['content_mm'] + news['content_th']).lower()
                 match_found = False
+
+                # Sheet ထဲက date string ကို date object အဖြစ် parse လုပ်သည်
+                # YYYY-MM-DD နှင့် DD/MM/YYYY ပုံစံနှစ်မျိုးလုံး handle လုပ်နိုင်သည်
+                news_date_obj = None
+                try:
+                    parsed = pd.to_datetime(news_date_raw, dayfirst=False, errors='coerce')
+                    if pd.notna(parsed):
+                        news_date_obj = parsed.date()
+                except Exception:
+                    pass
+
+                if news_date_obj is None:
+                    try:
+                        parsed = pd.to_datetime(news_date_raw, dayfirst=True, errors='coerce')
+                        if pd.notna(parsed):
+                            news_date_obj = parsed.date()
+                    except Exception:
+                        pass
 
                 if "စစ်ထုတ်မှု" in user_query:
                     match_date_ok = True
                     match_company_ok = True
 
                     if filter_date is not None:
-                        date_formats = [
-                            filter_date.strftime("%Y-%m-%d"),
-                            filter_date.strftime("%d-%m-%Y"),
-                            filter_date.strftime("%Y/%m/%d"),
-                            filter_date.strftime("%d/%m/%Y"),
-                        ]
-                        match_date_ok = any(fmt in news_date_clean for fmt in date_formats)
+                        # String matching မဟုတ်ဘဲ date object ချင်း တိုက်စစ်သည်
+                        match_date_ok = (news_date_obj == filter_date) if news_date_obj else False
 
                     if filter_company:
                         f_co = filter_company.lower()
@@ -721,22 +727,18 @@ elif menu_choice == "KMM Tractor AI Agent":
                         match_found = True
 
                 elif "ယနေ့" in user_query or "ဒီနေ့" in user_query:
-                    if any(fmt in news_date_clean for fmt in today_formats):
+                    if news_date_obj == today_date_obj:
                         match_found = True
 
                 elif "မနေ့က" in user_query:
-                    if any(fmt in news_date_clean for fmt in yesterday_formats):
+                    if news_date_obj == yesterday_date_obj:
                         match_found = True
 
                 elif "ပတ်စာ" in user_query or "report" in user_query.lower():
-                    try:
-                        item_date_obj = pd.to_datetime(news_date_clean, errors='coerce').date()
-                        if pd.notna(item_date_obj):
-                            seven_days_ago = today_date_obj - datetime.timedelta(days=7)
-                            if seven_days_ago <= item_date_obj <= today_date_obj:
-                                match_found = True
-                    except Exception:
-                        pass
+                    if news_date_obj is not None:
+                        seven_days_ago = today_date_obj - datetime.timedelta(days=7)
+                        if seven_days_ago <= news_date_obj <= today_date_obj:
+                            match_found = True
 
                 else:
                     q_words = user_query.lower().split()
