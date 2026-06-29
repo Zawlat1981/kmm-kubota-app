@@ -542,14 +542,14 @@ elif menu_choice == "KMM Tractor AI Agent":
                     f"သတင်း စစ်ထုတ်မှု: {filter_date.strftime('%Y-%m-%d')} ရက်စွဲရှိ {filter_company} သတင်း"
                 )
             elif filter_date is not None:
-                suggested_query = f"သတင်း တွေ့ရှိမှု: {filter_date.strftime('%Y-%m-%d')} ရက်စွဲရှိ သတင်းများ"
+                suggested_query = f"သတင်း စစ်ထုတ်မှု: {filter_date.strftime('%Y-%m-%d')} ရက်စွဲရှိ သတင်းများ"
             elif filter_company:
-                suggested_query = f"သတင်း တွေ့ရှိမှု: {filter_company} ကုမ္ပဏီ၏ သတင်းများ"
+                suggested_query = f"သတင်း စစ်ထုတ်မှု: {filter_company} ကုမ္ပဏီ၏ သတင်းများ"
             else:
                 st.info("💡 ရက်စွဲတစ်ခု ရွေးချယ်ပေးပါ သို့မဟုတ် ကုမ္ပဏီအမည် ရိုက်ထည့်ပေးပါ ခင်ဗျာ။")
 
     # --- Chat Input ---
-    user_input = st.chat_input(" Model or Company Name & Other questions")
+    user_input = st.chat_input("ဥပမာ - 'M6240' သို့မဟုတ် အပေါ်က စစ်ထုတ်မှုများကို အသုံးပြုပါ")
     user_query = suggested_query if suggested_query else user_input
 
     if user_query:
@@ -564,10 +564,19 @@ elif menu_choice == "KMM Tractor AI Agent":
         today_date_obj = now_local.date()
         yesterday_date_obj = today_date_obj - datetime.timedelta(days=1)
 
-        is_news_intent = any(
-            keyword in user_query
-            for keyword in ["သတင်း", "news", "report", "တင်ထားတာ", "ယနေ့", "မနေ့က", "ဒီနေ့", "စစ်ထုတ်မှု"]
-        )
+        # News intent ကို တင်းကျပ်စွာ စစ်ဆေးသည် — News ဆိုင်ရာ keyword တိတိကျကျပါမှသာ News Mode သို့ ဝင်မည်
+        # "news" တစ်လုံးတည်းနှင့် မဝင်အောင် phrase-level စစ်ဆေးခြင်း
+        NEWS_KEYWORDS = [
+            "သတင်း", "ယနေ့", "မနေ့က", "ဒီနေ့", "စစ်ထုတ်မှု",
+            "တင်ထားတာ", "competitor", "ပတ်စာ",
+            "ข่าว", "รายงาน",
+        ]
+        is_news_intent = any(keyword in user_query for keyword in NEWS_KEYWORDS)
+
+        # "report" နှင့် "news" တို့ကို တစ်လုံးတည်းအဖြစ် စစ်ဆေးသည် (case-insensitive)
+        q_lower = user_query.lower().strip()
+        if q_lower in ("news", "report") or q_lower.startswith("news ") or q_lower.startswith("report "):
+            is_news_intent = True
 
         # ==========================================================
         # Mode A — စက်မော်ဒယ် / ဈေးနှုန်း ရှာဖွေခြင်း
@@ -658,15 +667,32 @@ elif menu_choice == "KMM Tractor AI Agent":
                         st.warning(f"AI ဖြေကြားမှု မအောင်မြင်ပါ: {e}")
 
                 else:
-                    st.warning(
-                        f"⚠️ တောင်းပန်ပါတယ်ခင်ဗျာ၊ '{user_query}' မော်ဒယ်ကို "
-                        f"ဈေးနှုန်း List ထဲတွင် ရှာမတွေ့ပါ။ AI အား ထပ်မံမေးမြန်းပေးပါမည်။"
-                    )
+                    # Tractor မတွေ့ပါက — Perplexity Sonar (web search) ဖြင့် လက်ရှိ update အဖြေပေးသည်
                     try:
-                        response = client.chat.completions.create(
-                            model="openai/gpt-4o-mini",
-                            messages=[{"role": "user", "content": user_query}]
-                        )
+                        history_messages = [
+                            {
+                                "role": "system",
+                                "content": (
+                                    "မင်းက KMM Kubota အရောင်းဆိုင် AI Assistant ဖြစ်တယ်။ "
+                                    "မေးလာသမျှကို web မှ ရှာဖွေပြီး လက်ရှိ update ဖြစ်တဲ့ "
+                                    "အချက်အလက်တွေနဲ့သာ ဖြေကြားပေးပါ။ "
+                                    "မသေချာတဲ့ အချက်အလက်တွေကို မဆင်မြင်ဘဲ မဖြေပါနဲ့။ "
+                                    "မြန်မာဘာသာ သို့မဟုတ် ထိုင်းဘာသာဖြင့် ယဉ်ကျေးစွာ ဖြေကြားပေးပါ။"
+                                ),
+                            }
+                        ]
+                        for msg in st.session_state.messages[:-1]:
+                            history_messages.append({
+                                "role": msg["role"],
+                                "content": msg["content"]
+                            })
+                        history_messages.append({"role": "user", "content": user_query})
+
+                        with st.spinner("အင်တာနက်မှ လက်ရှိ အချက်အလက်များ ရှာဖွေနေပါသည်..."):
+                            response = client.chat.completions.create(
+                                model="perplexity/sonar",  # Web search ပါဝင်သော model
+                                messages=history_messages
+                            )
                         ai_reply = response.choices[0].message.content
                         st.markdown(ai_reply)
                         st.session_state.messages.append({"role": "assistant", "content": ai_reply})
@@ -780,15 +806,34 @@ elif menu_choice == "KMM Tractor AI Agent":
                         st.warning(f"AI ဖြေကြားမှု မအောင်မြင်ပါ: {e}")
 
                 else:
-                    st.warning(
-                        "⚠️ တောင်းပန်ပါတယ်ခင်ဗျာ၊ ရွေးချယ်ထားသော ရက်စွဲ/အချက်အလက်အတိုင်း "
-                        "သတင်းဒေတာ ရှာမတွေ့ပါ။ AI အခြေခံဖြင့်သာ ဖြေကြားပေးပါမည်။"
-                    )
+                    # News မတွေ့ပါက — Perplexity Sonar (web search) ဖြင့် လက်ရှိ update အဖြေပေးသည်
                     try:
-                        response = client.chat.completions.create(
-                            model="openai/gpt-4o-mini",
-                            messages=[{"role": "user", "content": user_query}]
-                        )
-                        st.markdown(response.choices[0].message.content)
+                        history_messages = [
+                            {
+                                "role": "system",
+                                "content": (
+                                    "မင်းက KMM Kubota အရောင်းဆိုင် AI Assistant ဖြစ်တယ်။ "
+                                    "မေးလာသမျှကို web မှ ရှာဖွေပြီး လက်ရှိ update ဖြစ်တဲ့ "
+                                    "အချက်အလက်တွေနဲ့သာ ဖြေကြားပေးပါ။ "
+                                    "မသေချာတဲ့ အချက်အလက်တွေကို မဆင်မြင်ဘဲ မဖြေပါနဲ့။ "
+                                    "မြန်မာဘာသာ သို့မဟုတ် ထိုင်းဘာသာဖြင့် ယဉ်ကျေးစွာ ဖြေကြားပေးပါ။"
+                                ),
+                            }
+                        ]
+                        for msg in st.session_state.messages[:-1]:
+                            history_messages.append({
+                                "role": msg["role"],
+                                "content": msg["content"]
+                            })
+                        history_messages.append({"role": "user", "content": user_query})
+
+                        with st.spinner("အင်တာနက်မှ လက်ရှိ အချက်အလက်များ ရှာဖွေနေပါသည်..."):
+                            response = client.chat.completions.create(
+                                model="perplexity/sonar",  # Web search ပါဝင်သော model
+                                messages=history_messages
+                            )
+                        ai_reply = response.choices[0].message.content
+                        st.markdown(ai_reply)
+                        st.session_state.messages.append({"role": "assistant", "content": ai_reply})
                     except Exception as e:
                         st.warning(f"AI ဖြေကြားမှု မအောင်မြင်ပါ: {e}")
