@@ -690,7 +690,7 @@ elif menu_choice == "KMM Tractor AI Agent":
 
                         with st.spinner("အင်တာနက်မှ လက်ရှိ အချက်အလက်များ ရှာဖွေနေပါသည်..."):
                             response = client.chat.completions.create(
-                                model="perplexity/sonar",  # Web search ပါဝင်သော model
+                                model="google/gemini-flash-1.5",  # Free tier — grounding ပါဝင်သော model
                                 messages=history_messages
                             )
                         ai_reply = response.choices[0].message.content
@@ -829,7 +829,7 @@ elif menu_choice == "KMM Tractor AI Agent":
 
                         with st.spinner("အင်တာနက်မှ လက်ရှိ အချက်အလက်များ ရှာဖွေနေပါသည်..."):
                             response = client.chat.completions.create(
-                                model="perplexity/sonar",  # Web search ပါဝင်သော model
+                                model="google/gemini-flash-1.5",  # Free tier — grounding ပါဝင်သော model
                                 messages=history_messages
                             )
                         ai_reply = response.choices[0].message.content
