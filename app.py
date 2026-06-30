@@ -228,18 +228,20 @@ if gemini_api_key:
 def ask_gemini(user_query: str, history: list) -> str:
     """
     Gemini ထံ မေးမြန်းပြီး အဖြေကို string အဖြစ် ပြန်ပေးသည်။
-    history က [{"role": "user"/"model", "parts": "..."}] ပုံစံဖြစ်သည်။
     """
-    if gemini_model is None:
+    if gemini_client is None:
         return "⚠️ GEMINI_API_KEY မသတ်မှတ်ရသေးပါ။ Streamlit Secrets ထဲတွင် ဖြည့်ပေးပါ ခင်ဗျာ။"
     try:
-        # session_state messages ကို Gemini format သို့ ပြောင်းသည်
         gemini_history = []
-        for msg in history:
+        for msg in history[:-1]:
             role = "model" if msg["role"] == "assistant" else "user"
-            gemini_history.append({"role": role, "parts": msg["content"]})
+            gemini_history.append({"role": role, "parts": [{"text": msg["content"]}]})
 
-        chat = gemini_model.start_chat(history=gemini_history[:-1])
+        chat = gemini_client.chats.create(
+            model="gemini-flash-latest",
+            history=gemini_history,
+            config={"system_instruction": GEMINI_SYSTEM_INSTRUCTION},
+        )
         response = chat.send_message(user_query)
         return response.text
     except Exception as e:
@@ -506,7 +508,7 @@ elif menu_choice == "KMM Tractor AI Agent":
     )
     st.write("---")
 
-    if not gemini_model:
+    if not gemini_client:
         st.warning("⚠️ GEMINI_API_KEY မသတ်မှတ်ရသေးပါ။ Streamlit Secrets ထဲတွင် GEMINI_API_KEY ဖြည့်ပေးပါ ခင်ဗျာ။")
         st.stop()
 
