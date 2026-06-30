@@ -218,7 +218,7 @@ gemini_model = None
 if gemini_api_key:
     genai.configure(api_key=gemini_api_key)
     gemini_model = genai.GenerativeModel(
-        model_name="gemini-1.5-flash",
+        model_name="gemini-flash-latest",
         system_instruction=(
             "မင်းက KMM Kubota အရောင်းဆိုင် AI Assistant ဖြစ်တယ်။ "
             "Tractor၊ စိုက်ပျိုးရေး၊ စက်ပစ္စည်း၊ ဈေးကွက်နှင့် "
