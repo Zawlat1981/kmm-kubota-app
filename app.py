@@ -2,7 +2,9 @@ import streamlit as st
 import pandas as pd
 import datetime
 import urllib.parse
+import json
 from google import genai
+from google.oauth2 import service_account
 
 # ==========================================
 # ၁။ Page Config
@@ -213,7 +215,6 @@ def render_news_card(news):
 # ==========================================
 # ၅။ Google Gemini API Setup (Free tier — တစ်နေ့ 1,500 requests)
 # ==========================================
-gemini_api_key = st.secrets.get("GEMINI_API_KEY", "")
 gemini_client = None
 GEMINI_SYSTEM_INSTRUCTION = (
     "မင်းက KMM Kubota အရောင်းဆိုင် AI Assistant ဖြစ်တယ်။ "
@@ -221,8 +222,21 @@ GEMINI_SYSTEM_INSTRUCTION = (
     "အထေါ်ထွေမေးခွန်းများကို မြန်မာ/ထိုင်းဘာသာဖြင့် "
     "ရှင်းလင်းယဉ်ကျေးစွာ ဖြေကြားပေးပါ။"
 )
-if gemini_api_key:
-    gemini_client = genai.Client(api_key=gemini_api_key)
+
+try:
+    sa_info = dict(st.secrets["gcp_service_account"])
+    credentials = service_account.Credentials.from_service_account_info(
+        sa_info,
+        scopes=["https://www.googleapis.com/auth/cloud-platform"],
+    )
+    gemini_client = genai.Client(
+        vertexai=True,
+        project=sa_info["project_id"],
+        location="us-central1",
+        credentials=credentials,
+    )
+except Exception as e:
+    st.warning(f"⚠️ Service Account configure မအောင်မြင်ပါ: {e}")
 
 
 def ask_gemini(user_query: str, history: list) -> str:
@@ -238,7 +252,7 @@ def ask_gemini(user_query: str, history: list) -> str:
             gemini_history.append({"role": role, "parts": [{"text": msg["content"]}]})
 
         chat = gemini_client.chats.create(
-            model="gemini-flash-latest",
+            model="gemini-2.5-flash",
             history=gemini_history,
             config={"system_instruction": GEMINI_SYSTEM_INSTRUCTION},
         )
