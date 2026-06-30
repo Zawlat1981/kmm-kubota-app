@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import datetime
 import urllib.parse
-import google.generativeai as genai
+from google import genai
 
 # ==========================================
 # ၁။ Page Config
@@ -214,18 +214,15 @@ def render_news_card(news):
 # ၅။ Google Gemini API Setup (Free tier — တစ်နေ့ 1,500 requests)
 # ==========================================
 gemini_api_key = st.secrets.get("GEMINI_API_KEY", "")
-gemini_model = None
+gemini_client = None
+GEMINI_SYSTEM_INSTRUCTION = (
+    "မင်းက KMM Kubota အရောင်းဆိုင် AI Assistant ဖြစ်တယ်။ "
+    "Tractor၊ စိုက်ပျိုးရေး၊ စက်ပစ္စည်း၊ ဈေးကွက်နှင့် "
+    "အထေါ်ထွေမေးခွန်းများကို မြန်မာ/ထိုင်းဘာသာဖြင့် "
+    "ရှင်းလင်းယဉ်ကျေးစွာ ဖြေကြားပေးပါ။"
+)
 if gemini_api_key:
-    genai.configure(api_key=gemini_api_key)
-    gemini_model = genai.GenerativeModel(
-        model_name="gemini-flash-latest",
-        system_instruction=(
-            "မင်းက KMM Kubota အရောင်းဆိုင် AI Assistant ဖြစ်တယ်။ "
-            "Tractor၊ စိုက်ပျိုးရေး၊ စက်ပစ္စည်း၊ ဈေးကွက်နှင့် "
-            "အထေါ်ထွေမေးခွန်းများကို မြန်မာ/ထိုင်းဘာသာဖြင့် "
-            "ရှင်းလင်းယဉ်ကျေးစွာ ဖြေကြားပေးပါ။"
-        )
-    )
+    gemini_client = genai.Client(api_key=gemini_api_key)
 
 
 def ask_gemini(user_query: str, history: list) -> str:
