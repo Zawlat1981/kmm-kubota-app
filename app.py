@@ -4,7 +4,7 @@ import datetime
 import urllib.parse
 from openai import OpenAI
 
-# ==========================================
+# ========================================== 
 # ၁။ Page Config
 # ==========================================
 st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout="centered")
