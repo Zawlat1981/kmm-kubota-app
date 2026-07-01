@@ -2,9 +2,7 @@ import streamlit as st
 import pandas as pd
 import datetime
 import urllib.parse
-import json
-from google import genai
-from google.oauth2 import service_account
+from openai import OpenAI
 
 # ==========================================
 # ၁။ Page Config
@@ -215,7 +213,6 @@ def render_news_card(news):
 # ==========================================
 # ၅။ Google Gemini API Setup (Free tier — တစ်နေ့ 1,500 requests)
 # ==========================================
-gemini_client = None
 GEMINI_SYSTEM_INSTRUCTION = (
     "မင်းက KMM Kubota အရောင်းဆိုင် AI Assistant ဖြစ်တယ်။ "
     "Tractor၊ စိုက်ပျိုးရေး၊ စက်ပစ္စည်း၊ ဈေးကွက်နှင့် "
@@ -223,41 +220,29 @@ GEMINI_SYSTEM_INSTRUCTION = (
     "ရှင်းလင်းယဉ်ကျေးစွာ ဖြေကြားပေးပါ။"
 )
 
-try:
-    sa_info = dict(st.secrets["gcp_service_account"])
-    credentials = service_account.Credentials.from_service_account_info(
-        sa_info,
-        scopes=["https://www.googleapis.com/auth/cloud-platform"],
+groq_api_key = st.secrets.get("GROQ_API_KEY", "")
+gemini_client = None
+if groq_api_key:
+    gemini_client = OpenAI(
+        api_key=groq_api_key,
+        base_url="https://api.groq.com/openai/v1"
     )
-    gemini_client = genai.Client(
-        vertexai=True,
-        project=sa_info["project_id"],
-        location="us-central1",
-        credentials=credentials,
-    )
-except Exception as e:
-    st.warning(f"⚠️ Service Account configure မအောင်မြင်ပါ: {e}")
 
 
 def ask_gemini(user_query: str, history: list) -> str:
-    """
-    Gemini ထံ မေးမြန်းပြီး အဖြေကို string အဖြစ် ပြန်ပေးသည်။
-    """
     if gemini_client is None:
-        return "⚠️ GEMINI_API_KEY မသတ်မှတ်ရသေးပါ။ Streamlit Secrets ထဲတွင် ဖြည့်ပေးပါ ခင်ဗျာ။"
+        return "⚠️ GROQ_API_KEY မသတ်မှတ်ရသေးပါ။ Streamlit Secrets ထဲတွင် ဖြည့်ပေးပါ ခင်ဗျာ။"
     try:
-        gemini_history = []
+        messages = [{"role": "system", "content": GEMINI_SYSTEM_INSTRUCTION}]
         for msg in history[:-1]:
-            role = "model" if msg["role"] == "assistant" else "user"
-            gemini_history.append({"role": role, "parts": [{"text": msg["content"]}]})
+            messages.append({"role": msg["role"], "content": msg["content"]})
+        messages.append({"role": "user", "content": user_query})
 
-        chat = gemini_client.chats.create(
-            model="gemini-2.5-flash",
-            history=gemini_history,
-            config={"system_instruction": GEMINI_SYSTEM_INSTRUCTION},
+        response = gemini_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=messages,
         )
-        response = chat.send_message(user_query)
-        return response.text
+        return response.choices[0].message.content
     except Exception as e:
         return f"⚠️ AI ဖြေကြားမှု မအောင်မြင်ပါ: {e}"
 
