@@ -179,7 +179,7 @@ def render_news_card(news):
                 st.write("---")
                 for img in img_list:
                     st.image(img, use_container_width=True)
-                    st.markdown(f"[🔍 ပုံကို အကြီးချဲ့ကြည့်ရန်]({img})")
+                    st.markdown(f"[🔍 ပုံကိုကြည့်ရန်နှိပ်ပါ (กดเพื่อดูภาพ)]({img})")
 
         promo = str(news.get('promo', '')).strip()
         if promo and promo not in ('0', '0.0', 'nan', 'None', ''):
