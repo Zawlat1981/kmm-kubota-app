@@ -323,7 +323,7 @@ if menu_choice == "Brand Selection":
         if img_url and img_url.startswith("http"):
             st.image(img_url, use_container_width=True)
             st.markdown(
-                f"[🔍 ပုံကို အကြီးချဲ့ကြည့်ရန် (သို့မဟုတ်) Download ဆွဲရန် နှိပ်ပါ]({img_url})"
+                f"[🔍 ပုံကိုကြည့်ရန်နှိပ်ပါ (กดเพื่อดูภาพ)]({img_url})"
             )
 
         st.markdown(f"### 💰 စက်ဈေးနှုန်း (ราคารถ): **{base_price:,.0f}** MMK")
@@ -450,7 +450,7 @@ elif menu_choice == "Competitor News Updates":
             with st.chat_message("assistant"):
                 st.write(
                     f"🔍 ရှာဖွေမှုရလဒ် စုစုပေါင်း ({total_filtered_items}) စောင်အနက်မှ "
-                    f"အသစ်ဆုံးသတင်းများကို ဖော်ပြပေးလိုက်ပါတယ် ခင်ဗျာ။"
+                    f"နောက်ဆုံးသတင်းများကို ဖော်ပြပေးလိုက်ပါတယ် ခင်ဗျာ။"
                 )
                 st.write("---")
 
@@ -580,7 +580,7 @@ elif menu_choice == "KMM Tractor AI Agent":
                 st.info("💡 ရက်စွဲတစ်ခု ရွေးချယ်ပေးပါ သို့မဟုတ် ကုမ္ပဏီအမည် ရိုက်ထည့်ပေးပါ ခင်ဗျာ။")
 
     # --- Chat Input ---
-    user_input = st.chat_input("ဥပမာ - 'M6240' သို့မဟုတ် အပေါ်က စစ်ထုတ်မှုများကို အသုံးပြုပါ")
+    user_input = st.chat_input("You can access and read the news and ask questions.")
     user_query = suggested_query if suggested_query else user_input
 
     if user_query:
