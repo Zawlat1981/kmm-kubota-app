@@ -479,16 +479,16 @@ elif menu_choice == "Competitor News Updates":
                 if items_displayed < total_filtered_items:
                     col1, col2 = st.columns([2, 3])
                     with col1:
-                        if st.button("👍 မှန်ပါတယ်၊ နောက်ထပ်ပြပါ", key="news_more_pagination_btn"):
+                        if st.button("👍 မှန်ပါတယ်၊ နောက်ထပ်ပြပါ / ถูกต้อง แสดงเพิ่มเติม", key="news_more_pagination_btn"):
                             st.session_state.news_display_count += 7
                             st.rerun()
                     with col2:
-                        if st.button("👎 မဟုတ်ပါဘူး၊ တခြားဟာရှာမယ်", key="news_stop_pagination_btn"):
+                        if st.button("👎 မဟုတ်ပါဘူး၊ တခြားဟာရှာမယ် / ไม่ใช่ ค้นหาอย่างอื่น", key="news_stop_pagination_btn"):
                             st.write("🤖 လူကြီးမင်း သိလိုသော အကြောင်းအရာကို ထပ်မံ အသေးစိတ် ရိုက်ထည့်ပေးပါ ခင်ဗျာ။")
                 else:
-                    st.info("👋 သတင်းအားလုံးကို ပြသပေးပြီးပါပြီ ခင်ဗျာ။")
+                    st.info("👋 သတင်းအားလုံးကို ပြသပေးပြီးပါပြီ ခင်ဗျာ။ / แสดงข่าวทั้งหมดเรียบร้อยแล้วครับ")
         else:
-            st.info("❌ ရှာဖွေမှုရလဒ်မရှိပါ။")
+            st.info("❌ ရှာဖွေမှုရလဒ်မရှိပါ။ / ไม่พบผลการค้นหา")
     else:
         st.error("Error loading data from sheet.")
 
