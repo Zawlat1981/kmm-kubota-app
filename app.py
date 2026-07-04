@@ -471,7 +471,7 @@ elif menu_choice == "Competitor News Updates":
                         st.markdown(
                             f"<h2 style='color: #ff6600; background-color: #f0f7ff; "
                             f"padding: 10px; border-radius: 5px;'> Date: {date_key}</h2>",
-                            unsafe_allow_html=True
+                            unsafe_allow_html=True 
                         )
                         for news in items_to_show:
                             render_news_card(news)
