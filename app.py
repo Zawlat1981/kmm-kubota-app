@@ -178,7 +178,7 @@ def render_news_card(news):
             if img_list:
                 st.write("---")
                 for img in img_list:
-                    st.image(img, width='stretch')
+                    st.image(img, use_container_width=True)
                     st.markdown(f"[🔍 ပုံကိုကြည့်ရန်နှိပ်ပါ (กดเพื่อดูภาพ)]({img})")
 
         promo = str(news.get('promo', '')).strip()
@@ -199,13 +199,13 @@ def render_news_card(news):
             btn_col1, btn_col2, btn_col3 = st.columns(3)
             if fb_link and fb_link.startswith("http"):
                 with btn_col1:
-                    st.link_button("🔵 Facebook", fb_link, width='stretch')
+                    st.link_button("🔵 Facebook", fb_link, use_container_width=True)
             if tt_link and tt_link.startswith("http"):
                 with btn_col2:
-                    st.link_button("⚫ TikTok", tt_link, width='stretch')
+                    st.link_button("⚫ TikTok", tt_link, use_container_width=True)
             if tg_link and tg_link.startswith("http"):
                 with btn_col3:
-                    st.link_button("✈️ Telegram", tg_link, width='stretch')
+                    st.link_button("✈️ Telegram", tg_link, use_container_width=True)
 
         st.write("<br>", unsafe_allow_html=True)
 
@@ -325,7 +325,7 @@ if menu_choice == "Brand Selection":
 
         img_url = str(t_info.iloc[2]) if len(t_info) > 2 else ""
         if img_url and img_url.startswith("http"):
-            st.image(img_url, width='stretch')
+            st.image(img_url, use_container_width=True)
             st.markdown(
                 f"[🔍 ပုံကိုကြည့်ရန်နှိပ်ပါ (กดเพื่อดูภาพ)]({img_url})"
             )
@@ -535,13 +535,13 @@ elif menu_choice == "KMM Tractor AI Agent":
         suggested_query = st.session_state.pop("dropdown_query")
 
     with col_btn1:
-        if st.button("📰 ข่าววันนี้", width='stretch'):
+        if st.button("📰 ข่าววันนี้", use_container_width=True):
             suggested_query = "ယနေ့သတင်း"
     with col_btn2:
-        if st.button("📅 ข่าวเมื่อวาน", width='stretch'):
+        if st.button("📅 ข่าวเมื่อวาน", use_container_width=True):
             suggested_query = "မနေ့ကသတင်း"
     with col_btn3:
-        if st.button("📊 รายงาน 1 สัปดาห์", width='stretch'):
+        if st.button("📊 รายงาน 1 สัปดาห์", use_container_width=True):
             suggested_query = "ပြီးခဲ့တဲ့တစ်ပတ်စာ သတင်း Report ထုတ်ပေးပါ"
     with col_btn4:
         # AI Agent ထဲက Brand Dropdown — sidebar_selected_brand နှင့် အမည်ကွဲသည်
@@ -571,7 +571,7 @@ elif menu_choice == "KMM Tractor AI Agent":
                 "🏢 กรอกชื่อบริษัท/องค์กร (ဥပမာ - Win Shwe Wah, Kubota)", value=""
             ).strip()
 
-        if st.button("🔎 ค้นหาด้วยข้อมูลที่เลือก", type="primary", width='stretch'):
+        if st.button("🔎 ค้นหาด้วยข้อมูลที่เลือก", type="primary", use_container_width=True):
             if filter_date is not None and filter_company:
                 suggested_query = (
                     f"သတင်း စစ်ထုတ်မှု: {filter_date.strftime('%Y-%m-%d')} ရက်စွဲရှိ {filter_company} သတင်း"
@@ -674,7 +674,7 @@ elif menu_choice == "KMM Tractor AI Agent":
                                 st.markdown(f"• **ဈေးနှုန်း:** {item['price']} MMK")
                         with col2:
                             if item['image'] and item['image'].startswith("http"):
-                                st.image(item['image'], width='stretch')
+                                st.image(item['image'], use_container_width=True)
                         st.write("---")
 
                     try:
