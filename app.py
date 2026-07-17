@@ -7,79 +7,7 @@ from openai import OpenAI
 # ========================================== 
 # ၁။ Page Config
 # ==========================================
-st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout="wide")
-
-# ==========================================
-# ၁.၁ CSS — Wide layout + Responsive News Grid
-# ========================================== 
-st.markdown("""
-<style>
-    .block-container {
-        padding-top: 1.5rem;
-        padding-left: 2rem;
-        padding-right: 2rem;
-        max-width: 100% !important;
-    }
-    .news-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-        gap: 16px;
-        margin-bottom: 20px;
-    }
-    .news-card {
-        border: 1px solid #ddd;
-        border-radius: 10px;
-        padding: 16px;
-        background: white;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-        overflow-wrap: break-word;
-    }
-    .news-card h3 {
-        margin: 0;
-    }
-    .news-card hr {
-        margin: 8px 0;
-    }
-    .news-card img {
-        width: 100%;
-        border-radius: 6px;
-        margin-top: 8px;
-        display: block;
-    }
-    .news-links {
-        margin-top: 10px;
-    }
-    .news-links a {
-        display: inline-block;
-        margin-right: 8px;
-        margin-top: 6px;
-        padding: 6px 14px;
-        border-radius: 6px;
-        text-decoration: none;
-        font-size: 13px;
-        color: white !important;
-    }
-    .fb-link { background:#1877F2; }
-    .tt-link { background:#000000; }
-    .tg-link { background:#229ED9; }
-    .promo-box {
-        background:#eef6ff;
-        padding:8px;
-        border-radius:6px;
-        margin-top:8px;
-    }
-
-    @media (max-width: 640px) {
-        .news-grid {
-            grid-template-columns: 1fr;
-        }
-        .block-container {
-            padding-left: 0.8rem;
-            padding-right: 0.8rem;
-        }
-    }
-</style>
-""", unsafe_allow_html=True)
+st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout="wide") 
 
 # ==========================================
 # ၂။ Constants
@@ -90,6 +18,9 @@ ALL_BRANDS = [
     "Kubota", "Yanmar", "Win-Shwe-Wah(2nd)", "John-Deere",
     "New-Holland", "YTO", "Mahindra", "Sonalika", "Yamabisi", "DongFeng"
 ]
+
+# OpenRouter တွင် အလုပ်လုပ်သော Free Models (fallback chain) — မလိုတော့ပါ
+# Google Gemini API သို့ ပြောင်းထားသည်
 
 # ==========================================
 # ၃။ Callback Function
@@ -112,7 +43,7 @@ def load_data(tab_name):
         f"/gviz/tq?tqx=out:csv&sheet={encoded_tab}"
     )
     try:
-        df_tractor = pd.read_csv(base_url).fillna(0)
+        df_tractor = pd.read_csv(base_url).fillna(0) 
     except Exception as e:
         st.warning(f"Tractor data load မအောင်မြင်ပါ ({tab_name}): {e}")
         df_tractor = pd.DataFrame()
@@ -216,74 +147,71 @@ def parse_news_sheet(df):
     return grouped_news
 
 
-# ==========================================
-# ၄.၁ News Card Rendering — Responsive Grid (HTML/CSS based)
-# ==========================================
-def _news_card_html(news):
-    """တစ်ခုချင်းစီအတွက် News Card HTML string ကို ပြင်ဆင်သည်"""
-    c_th = news.get('content_th', '').strip()
-    c_mm = news.get('content_mm', '').strip()
+def render_news_card(news):
+    """News Card တစ်ခုကို UI ပေါ်တွင် ထုတ်ပြသည်"""
+    with st.container(border=True):
+        st.markdown(
+            f"<h3 style='color: #0066cc; margin: 0;'>🏢 {news['company']}</h3>",
+            unsafe_allow_html=True
+        )
+        st.markdown(
+            f"<small style='color: #888;'>📅 Date: {news['date']}</small>",
+            unsafe_allow_html=True
+        )
+        st.write("---")
 
-    content_html = ""
-    if c_th:
-        content_html += f"<b>🇹🇭 ภาษาไทย</b><p>{c_th.replace(chr(10), '<br>')}</p>"
-    if c_th and c_mm:
-        content_html += "<hr>"
-    if c_mm:
-        content_html += f"<b>🇲🇲 မြန်မာဘာသာ</b><p>{c_mm.replace(chr(10), '<br>')}</p>"
+        c_th = news.get('content_th', '').strip()
+        c_mm = news.get('content_mm', '').strip()
 
-    img_html = ""
-    img_data = news.get('image_url', '').strip()
-    if img_data:
-        img_list = [i.strip() for i in img_data.split(',') if i.strip().startswith('http')]
-        for img in img_list:
-            img_html += (
-                f'<a href="{img}" target="_blank">'
-                f'<img src="{img}" alt="news image"></a>'
-            )
+        if c_th:
+            st.markdown("**🇹🇭 ภาษาไทย**")
+            st.markdown(c_th.replace("\n", "  \n"))
+        if c_th and c_mm:
+            st.write("---")
+        if c_mm:
+            st.markdown("**🇲🇲 မြန်မာဘာသာ**")
+            st.markdown(c_mm.replace("\n", "  \n"))
 
-    promo = str(news.get('promo', '')).strip()
-    promo_html = ""
-    if promo and promo not in ('0', '0.0', 'nan', 'None', ''):
-        promo_html = f"<div class='promo-box'>💡 {promo}</div>"
+        img_data = news.get('image_url', '').strip()
+        if img_data:
+            img_list = [i.strip() for i in img_data.split(',') if i.strip().startswith('http')]
+            if img_list:
+                st.write("---")
+                for img in img_list:
+                    st.image(img)
+                    st.markdown(f"[🔍 ပုံကိုကြည့်ရန်နှိပ်ပါ (กดเพื่อดูภาพ)]({img})")
 
-    fb_link = news.get('facebook', '').strip()
-    tt_link = news.get('tiktok', '').strip()
-    tg_link = news.get('telegram', '').strip()
+        promo = str(news.get('promo', '')).strip()
+        if promo and promo not in ('0', '0.0', 'nan', 'None', ''):
+            st.info(f"💡 {promo}")
 
-    links_html = "<div class='news-links'>"
-    if fb_link.startswith("http"):
-        links_html += f'<a class="fb-link" href="{fb_link}" target="_blank">🔵 Facebook</a>'
-    if tt_link.startswith("http"):
-        links_html += f'<a class="tt-link" href="{tt_link}" target="_blank">⚫ TikTok</a>'
-    if tg_link.startswith("http"):
-        links_html += f'<a class="tg-link" href="{tg_link}" target="_blank">✈️ Telegram</a>'
-    links_html += "</div>"
+        fb_link = news.get('facebook', '').strip()
+        tt_link = news.get('tiktok', '').strip()
+        tg_link = news.get('telegram', '').strip()
 
-    return f"""
-    <div class="news-card">
-        <h3 style="color:#0066cc;">🏢 {news['company']}</h3>
-        <small style="color:#888;">📅 Date: {news['date']}</small>
-        <hr>
-        {content_html}
-        {img_html}
-        {promo_html}
-        {links_html}
-    </div>
-    """
+        has_links = (
+            (fb_link and fb_link.startswith("http")) or
+            (tt_link and tt_link.startswith("http")) or
+            (tg_link and tg_link.startswith("http"))
+        )
+        if has_links:
+            st.write("---")
+            btn_col1, btn_col2, btn_col3 = st.columns(3)
+            if fb_link and fb_link.startswith("http"):
+                with btn_col1:
+                    st.link_button("🔵 Facebook", fb_link, use_container_width=True)
+            if tt_link and tt_link.startswith("http"):
+                with btn_col2:
+                    st.link_button("⚫ TikTok", tt_link, use_container_width=True)
+            if tg_link and tg_link.startswith("http"):
+                with btn_col3:
+                    st.link_button("✈️ Telegram", tg_link, use_container_width=True)
 
-
-def render_news_grid(news_list):
-    """News list တစ်ခုလုံးကို Responsive Grid အဖြစ် တစ်ခါတည်း render လုပ်သည်
-    ဖုန်းပေါ်တွင် ၁ Column၊ Screen ကျယ်လာသည်နှင့် ၂-၃ Column အလိုအလျောက် ကျယ်လာမည်"""
-    if not news_list:
-        return
-    cards_html = "".join(_news_card_html(n) for n in news_list)
-    st.markdown(f'<div class="news-grid">{cards_html}</div>', unsafe_allow_html=True)
+        st.write("<br>", unsafe_allow_html=True)
 
 
 # ==========================================
-# ၅။ Google Gemini / Groq API Setup (Free tier)
+# ၅။ Google Gemini API Setup (Free tier — တစ်နေ့ 1,500 requests)
 # ==========================================
 GEMINI_SYSTEM_INSTRUCTION = (
     "မင်းက KMM Kubota ကုမ္ပဏီက AI Assistant ဖြစ်တယ်။ "
@@ -333,6 +261,8 @@ with st.sidebar:
     )
     st.write("---")
 
+    # sidebar_selected_brand — Brand Selection menu အတွက်သာ သုံးသည်
+    # AI Agent ထဲက brand selectbox နှင့် မတိုက်မိစေရန် အမည်ကွဲထားသည်
     sidebar_selected_brand = None
     if menu_choice == "Brand Selection":
         st.header("🔍 Filter")
@@ -396,10 +326,10 @@ if menu_choice == "Brand Selection":
         img_url = str(t_info.iloc[2]) if len(t_info) > 2 else ""
         if img_url and isinstance(img_url, str) and (img_url.startswith("http://") or img_url.startswith("https://")):
             try:
-                st.image(img_url)
-                st.markdown(f"[🔍 ပုံကိုကြည့်ရန်နှိပ်ပါ (กดเพื่อดูภาพ)]({img_url})")
+               st.image(img_url)
+               st.markdown(f"[🔍 ပုံကိုကြည့်ရန်နှိပ်ပါ (กดเพื่อดูภาพ)]({img_url})")
             except Exception as e:
-                st.warning(f"ပုံကို Loading လုပ်ရာတွင် အမှားအယွင်းရှိသည်: {e}")
+               st.warning(f"ပုံကို Loading လုပ်ရာတွင် အမှားအယွင်းရှိသည်: {e}")
         else:
             pass
 
@@ -548,9 +478,10 @@ elif menu_choice == "Competitor News Updates":
                         st.markdown(
                             f"<h2 style='color: #ff6600; background-color: #f0f7ff; "
                             f"padding: 10px; border-radius: 5px;'> Date: {date_key}</h2>",
-                            unsafe_allow_html=True
+                            unsafe_allow_html=True 
                         )
-                        render_news_grid(items_to_show)
+                        for news in items_to_show:
+                            render_news_card(news)
 
                 if items_displayed < total_filtered_items:
                     col1, col2 = st.columns([2, 3])
@@ -602,6 +533,7 @@ elif menu_choice == "KMM Tractor AI Agent":
     col_btn1, col_btn2, col_btn3, col_btn4 = st.columns(4)
     suggested_query = None
 
+    # Dropdown မှ ရွေးချယ်မှုကို တစ်ကြိမ်သာ ယူပြီး ပြန်ဖျက်ရန်
     if "dropdown_query" in st.session_state:
         suggested_query = st.session_state.pop("dropdown_query")
 
@@ -615,6 +547,7 @@ elif menu_choice == "KMM Tractor AI Agent":
         if st.button("📊 รายงาน 1 สัปดาห์", use_container_width=True):
             suggested_query = "ပြီးခဲ့တဲ့တစ်ပတ်စာ သတင်း Report ထုတ်ပေးပါ"
     with col_btn4:
+        # AI Agent ထဲက Brand Dropdown — sidebar_selected_brand နှင့် အမည်ကွဲသည်
         agent_brand_list = [
             "— เลือก —", "Kubota", "Yanmar", "Win-Shwe-Wah(2nd)",
             "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika"
@@ -628,6 +561,7 @@ elif menu_choice == "KMM Tractor AI Agent":
         )
 
     # --- Filter Expander ---
+    # Bug Fix: filter_date နှင့် filter_company ကို default တန်ဖိုးများ ကြိုသတ်မှတ်ထားသည်
     filter_date = None
     filter_company = ""
 
@@ -661,11 +595,15 @@ elif menu_choice == "KMM Tractor AI Agent":
             st.markdown(user_query)
         st.session_state.messages.append({"role": "user", "content": user_query})
 
+        # Myanmar/Thailand Timezone (UTC+7) ကို သေချာသတ်မှတ်သည်
+        # Streamlit Cloud က UTC ဖြင့် run သောကြောင့် +7 နာရီ ထည့်ရသည်
         tz_offset = datetime.timezone(datetime.timedelta(hours=7))
         now_local = datetime.datetime.now(tz=tz_offset)
         today_date_obj = now_local.date()
         yesterday_date_obj = today_date_obj - datetime.timedelta(days=1)
 
+        # News intent ကို တင်းကျပ်စွာ စစ်ဆေးသည် — News ဆိုင်ရာ keyword တိတိကျကျပါမှသာ News Mode သို့ ဝင်မည်
+        # "news" တစ်လုံးတည်းနှင့် မဝင်အောင် phrase-level စစ်ဆေးခြင်း
         NEWS_KEYWORDS = [
             "သတင်း", "ယနေ့", "မနေ့က", "ဒီနေ့", "စစ်ထုတ်မှု",
             "တင်ထားတာ", "competitor", "ပတ်စာ",
@@ -673,6 +611,7 @@ elif menu_choice == "KMM Tractor AI Agent":
         ]
         is_news_intent = any(keyword in user_query for keyword in NEWS_KEYWORDS)
 
+        # "report" နှင့် "news" တို့ကို တစ်လုံးတည်းအဖြစ် စစ်ဆေးသည် (case-insensitive)
         q_lower = user_query.lower().strip()
         if q_lower in ("news", "report") or q_lower.startswith("news ") or q_lower.startswith("report "):
             is_news_intent = True
@@ -755,6 +694,7 @@ elif menu_choice == "KMM Tractor AI Agent":
                         st.warning(f"AI ဖြေကြားမှု မအောင်မြင်ပါ: {e}")
 
                 else:
+                    # Tractor မတွေ့ပါက — Gemini ဖြင့် ဖြေကြားသည်
                     with st.spinner("AI က ဖြေကြားနေပါသည်..."):
                         ai_reply = ask_gemini(user_query, st.session_state.messages)
                     st.markdown(ai_reply)
@@ -768,7 +708,7 @@ elif menu_choice == "KMM Tractor AI Agent":
             status_placeholder.text("⏳ Competitor News Updates ရှီတ်ထဲမှ အချက်အလက်များကို စုစည်းနေပါသည်...")
 
             df_comp = load_all_sheet_data("Competitor News Updates")
-            all_news = parse_news_sheet(df_comp)
+            all_news = parse_news_sheet(df_comp)  # DRY — shared function သုံးထားသည်
 
             status_placeholder.empty()
 
@@ -780,6 +720,8 @@ elif menu_choice == "KMM Tractor AI Agent":
                 content_lower = (news['content_mm'] + news['content_th']).lower()
                 match_found = False
 
+                # Sheet ထဲက date string ကို date object အဖြစ် parse လုပ်သည်
+                # YYYY-MM-DD နှင့် DD/MM/YYYY ပုံစံနှစ်မျိုးလုံး handle လုပ်နိုင်သည်
                 news_date_obj = None
                 try:
                     parsed = pd.to_datetime(news_date_raw, dayfirst=False, errors='coerce')
@@ -801,6 +743,7 @@ elif menu_choice == "KMM Tractor AI Agent":
                     match_company_ok = True
 
                     if filter_date is not None:
+                        # String matching မဟုတ်ဘဲ date object ချင်း တိုက်စစ်သည်
                         match_date_ok = (news_date_obj == filter_date) if news_date_obj else False
 
                     if filter_company:
@@ -838,8 +781,13 @@ elif menu_choice == "KMM Tractor AI Agent":
                         f"### 📊 ရှာဖွေတွေ့ရှိရသော Competitor News ({len(matched_news_list)}) စောင်"
                     )
                     st.write("---")
-                    render_news_grid(matched_news_list)
+                    for news in matched_news_list:
+                        render_news_card(news)
 
+                    context_str = "\n".join([
+                        f"Company: {n['company']} | Content: {n['content_mm']}"
+                        for n in matched_news_list[:5]
+                    ])
                     try:
                         ai_reply = ask_gemini(
                             "သတင်းများကို ပြသပေးပြီးပြီ။ မြန်မာလို ယဉ်ကျေးစွာ အကျဉ်းချုပ်ပြောကြားပေးပါ။",
@@ -850,6 +798,7 @@ elif menu_choice == "KMM Tractor AI Agent":
                         st.warning(f"AI ဖြေကြားမှု မအောင်မြင်ပါ: {e}")
 
                 else:
+                    # News မတွေ့ပါက — Gemini ဖြင့် ဖြေကြားသည်
                     with st.spinner("AI က ဖြေကြားနေပါသည်..."):
                         ai_reply = ask_gemini(user_query, st.session_state.messages)
                     st.markdown(ai_reply)
