@@ -676,7 +676,14 @@ elif menu_choice == "KMM Tractor AI Agent":
                             except Exception:
                                 st.markdown(f"• **ဈေးနှုန်း:** {item['price']} MMK")
                         with col2:
-                            matched_tractor=next((t for t in tractor_database if t['model']==item['model']),None)
+                            matched_tractor = None
+                            if 'df_tractor' in globals() and not df_tractor.empty:
+                                match_row = df_tractor[df_tractor.iloc[:,0].astype(str) == str(item.get('model'))]
+                                if not match_row.empty:
+                                    raw_img = match_row.iloc[0,2] if len(match_row.colums) > 2 else""
+                                    if raw_img and str(raw_img).startswith("http"):
+                                        matched_tractor = {"image": raw_img}
+                                        
                             if matched_tractor:
                                 item['image']=matched_tractor.get('image')
                                 
