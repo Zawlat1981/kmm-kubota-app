@@ -676,9 +676,16 @@ elif menu_choice == "KMM Tractor AI Agent":
                             except Exception:
                                 st.markdown(f"• **ဈေးနှုန်း:** {item['price']} MMK")
                         with col2:
-                            if item['image'] and item['image'].startswith("http"):
+                            matched_tractor=next((t for t in tractor_database if t['model']==item['model']),None)
+                            if matched_tractor:
+                                item['image']=matched_tractor.get('image')
+                                
+                            if item.get['image'] and item['image'].startswith("http"):
                                 st.image(item['image'], use_container_width=True)
-                        st.write("---")
+                            else:
+                                st.write("ပုံမရှိပါ")
+                            st.write("---")
+                        
 
                     try:
                         ai_reply = ask_gemini(
