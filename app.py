@@ -684,16 +684,21 @@ elif menu_choice == "KMM Tractor AI Agent":
                                     if raw_img and str(raw_img).startswith("http"):
                                         matched_tractor = {"image": raw_img}
                                         
-                            if matched_tractor:
-                                item['image']=matched_tractor.get('image')
-                                
-                            if item.get['image'] and item['image'].startswith("http"):
-                                st.image(item['image'], use_container_width=True)
+                            img_val = ""
+                            try:
+                                if isinstance(item, dict):
+                                    img_val = item.get('image', '')
+                                elif hasattr(item, 'get'):
+                                    img_val = item.get('image', '')
+                            except Exception:
+                                img_val = ""
+
+                            if img_val and str(img_val).startswith("http"):
+                                st.image(str(img_val), use_container_width=True)
                             else:
                                 st.write("ပုံမရှိပါ")
                             st.write("---")
                         
-
                     try:
                         ai_reply = ask_gemini(
                             "စက်ဈေးနှုန်းပြပြီးပြီဖြစ်လို့ ဘာများ ထပ်မံကူညီပေးရမလဲလို့ မြန်မာလို ယဉ်ကျေးစွာ မေးပေးပါ။",
