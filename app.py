@@ -680,10 +680,15 @@ elif menu_choice == "KMM Tractor AI Agent":
                             if 'df_tractor' in globals() and not df_tractor.empty:
                                 match_row = df_tractor[df_tractor.iloc[:,0].astype(str) == str(item.get('model'))]
                                 if not match_row.empty:
-                                    raw_img = match_row.iloc[0,2] if len(match_row.colums) > 2 else""
+                                    # colums ကို columns ဟု ပြင်ဆင်ထားပါသည်
+                                    raw_img = match_row.iloc[0,2] if len(match_row.columns) > 2 else ""
                                     if raw_img and str(raw_img).startswith("http"):
                                         matched_tractor = {"image": raw_img}
-                                        
+                            
+                            # matched_tractor တွေ့ပါက item['image'] ထဲသို့ ထည့်ပေးပါ
+                            if matched_tractor:
+                                item['image'] = matched_tractor.get('image')
+
                             img_val = ""
                             try:
                                 if isinstance(item, dict):
@@ -694,7 +699,10 @@ elif menu_choice == "KMM Tractor AI Agent":
                                 img_val = ""
 
                             if img_val and str(img_val).startswith("http"):
-                                st.image(str(img_val), use_container_width=True)
+                                try:
+                                    st.image(str(img_val))
+                                except Exception:
+                                    st.write("ပုံပြသ၍ မရပါ။")
                             else:
                                 st.write("ပုံမရှိပါ")
                             st.write("---")
