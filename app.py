@@ -360,7 +360,7 @@ if menu_choice == "Brand Selection":
 # ==========================================
 elif menu_choice == "Competitor News Updates":
     st.markdown(
-        "<h1 style='text-align: center; color: #0066cc;'>📊 Competitor News Updates (TH)</h1>",
+        "<h1 style='text-align: center; color: #0066cc;'>📊 Competitor News Updates </h1>",
         unsafe_allow_html=True
     )
     st.write("---")
@@ -369,12 +369,12 @@ elif menu_choice == "Competitor News Updates":
     grouped_news_list = parse_news_sheet(df_comp)
 
     if grouped_news_list:
-        st.markdown("### 🔍 သတင်းများ ပြန်လည်ရှာဖွေရန် / ค้นหาข่าวย้อนหลัง")
+        st.markdown("### 🔍  ค้นหาข่าวย้อนหลัง (သတင်းများ ပြန်လည်ရှာဖွေရန်)")
         search_col1, search_col2 = st.columns(2)
         with search_col1:
-            search_query = st.text_input("📝 သတင်းခေါင်းစဉ် / ကုမ္ပဏီ / အကြောင်းအရာဖြင့် ရှာရန်", "")
+            search_query = st.text_input("📝 ค้นหาด้วยหัวข้อข่าว / บริษัท / เนื้อหา (သတင်းခေါင်းစဉ် / ကုမ္ပဏီ / အကြောင်းအရာဖြင့် ရှာရန်)", "")
         with search_col2:
-            search_date = st.date_input("📅 ရက်စွဲဖြင့် ရှာရန်", value=None, format="YYYY-MM-DD")
+            search_date = st.date_input("📅 ค้นหาด้วยวันที่ (ရက်စွဲဖြင့် ရှာရန်)", value=None, format="YYYY-MM-DD")
         st.write("---")
 
         grouped_data = {}
