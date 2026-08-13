@@ -426,8 +426,7 @@ elif menu_choice == "Competitor News Updates":
 
             with st.chat_message("assistant"):
                 st.write(
-                    f"🔍 ရှာဖွေမှုရလဒ် စုစုပေါင်း ({total_filtered_items}) စောင်အနက်မှ "
-                    f"နောက်ဆုံးသတင်းများကို ဖော်ပြပေးလိုက်ပါတယ် ခင်ဗျာ။"
+                    f"🔍 แสดงข่าวล่าสุดจากผลการค้นหาทั้งหมด ({total_filtered_items}) รายการครับ "
                 )
                 st.write("---")
 
