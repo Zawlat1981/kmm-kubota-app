@@ -33,7 +33,6 @@ def handle_brand_change():
 # ==========================================
 @st.cache_data(ttl=60)
 def load_data(tab_name):
-    """UI Brand Selection အတွက် Tractor နှင့် Attachment ဒေတာ Load လုပ်သည်"""
     encoded_tab = urllib.parse.quote(tab_name)
     base_url = (
         f"https://docs.google.com/spreadsheets/d/{SHEET_ID}"
@@ -63,7 +62,6 @@ def load_data(tab_name):
 
 @st.cache_data(ttl=60)
 def load_all_sheet_data(tab_name):
-    """AI Agent နှင့် News အတွက် Sheet ဒေတာ Load လုပ်သည်"""
     encoded_tab = urllib.parse.quote(tab_name)
     csv_url = (
         f"https://docs.google.com/spreadsheets/d/{SHEET_ID}"
@@ -77,10 +75,6 @@ def load_all_sheet_data(tab_name):
 
 
 def parse_news_sheet(df):
-    """
-    Competitor News Sheet ကို Grouped News List အဖြစ် ပြောင်းပေးသည်။
-    Menu 2 နှင့် AI Agent နှစ်ခုလုံးအတွက် အသုံးပြုနိုင်သည်။
-    """
     grouped_news = []
     if df is None or df.empty:
         return grouped_news
@@ -93,9 +87,8 @@ def parse_news_sheet(df):
         r_date = str(row.get('date', '')).strip()
         r_company = str(row.get('company', '')).strip()
         r_content_th = str(row.get('content_th', '')).strip()
-        r_content_mm = str(row.get('content_mm', '')).strip()
 
-        if r_date == '' and r_company == '' and r_content_th == '' and r_content_mm == '':
+        if r_date == '' and r_company == '' and r_content_th == '':
             continue
 
         if r_date != '' or r_company != '':
@@ -108,7 +101,6 @@ def parse_news_sheet(df):
                 'date': current_date,
                 'company': r_company if r_company != '' else '💵 Exchange Rate / News',
                 'content_th': r_content_th,
-                'content_mm': r_content_mm,
                 'promo': str(row.get('promo', '')).strip(),
                 'facebook': str(row.get('facebook', '')).strip(),
                 'tiktok': str(row.get('tiktok', '')).strip(),
@@ -119,8 +111,6 @@ def parse_news_sheet(df):
             if last_news_item is not None:
                 if r_content_th:
                     last_news_item['content_th'] = (last_news_item['content_th'] + "\n" + r_content_th).strip()
-                if r_content_mm:
-                    last_news_item['content_mm'] = (last_news_item['content_mm'] + "\n" + r_content_mm).strip()
                 for field in ['image_url', 'promo', 'facebook', 'tiktok', 'telegram']:
                     val = str(row.get(field, '')).strip()
                     if val:
@@ -130,7 +120,6 @@ def parse_news_sheet(df):
                     'date': current_date,
                     'company': '💵 Exchange Rate / News',
                     'content_th': r_content_th,
-                    'content_mm': r_content_mm,
                     'promo': str(row.get('promo', '')).strip(),
                     'facebook': str(row.get('facebook', '')).strip(),
                     'tiktok': str(row.get('tiktok', '')).strip(),
@@ -145,7 +134,7 @@ def parse_news_sheet(df):
 
 
 def render_news_card(news):
-    """News Card တစ်ခုကို UI ပေါ်တွင် ထုတ်ပြသည် (ဘာသာပြန်အပိုင်းများကို လိုအပ်မှသာ သုံးရန် ယာယီဆိုင်းငံ့ထားသည်)"""
+    """ထိုင်းသတင်း (content_th) နှင့် ပုံများကိုသာ ပြသမည် (မြန်မာဘာသာပြန် လုံးဝမပါပါ)"""
     with st.container(border=True):
         st.markdown(
             f"<h3 style='color: #0066cc; margin: 0;'>🏢 {news['company']}</h3>",
@@ -158,17 +147,9 @@ def render_news_card(news):
         st.write("---")
 
         c_th = news.get('content_th', '').strip()
-        c_mm = news.get('content_mm', '').strip()
-
-        # [ဘာသာပြန်အပိုင်း ယာယီပိတ်ထားခြင်း - လိုအပ်မှ ပြန်ဖွင့်မည်]
         if c_th:
             st.markdown("**🇹🇭 Content (TH)**")
             st.markdown(c_th.replace("\n", "  \n"))
-        if c_th and c_mm:
-            st.write("---")
-        if c_mm:
-            st.markdown("**🇲🇲 Content (MM)**")
-            st.markdown(c_mm.replace("\n", "  \n"))
 
         img_data = news.get('image_url', '').strip()
         if img_data:
@@ -323,8 +304,6 @@ if menu_choice == "Brand Selection":
                st.markdown(f"[🔍 ပုံကိုကြည့်ရန်နှိပ်ပါ (กดเพื่อดูภาพ)]({img_url})")
             except Exception as e:
                st.warning(f"ပုံကို Loading လုပ်ရာတွင် အမှားအယွင်းရှိသည်: {e}")
-        else:
-            pass
 
         st.markdown(f"### 💰 စက်ဈေးနှုန်း (ราคารถ): **{base_price:,.0f}** MMK")
         st.write("---")
@@ -381,7 +360,7 @@ if menu_choice == "Brand Selection":
 # ==========================================
 elif menu_choice == "Competitor News Updates":
     st.markdown(
-        "<h1 style='text-align: center; color: #0066cc;'>📊 Competitor News Updates & News Myanmar</h1>",
+        "<h1 style='text-align: center; color: #0066cc;'>📊 Competitor News Updates (TH)</h1>",
         unsafe_allow_html=True
     )
     st.write("---")
@@ -422,8 +401,7 @@ elif menu_choice == "Competitor News Updates":
                     q = search_query.lower()
                     if not (
                         q in news['company'].lower() or
-                        q in news['content_th'].lower() or
-                        q in news['content_mm'].lower()
+                        q in news['content_th'].lower()
                     ):
                         continue
                 news_list_under_date.append(news)
@@ -478,12 +456,9 @@ elif menu_choice == "Competitor News Updates":
                 if items_displayed < total_filtered_items:
                     col1, col2 = st.columns([2, 3])
                     with col1:
-                        if st.button("👍 မှန်ပါတယ်၊ နောက်ထပ်ပြပါ / ถูกต้อง แสดงเพิ่มเติม", key="news_more_pagination_btn"):
+                        if st.button("👍 နောက်ထပ်ပြပါ / แสดงเพิ่มเติม", key="news_more_pagination_btn"):
                             st.session_state.news_display_count += 7
                             st.rerun()
-                    with col2:
-                        if st.button("👎 မဟုတ်ပါဘူး၊ တခြားဟာရှာမယ် / ไม่ใช่ ค้นหาอย่างอื่น", key="news_stop_pagination_btn"):
-                            st.write("🤖 လူကြီးမင်း သိလိုသော အကြောင်းအရာကို ထပ်မံ အသေးစိတ် ရိုက်ထည့်ပေးပါ ခင်ဗျာ။")
                 else:
                     st.info("👋 သတင်းအားလုံးကို ပြသပေးပြီးပါပြီ ခင်ဗျာ။ / แสดงข่าวทั้งหมดเรียบร้อยแล้วครับ")
         else:
@@ -549,30 +524,6 @@ elif menu_choice == "KMM Tractor AI Agent":
             on_change=handle_brand_change
         )
 
-    filter_date = None
-    filter_company = ""
-
-    with st.expander("🔍 ရွေးချယ်စရာများ (ค้นหาข่าวตามวันที่หรือชื่อบริษัท)", expanded=True):
-        col_filter1, col_filter2 = st.columns(2)
-        with col_filter1:
-            filter_date = st.date_input("📅 เลือกวันที่ (Date)", value=None, format="YYYY-MM-DD")
-        with col_filter2:
-            filter_company = st.text_input(
-                "🏢 กรอกชื่อบริษัท/องค์กร (ဥပမာ - Win Shwe Wah, Kubota)", value=""
-            ).strip()
-
-        if st.button("🔎 ค้นหาด้วยข้อมูลที่เลือก", type="primary", use_container_width=True):
-            if filter_date is not None and filter_company:
-                suggested_query = (
-                    f"သတင်း စစ်ထုတ်မှု: {filter_date.strftime('%Y-%m-%d')} ရက်စွဲရှိ {filter_company} သတင်း"
-                )
-            elif filter_date is not None:
-                suggested_query = f"သတင်း စစ်ထုတ်မှု: {filter_date.strftime('%Y-%m-%d')} ရက်စွဲရှိ သတင်းများ"
-            elif filter_company:
-                suggested_query = f"သတင်း စစ်ထုတ်မှု: {filter_company} ကုမ္ပဏီ၏ သတင်းများ"
-            else:
-                st.info("💡 ရက်စွဲတစ်ခု ရွေးချယ်ပေးပါ သို့မဟုတ် ကုမ္ပဏီအမည် ရိုက်ထည့်ပေးပါ ခင်ဗျာ။")
-
     user_input = st.chat_input("You can access and read the news, as well as ask questions.")
     user_query = suggested_query if suggested_query else user_input
 
@@ -581,227 +532,7 @@ elif menu_choice == "KMM Tractor AI Agent":
             st.markdown(user_query)
         st.session_state.messages.append({"role": "user", "content": user_query})
 
-        tz_offset = datetime.timezone(datetime.timedelta(hours=7))
-        now_local = datetime.datetime.now(tz=tz_offset)
-        today_date_obj = now_local.date()
-        yesterday_date_obj = today_date_obj - datetime.timedelta(days=1)
-
-        NEWS_KEYWORDS = [
-            "သတင်း", "ယနေ့", "မနေ့က", "ဒီနေ့", "စစ်ထုတ်မှု",
-            "တင်ထားတာ", "competitor", "ပတ်စာ",
-            "ข่าว", "รายงาน",
-        ]
-        is_news_intent = any(keyword in user_query for keyword in NEWS_KEYWORDS)
-
-        q_lower = user_query.lower().strip()
-        if q_lower in ("news", "report") or q_lower.startswith("news ") or q_lower.startswith("report "):
-            is_news_intent = True
-
-        if not is_news_intent:
-            found_tractor_data = []
-            q_clean = "".join(user_query.split()).lower().replace("-", "").replace("_", "")
-
-            with st.spinner("စက်ပစ္စည်းနှင့် ဈေးနှုန်းဒေတာများကို ရှာဖွေနေပါသည်..."):
-                for brand in ALL_BRANDS:
-                    df_brand = load_all_sheet_data(brand)
-                    if df_brand is None or df_brand.empty:
-                        continue
-
-                    brand_clean = brand.lower().replace("-", "").replace("_", "")
-                    q_model_only = q_clean.replace(brand_clean, "")
-
-                    for _, row in df_brand.iterrows():
-                        model_name = str(row.iloc[0]).strip()
-                        if model_name in ["0", "0.0", "nan", "Model", ""]:
-                            continue
-
-                        model_clean = "".join(model_name.split()).lower().replace("-", "").replace("_", "")
-
-                        match = False
-                        if q_model_only:
-                            if q_model_only in model_clean or model_clean in q_model_only:
-                                match = True
-                        else:
-                            if brand.lower() in user_query.lower():
-                                match = True
-
-                        if match:
-                            found_tractor_data.append({
-                                "brand": brand,
-                                "model": model_name,
-                                "price": str(row.iloc[1]),
-                                "image": str(row.iloc[2]) if len(row) > 2 else "",
-                            })
-
-            with st.chat_message("assistant"):
-                if found_tractor_data:
-                    st.markdown(f"### 🚜 {user_query} အတွက် ရှာဖွေတွေ့ရှိရသော မော်ဒယ်များနှင့် ဈေးနှုန်းများ")
-                    st.write("---")
-
-                    for idx, item in enumerate(found_tractor_data):
-                        col1, col2 = st.columns([1, 1])
-                        with col1:
-                            st.markdown(f"### {idx + 1}။ **{item['model']}**")
-                            st.markdown(f"• **Brand:** {item['brand']}")
-                            try:
-                                p_val = float(str(item['price']).replace(',', '').strip())
-                                st.markdown(
-                                    f"• **အခြေခံဈေးနှုန်း:** "
-                                    f"<span style='color:#ff6600; font-size:22px; font-weight:bold;'>"
-                                    f"{p_val:,.0f}</span> MMK",
-                                    unsafe_allow_html=True
-                                )
-                            except Exception:
-                                st.markdown(f"• **ဈေးနှုန်း:** {item['price']} MMK")
-                        with col2:
-                            matched_tractor = None
-                            if 'df_tractor' in globals() and not df_tractor.empty:
-                                match_row = df_tractor[df_tractor.iloc[:,0].astype(str) == str(item.get('model'))]
-                                if not match_row.empty:
-                                    raw_img = match_row.iloc[0,2] if len(match_row.columns) > 2 else ""
-                                    if raw_img and str(raw_img).startswith("http"):
-                                        matched_tractor = {"image": raw_img}
-                            
-                            if matched_tractor:
-                                item['image'] = matched_tractor.get('image')
-
-                            img_val = ""
-                            try:
-                                if isinstance(item, dict):
-                                    img_val = item.get('image', '')
-                                elif hasattr(item, 'get'):
-                                    img_val = item.get('image', '')
-                            except Exception:
-                                img_val = ""
-
-                            if img_val and str(img_val).startswith("http"):
-                                try:
-                                    st.image(str(img_val))
-                                except Exception:
-                                    st.write("ပုံပြသ၍ မရပါ။")
-                            else:
-                                st.write("ပုံမရှိပါ")
-                            st.write("---")
-                    
-                    try:
-                        ai_reply = ask_gemini(
-                            "စက်ဈေးနှုန်းပြပြီးပြီဖြစ်လို့ ဘာများ ထပ်မံကူညီပေးရမလဲလို့ မေးပေးပါ။",
-                            st.session_state.messages
-                        )
-                        st.info(ai_reply)
-                        st.session_state.messages.append({
-                            "role": "assistant",
-                            "content": f"🚜 {user_query} စက်ဈေးနှုန်းများကို ပြသပေးပြီးပါပြီ။",
-                        })
-                    except Exception as e:
-                        st.warning(f"AI ဖြေကြားမှု မအောင်မြင်ပါ: {e}")
-
-                else:
-                    with st.spinner("AI က ဖြေကြားနေပါသည်..."):
-                        ai_reply = ask_gemini(user_query, st.session_state.messages)
-                    st.markdown(ai_reply)
-                    st.session_state.messages.append({"role": "assistant", "content": ai_reply})
-
-        # ==========================================================
-        # Mode B — Competitor News ရှာဖွေပြသခြင်း
-        # ==========================================================
-        else:
-            status_placeholder = st.empty()
-            status_placeholder.text("⏳ Competitor News Updates ရှီတ်ထဲမှ အချက်အလက်များကို စုစည်းနေပါသည်...")
-
-            df_comp = load_all_sheet_data("Competitor News Updates")
-            all_news = parse_news_sheet(df_comp)  # DRY — shared function သုံးထားသည်
-
-            status_placeholder.empty()
-
-            matched_news_list = []
-
-            for news in all_news:
-                news_date_raw = news['date'].strip()
-                company_lower = news['company'].lower()
-                content_lower = (news['content_mm'] + news['content_th']).lower()
-                match_found = False
-
-                # Sheet ထဲက date string ကို date object အဖြစ် parse လုပ်သည်
-                # YYYY-MM-DD နှင့် DD/MM/YYYY ပုံစံနှစ်မျိုးလုံး handle လုပ်နိုင်သည်
-                news_date_obj = None
-                try:
-                    parsed = pd.to_datetime(news_date_raw, dayfirst=False, errors='coerce')
-                    if pd.notna(parsed):
-                        news_date_obj = parsed.date()
-                except Exception:
-                    pass
-
-                if news_date_obj is None:
-                    try:
-                        parsed = pd.to_datetime(news_date_raw, dayfirst=True, errors='coerce')
-                        if pd.notna(parsed):
-                            news_date_obj = parsed.date()
-                    except Exception:
-                        pass
-
-                if "စစ်ထုတ်မှု" in user_query:
-                    match_date_ok = True
-                    match_company_ok = True
-
-                    if filter_date is not None:
-                        # String matching မဟုတ်ဘဲ date object ချင်း တိုက်စစ်သည်
-                        match_date_ok = (news_date_obj == filter_date) if news_date_obj else False
-
-                    if filter_company:
-                        f_co = filter_company.lower()
-                        match_company_ok = (f_co in company_lower or f_co in content_lower)
-
-                    if match_date_ok and match_company_ok:
-                        match_found = True
-
-                elif "ယနေ့" in user_query or "ဒီနေ့" in user_query:
-                    if news_date_obj == today_date_obj:
-                        match_found = True
-
-                elif "မနေ့က" in user_query:
-                    if news_date_obj == yesterday_date_obj:
-                        match_found = True
-
-                elif "ပတ်စာ" in user_query or "report" in user_query.lower():
-                    if news_date_obj is not None:
-                        seven_days_ago = today_date_obj - datetime.timedelta(days=7)
-                        if seven_days_ago <= news_date_obj <= today_date_obj:
-                            match_found = True
-
-                else:
-                    q_words = user_query.lower().split()
-                    if any(word in company_lower or word in content_lower for word in q_words):
-                        match_found = True
-
-                if match_found:
-                    matched_news_list.append(news)
-
-            with st.chat_message("assistant"):
-                if matched_news_list:
-                    st.markdown(
-                        f"### 📊 ရှာဖွေတွေ့ရှိရသော Competitor News ({len(matched_news_list)}) စောင်"
-                    )
-                    st.write("---")
-                    for news in matched_news_list:
-                        render_news_card(news)
-
-                    context_str = "\n".join([
-                        f"Company: {n['company']} | Content: {n['content_mm']}"
-                        for n in matched_news_list[:5]
-                    ])
-                    try:
-                        ai_reply = ask_gemini(
-                            "သတင်းများကို ပြသပေးပြီးပြီ။ မြန်မာလို ယဉ်ကျေးစွာ အကျဉ်းချုပ်ပြောကြားပေးပါ။",
-                            st.session_state.messages
-                        )
-                        st.info(ai_reply)
-                    except Exception as e:
-                        st.warning(f"AI ဖြေကြားမှု မအောင်မြင်ပါ: {e}")
-
-                else:
-                    # News မတွေ့ပါက — Gemini ဖြင့် ဖြေကြားသည်
-                    with st.spinner("AI က ဖြေကြားနေပါသည်..."):
-                        ai_reply = ask_gemini(user_query, st.session_state.messages)
-                    st.markdown(ai_reply)
-                    st.session_state.messages.append({"role": "assistant", "content": ai_reply})
+        with st.spinner("AI က ဖြေကြားနေပါသည်..."):
+            ai_reply = ask_gemini(user_query, st.session_state.messages)
+        st.markdown(ai_reply)
+        st.session_state.messages.append({"role": "assistant", "content": ai_reply})
