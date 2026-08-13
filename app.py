@@ -8,6 +8,26 @@ from openai import OpenAI
 # ၁။ Page Config
 # ==========================================
 st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout="wide") 
+# Custom CSS ဖြင့် ဒီဇိုင်းဆန်းသစ်ခြင်း
+st.markdown("""
+    <style>
+    /* Main background and font styling */
+    .main {
+        background-color: #f8f9fa;
+    }
+    /* Header styling */
+    h1 {
+        color: #df4b00; /* Kubota Orange */
+        font-family: 'sans-serif';
+    }
+    /* Card or container styling */
+    .stCard {
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 # ==========================================
 # ၂။ Constants
