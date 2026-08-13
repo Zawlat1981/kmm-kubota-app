@@ -532,7 +532,87 @@ elif menu_choice == "KMM Tractor AI Agent":
             st.markdown(user_query)
         st.session_state.messages.append({"role": "user", "content": user_query})
 
-        with st.spinner("AI က ဖြေကြားနေပါသည်..."):
-            ai_reply = ask_gemini(user_query, st.session_state.messages)
-        st.markdown(ai_reply)
-        st.session_state.messages.append({"role": "assistant", "content": ai_reply})
+        tz_offset = datetime.timezone(datetime.timedelta(hours=7))
+        now_local = datetime.datetime.now(tz=tz_offset)
+        today_date_obj = now_local.date()
+        yesterday_date_obj = today_date_obj - datetime.timedelta(days=1)
+
+        NEWS_KEYWORDS = [
+            "သတင်း", "ယနေ့", "မနေ့က", "ဒီနေ့", "စစ်ထုတ်မှု",
+            "တင်ထားတာ", "competitor", "ပတ်စာ",
+            "ข่าว", "รายงาน",
+        ]
+        is_news_intent = any(keyword in user_query for keyword in NEWS_KEYWORDS)
+
+        q_lower = user_query.lower().strip()
+        if q_lower in ("news", "report") or q_lower.startswith("news ") or q_lower.startswith("report "):
+            is_news_intent = True
+
+        if is_news_intent:
+            df_comp = load_all_sheet_data("Competitor News Updates")
+            all_news = parse_news_sheet(df_comp)
+            matched_news_list = []
+
+            for news in all_news:
+                news_date_raw = news['date'].strip()
+                company_lower = news['company'].lower()
+                content_lower = news['content_th'].lower()
+                match_found = False
+
+                news_date_obj = None
+                try:
+                    parsed = pd.to_datetime(news_date_raw, dayfirst=False, errors='coerce')
+                    if pd.notna(parsed):
+                        news_date_obj = parsed.date()
+                except Exception:
+                    pass
+
+                if news_date_obj is None:
+                    try:
+                        parsed = pd.to_datetime(news_date_raw, dayfirst=True, errors='coerce')
+                        if pd.notna(parsed):
+                            news_date_obj = parsed.date()
+                    except Exception:
+                        pass
+
+                if "ယနေ့" in user_query or "ဒီနေ့" in user_query:
+                    if news_date_obj == today_date_obj:
+                        match_found = True
+                elif "မနေ့က" in user_query:
+                    if news_date_obj == yesterday_date_obj:
+                        match_found = True
+                elif "ပတ်စာ" in user_query or "report" in user_query.lower():
+                    if news_date_obj is not None:
+                        seven_days_ago = today_date_obj - datetime.timedelta(days=7)
+                        if seven_days_ago <= news_date_obj <= today_date_obj:
+                            match_found = True
+                else:
+                    q_words = user_query.lower().split()
+                    if any(word in company_lower or word in content_lower for word in q_words):
+                        match_found = True
+
+                if match_found:
+                    matched_news_list.append(news)
+
+            with st.chat_message("assistant"):
+                if matched_news_list:
+                    st.markdown(f"### 📊 ရှာဖွေတွေ့ရှိရသော Competitor News ({len(matched_news_list)}) စောင်")
+                    st.write("---")
+                    for news in matched_news_list:
+                        render_news_card(news)
+                    
+                    st.session_state.messages.append({
+                        "role": "assistant", 
+                        "content": f"📊 ရှာဖွေတွေ့ရှိရသော Competitor News ({len(matched_news_list)}) စောင်ကို ပြသပေးပြီးပါပြီ။"
+                    })
+                else:
+                    st.info("❌ သတ်မှတ်ထားသော အချက်အလက်အပေါ် မူတည်၍ သတင်း မတွေ့ရှိရပါ။")
+                    st.session_state.messages.append({
+                        "role": "assistant", 
+                        "content": "❌ သတ်မှတ်ထားသော အချက်အလက်အပေါ် မူတည်၍ သတင်း မတွေ့ရှိရပါ။"
+                    })
+        else:
+            with st.spinner("AI က ဖြေကြားနေပါသည်..."):
+                ai_reply = ask_gemini(user_query, st.session_state.messages)
+            st.markdown(ai_reply)
+            st.session_state.messages.append({"role": "assistant", "content": ai_reply})
