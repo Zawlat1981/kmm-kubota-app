@@ -358,7 +358,7 @@ if menu_choice == "Brand Selection":
 # ==========================================
 # Menu ၂။ COMPETITOR NEWS UPDATES
 # ==========================================
-elif menu_choice == "Competitor News Updates":
+elif menu_choice == "Competitor News Updates & Myanmar News":
     st.markdown(
         "<h1 style='text-align: center; color: #0066cc;'>📊 Competitor News Updates </h1>",
         unsafe_allow_html=True
