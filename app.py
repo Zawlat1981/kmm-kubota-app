@@ -19,9 +19,6 @@ ALL_BRANDS = [
     "New-Holland", "YTO", "Mahindra", "Sonalika", "Yamabisi", "DongFeng"
 ]
 
-# OpenRouter တွင် အလုပ်လုပ်သော Free Models (fallback chain) — မလိုတော့ပါ
-# Google Gemini API သို့ ပြောင်းထားသည်
-
 # ==========================================
 # ၃။ Callback Function
 # ==========================================
@@ -148,7 +145,7 @@ def parse_news_sheet(df):
 
 
 def render_news_card(news):
-    """News Card တစ်ခုကို UI ပေါ်တွင် ထုတ်ပြသည်"""
+    """News Card တစ်ခုကို UI ပေါ်တွင် ထုတ်ပြသည် (ဘာသာပြန်အပိုင်းများကို လိုအပ်မှသာ သုံးရန် ယာယီဆိုင်းငံ့ထားသည်)"""
     with st.container(border=True):
         st.markdown(
             f"<h3 style='color: #0066cc; margin: 0;'>🏢 {news['company']}</h3>",
@@ -163,13 +160,14 @@ def render_news_card(news):
         c_th = news.get('content_th', '').strip()
         c_mm = news.get('content_mm', '').strip()
 
+        # [ဘာသာပြန်အပိုင်း ယာယီပိတ်ထားခြင်း - လိုအပ်မှ ပြန်ဖွင့်မည်]
         if c_th:
-            st.markdown("**🇹🇭 ภาษาไทย**")
+            st.markdown("**🇹🇭 Content (TH)**")
             st.markdown(c_th.replace("\n", "  \n"))
         if c_th and c_mm:
             st.write("---")
         if c_mm:
-            st.markdown("**🇲🇲 မြန်မာဘာသာ**")
+            st.markdown("**🇲🇲 Content (MM)**")
             st.markdown(c_mm.replace("\n", "  \n"))
 
         img_data = news.get('image_url', '').strip()
@@ -211,17 +209,14 @@ def render_news_card(news):
 
 
 # ==========================================
-# ၅။ Google Gemini API Setup (Free tier — တစ်နေ့ 1,500 requests)
+# ၅။ Groq / API Setup
 # ==========================================
 GEMINI_SYSTEM_INSTRUCTION = (
     "မင်းက KMM Kubota ကုမ္ပဏီက AI Assistant ဖြစ်တယ်။ "
     "KMM Kubota ကုမ္ပဏီက Kubota ထွန်စက်၊ ရိတ်သိမ်းခြွေ့လှေ့စက်၊ ကောက်စိုက်စက်၊ မြေတူးစက် တို့ကိုရောင်းချသောကုမ္ပဏီဖြစ်သည်။ "
     "ထိုင်းနိုင်ငံနှင့် မြန်မာနိုင်ငံတွင်ကုမ္ပဏီများရှိသည်။ "
     "မင်းက လယ်ယာသုံးစက်ပစ္စည်း၊ ဈေးကွက်နှင့် "
-    "အခြားအထွေထွေမေးခွန်းများကို မြန်မာ/ထိုင်းဘာသာဖြင့် "
-    "ရှင်းလင်းယဉ်ကျေးစွာ ဖြေကြားပေးပါ။"
-    "မင်းကို မြန်မာလိုမေးရင် မြန်မာလိုဖြေပါ "
-    "မင်းကို ထိုင်းလိုမေးရင် ထိုင်းလိုဖြေပါ "
+    "အခြားအထွေထွေမေးခွန်းများကို ရှင်းလင်းယဉ်ကျေးစွာ ဖြေကြားပေးပါ။"
 )
 
 groq_api_key = st.secrets.get("GROQ_API_KEY", "")
@@ -261,8 +256,6 @@ with st.sidebar:
     )
     st.write("---")
 
-    # sidebar_selected_brand — Brand Selection menu အတွက်သာ သုံးသည်
-    # AI Agent ထဲက brand selectbox နှင့် မတိုက်မိစေရန် အမည်ကွဲထားသည်
     sidebar_selected_brand = None
     if menu_choice == "Brand Selection":
         st.header("🔍 Filter")
@@ -405,7 +398,6 @@ elif menu_choice == "Competitor News Updates":
             search_date = st.date_input("📅 ရက်စွဲဖြင့် ရှာရန်", value=None, format="YYYY-MM-DD")
         st.write("---")
 
-        # Grouping by date_key
         grouped_data = {}
         for news in grouped_news_list:
             d_key = news['date']
@@ -515,7 +507,7 @@ elif menu_choice == "KMM Tractor AI Agent":
     st.write("---")
 
     if not gemini_client:
-        st.warning("⚠️ GEMINI_API_KEY မသတ်မှတ်ရသေးပါ။ Streamlit Secrets ထဲတွင် GEMINI_API_KEY ဖြည့်ပေးပါ ခင်ဗျာ။")
+        st.warning("⚠️ GEMINI_API_KEY မသတ်မှတ်ရသေးပါ။ Streamlit Secrets ထဲတွင် API Key ဖြည့်ပေးပါ ခင်ဗျာ။")
         st.stop()
 
     if "messages" not in st.session_state:
@@ -525,7 +517,6 @@ elif menu_choice == "KMM Tractor AI Agent":
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    # --- Quick Buttons ---
     st.markdown(
         "<small style='color: #888;'>💡 คุณสามารถคลิกคำถามด้านล่างเพื่อสอบถามได้ง่ายๆ ครับ -</small>",
         unsafe_allow_html=True
@@ -533,7 +524,6 @@ elif menu_choice == "KMM Tractor AI Agent":
     col_btn1, col_btn2, col_btn3, col_btn4 = st.columns(4)
     suggested_query = None
 
-    # Dropdown မှ ရွေးချယ်မှုကို တစ်ကြိမ်သာ ယူပြီး ပြန်ဖျက်ရန်
     if "dropdown_query" in st.session_state:
         suggested_query = st.session_state.pop("dropdown_query")
 
@@ -547,7 +537,6 @@ elif menu_choice == "KMM Tractor AI Agent":
         if st.button("📊 รายงาน 1 สัปดาห์", use_container_width=True):
             suggested_query = "ပြီးခဲ့တဲ့တစ်ပတ်စာ သတင်း Report ထုတ်ပေးပါ"
     with col_btn4:
-        # AI Agent ထဲက Brand Dropdown — sidebar_selected_brand နှင့် အမည်ကွဲသည်
         agent_brand_list = [
             "— เลือก —", "Kubota", "Yanmar", "Win-Shwe-Wah(2nd)",
             "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika"
@@ -560,8 +549,6 @@ elif menu_choice == "KMM Tractor AI Agent":
             on_change=handle_brand_change
         )
 
-    # --- Filter Expander ---
-    # Bug Fix: filter_date နှင့် filter_company ကို default တန်ဖိုးများ ကြိုသတ်မှတ်ထားသည်
     filter_date = None
     filter_company = ""
 
@@ -586,7 +573,6 @@ elif menu_choice == "KMM Tractor AI Agent":
             else:
                 st.info("💡 ရက်စွဲတစ်ခု ရွေးချယ်ပေးပါ သို့မဟုတ် ကုမ္ပဏီအမည် ရိုက်ထည့်ပေးပါ ခင်ဗျာ။")
 
-    # --- Chat Input ---
     user_input = st.chat_input("You can access and read the news, as well as ask questions.")
     user_query = suggested_query if suggested_query else user_input
 
@@ -595,15 +581,11 @@ elif menu_choice == "KMM Tractor AI Agent":
             st.markdown(user_query)
         st.session_state.messages.append({"role": "user", "content": user_query})
 
-        # Myanmar/Thailand Timezone (UTC+7) ကို သေချာသတ်မှတ်သည်
-        # Streamlit Cloud က UTC ဖြင့် run သောကြောင့် +7 နာရီ ထည့်ရသည်
         tz_offset = datetime.timezone(datetime.timedelta(hours=7))
         now_local = datetime.datetime.now(tz=tz_offset)
         today_date_obj = now_local.date()
         yesterday_date_obj = today_date_obj - datetime.timedelta(days=1)
 
-        # News intent ကို တင်းကျပ်စွာ စစ်ဆေးသည် — News ဆိုင်ရာ keyword တိတိကျကျပါမှသာ News Mode သို့ ဝင်မည်
-        # "news" တစ်လုံးတည်းနှင့် မဝင်အောင် phrase-level စစ်ဆေးခြင်း
         NEWS_KEYWORDS = [
             "သတင်း", "ယနေ့", "မနေ့က", "ဒီနေ့", "စစ်ထုတ်မှု",
             "တင်ထားတာ", "competitor", "ပတ်စာ",
@@ -611,14 +593,10 @@ elif menu_choice == "KMM Tractor AI Agent":
         ]
         is_news_intent = any(keyword in user_query for keyword in NEWS_KEYWORDS)
 
-        # "report" နှင့် "news" တို့ကို တစ်လုံးတည်းအဖြစ် စစ်ဆေးသည် (case-insensitive)
         q_lower = user_query.lower().strip()
         if q_lower in ("news", "report") or q_lower.startswith("news ") or q_lower.startswith("report "):
             is_news_intent = True
 
-        # ==========================================================
-        # Mode A — စက်မော်ဒယ် / ဈေးနှုန်း ရှာဖွေခြင်း
-        # ==========================================================
         if not is_news_intent:
             found_tractor_data = []
             q_clean = "".join(user_query.split()).lower().replace("-", "").replace("_", "")
@@ -680,12 +658,10 @@ elif menu_choice == "KMM Tractor AI Agent":
                             if 'df_tractor' in globals() and not df_tractor.empty:
                                 match_row = df_tractor[df_tractor.iloc[:,0].astype(str) == str(item.get('model'))]
                                 if not match_row.empty:
-                                    # colums ကို columns ဟု ပြင်ဆင်ထားပါသည်
                                     raw_img = match_row.iloc[0,2] if len(match_row.columns) > 2 else ""
                                     if raw_img and str(raw_img).startswith("http"):
                                         matched_tractor = {"image": raw_img}
                             
-                            # matched_tractor တွေ့ပါက item['image'] ထဲသို့ ထည့်ပေးပါ
                             if matched_tractor:
                                 item['image'] = matched_tractor.get('image')
 
@@ -706,10 +682,10 @@ elif menu_choice == "KMM Tractor AI Agent":
                             else:
                                 st.write("ပုံမရှိပါ")
                             st.write("---")
-                        
+                    
                     try:
                         ai_reply = ask_gemini(
-                            "စက်ဈေးနှုန်းပြပြီးပြီဖြစ်လို့ ဘာများ ထပ်မံကူညီပေးရမလဲလို့ မြန်မာလို ယဉ်ကျေးစွာ မေးပေးပါ။",
+                            "စက်ဈေးနှုန်းပြပြီးပြီဖြစ်လို့ ဘာများ ထပ်မံကူညီပေးရမလဲလို့ မေးပေးပါ။",
                             st.session_state.messages
                         )
                         st.info(ai_reply)
@@ -721,7 +697,6 @@ elif menu_choice == "KMM Tractor AI Agent":
                         st.warning(f"AI ဖြေကြားမှု မအောင်မြင်ပါ: {e}")
 
                 else:
-                    # Tractor မတွေ့ပါက — Gemini ဖြင့် ဖြေကြားသည်
                     with st.spinner("AI က ဖြေကြားနေပါသည်..."):
                         ai_reply = ask_gemini(user_query, st.session_state.messages)
                     st.markdown(ai_reply)
