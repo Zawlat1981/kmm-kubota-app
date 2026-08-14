@@ -58,10 +58,10 @@ ALL_BRANDS = [
 # ၃။ Callback Function
 # ==========================================
 def handle_brand_change():
-    current_selection = st.session_state.main_page_brand_filter
+    current_selection = st.session_state.get("main_page_brand_filter")
     if current_selection != "— เลือก —":
-        st.session_state.dropdown_query = current_selection
-        st.session_state.main_page_brand_filter = "— เลือก —"
+        st.session_state.dropdown_query = f"{current_selection} အကြောင်းကို အသေးစိတ် ရှင်းပြပေးပါ"
+        # Widget ကို တိုက်ရိုက် Reset မလုပ်တော့ဘဲ Error တက်ခြင်းမှ ကာကွယ်သည်
 
 # ==========================================
 # ၄။ Data Loading Functions
@@ -569,7 +569,7 @@ elif menu_choice == "KMM Tractor AI Agent":
     with col_btn4:
         agent_brand_list = [
             "— เลือก —", "Kubota", "Yanmar", "Win-Shwe-Wah(2nd)",
-            "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika"
+            "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika", "Yamabisi", "DongFeng"
         ]
         st.selectbox(
             "Brand Filter",
