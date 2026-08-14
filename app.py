@@ -154,7 +154,7 @@ def parse_news_sheet(df):
 
 
 def render_news_card(news):
-    """HTML Flexbox ကိုသုံး၍ စာနှင့်ပုံကို ဘေးချင်းယှဉ်ပြသမည် (ပုံအရွယ်အစား ကြီးထားသည်)"""
+    """HTML Flexbox ကိုသုံး၍ စာနှင့်ပုံကို ဘေးချင်းယှဉ် (တစ်တန်းတည်း) ပြသမည်"""
     with st.container(border=True):
         st.markdown(
             f"<h3 style='color: #0066cc; margin: 0;'>🏢 {news['company']}</h3>",
@@ -170,19 +170,20 @@ def render_news_card(news):
         img_data = news.get('image_url', '').strip()
         img_list = [i.strip() for i in img_data.split(',') if i.strip().startswith('http')] if img_data else []
 
+        # HTML Flexbox ဖြင့် စာနှင့်ပုံကို ဘေးချင်းယှဉ်ပြရန်
         content_html = c_th.replace('\n', '<br>') if c_th else ""
         
         images_html = ""
         for img in img_list:
-            # 💡 ပုံအရွယ်အစားကို ကြီးလိုပါက width တန်ဖိုး (ဥပမာ - 280px, 320px) ကို ပြောင်းနိုင်ပါသည်
-            images_html += f"<div style='margin-bottom: 10px;'><img src='{img}' style='width: 280px; border-radius: 8px;'><br><a href='{img}' target='_blank' style='font-size: 12px;'>🔍 ပုံကိုကြည့်ရန်</a></div>"
+            images_html += f"<div style='margin-bottom: 10px;'><img src='{img}' style='width: 180px; border-radius: 8px;'><br><a href='{img}' target='_blank' style='font-size: 12px;'>🔍 ပုံကိုကြည့်ရန်</a></div>"
 
+        # ဘယ်ဘက် စာသား၊ ညာဘက် ပုံ တန်းစီမည့် Layout
         flex_container = f"""
         <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: nowrap;">
             <div style="flex: 2; word-break: break-word;">
                 <b style="color: #333;">🇹🇭 Content (TH)</b><br>{content_html}
             </div>
-            <div style="flex: 1; text-align: center; min-width: 280px;">
+            <div style="flex: 1; text-align: center; min-width: 180px;">
                 {images_html}
             </div>
         </div>
