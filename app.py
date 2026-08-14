@@ -30,6 +30,17 @@ st.markdown("""
     div[data-testid="stVerticalBlock"] div[data-testid="stContainer"] {
         max-width: 100% !important;
     }
+    
+    /* 📱 ဖုန်းစခရင်များ (Mobile Screen) တွင် Sidebar စာသားများ တစ်လုံးချင်း ဆင်းမသွားစေရန် ထိန်းညှိခြင်း */
+    @media (max-width: 768px) {
+        [data-testid="stSidebar"] {
+            min-width: 200px !important;
+            max-width: 250px !important;
+        }
+        [data-testid="stSidebar"] .stRadio label {
+            font-size: 14px !important;
+        }
+    }
     </style>
 """, unsafe_allow_html=True)
 
