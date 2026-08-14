@@ -154,7 +154,7 @@ def parse_news_sheet(df):
 
 
 def render_news_card(news):
-    """ထိုင်းသတင်း (content_th) နှင့် ပုံများကိုသာ ပြသမည် (မြန်မာဘာသာပြန် လုံးဝမပါပါ)"""
+    """HTML Flexbox ကိုသုံး၍ စာနှင့်ပုံကို ဘေးချင်းယှဉ် (တစ်တန်းတည်း) ပြသမည်"""
     with st.container(border=True):
         st.markdown(
             f"<h3 style='color: #0066cc; margin: 0;'>🏢 {news['company']}</h3>",
@@ -167,18 +167,30 @@ def render_news_card(news):
         st.write("---")
 
         c_th = news.get('content_th', '').strip()
-        if c_th:
-            st.markdown("**🇹🇭 Content (TH)**")
-            st.markdown(c_th.replace("\n", "  \n"))
-
         img_data = news.get('image_url', '').strip()
-        if img_data:
-            img_list = [i.strip() for i in img_data.split(',') if i.strip().startswith('http')]
-            if img_list:
-                st.write("---")
-                for img in img_list:
-                    st.image(img)
-                    st.markdown(f"[🔍 ပုံကိုကြည့်ရန်နှိပ်ပါ (กดเพื่อดูภาพ)]({img})")
+        img_list = [i.strip() for i in img_data.split(',') if i.strip().startswith('http')] if img_data else []
+
+        # HTML Flexbox ဖြင့် စာနှင့်ပုံကို ဘေးချင်းယှဉ်ပြရန်
+        content_html = c_th.replace('\n', '<br>') if c_th else ""
+        
+        images_html = ""
+        for img in img_list:
+            images_html += f"<div style='margin-bottom: 10px;'><img src='{img}' style='width: 180px; border-radius: 8px;'><br><a href='{img}' target='_blank' style='font-size: 12px;'>🔍 ပုံကိုကြည့်ရန်</a></div>"
+
+        # ဘယ်ဘက် စာသား၊ ညာဘက် ပုံ တန်းစီမည့် Layout
+        flex_container = f"""
+        <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: nowrap;">
+            <div style="flex: 2; word-break: break-word;">
+                <b style="color: #333;">🇹🇭 Content (TH)</b><br>{content_html}
+            </div>
+            <div style="flex: 1; text-align: center; min-width: 180px;">
+                {images_html}
+            </div>
+        </div>
+        """
+        
+        if c_th or img_list:
+            st.markdown(flex_container, unsafe_allow_html=True)
 
         promo = str(news.get('promo', '')).strip()
         if promo and promo not in ('0', '0.0', 'nan', 'None', ''):
