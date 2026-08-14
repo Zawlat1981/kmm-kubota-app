@@ -175,7 +175,7 @@ def render_news_card(news):
         images_html = ""
         for img in img_list:
             # 💡 ပုံအရွယ်အစားကို ကြီးလိုပါက width တန်ဖိုး (ဥပမာ - 280px, 320px) ကို ပြောင်းနိုင်ပါသည်
-            images_html += f"<div style='margin-bottom: 10px;'><img src='{img}' style='width: 320px; border-radius: 8px;'><br><a href='{img}' target='_blank' style='font-size: 12px;'>🔍 ပုံကိုကြည့်ရန်</a></div>"
+            images_html += f"<div style='margin-bottom: 10px;'><img src='{img}' style='width: 280px; border-radius: 8px;'><br><a href='{img}' target='_blank' style='font-size: 12px;'>🔍 ပုံကိုကြည့်ရန်</a></div>"
 
         flex_container = f"""
         <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: nowrap;">
