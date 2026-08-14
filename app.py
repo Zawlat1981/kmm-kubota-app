@@ -318,14 +318,23 @@ if menu_choice == "Brand Selection":
             base_price = 0.0
 
         img_url = str(t_info.iloc[2]) if len(t_info) > 2 else ""
-        if img_url and isinstance(img_url, str) and (img_url.startswith("http://") or img_url.startswith("https://")):
-            try:
-               st.image(img_url)
-               st.markdown(f"[🔍 ပုံကိုကြည့်ရန်နှိပ်ပါ (กดเพื่อดูภาพ)]({img_url})")
-            except Exception as e:
-               st.warning(f"ပုံကို Loading လုပ်ရာတွင် အမှားအယွင်းရှိသည်: {e}")
+        
+        # ==========================================
+        # 📌 စာနဲ့ပုံ ဘေးချင်းယှဉ် (တစ်တန်းတည်း) ထားသည့်နေရာ
+        # ==========================================
+        col_price, col_img = st.columns([2, 1])
+        
+        with col_price:
+            st.markdown(f"### 💰 စက်ဈေးနှုန်း (ราคารถ): **{base_price:,.0f}** MMK")
 
-        st.markdown(f"### 💰 စက်ဈေးနှုန်း (ราคารถ): **{base_price:,.0f}** MMK")
+        with col_img:
+            if img_url and isinstance(img_url, str) and (img_url.startswith("http://") or img_url.startswith("https://")):
+                try:
+                    st.image(img_url, width=150)
+                    st.markdown(f"[🔍 ပုံကိုကြည့်ရန်]({img_url})")
+                except Exception as e:
+                    st.warning(f"ပုံ Loading အမှား: {e}")
+
         st.write("---")
 
         st.subheader("🛠 နောက်တွဲများ ရွေးချယ်ရန် (เลือก Implement)")
