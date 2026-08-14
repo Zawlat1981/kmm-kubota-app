@@ -19,7 +19,7 @@ st.markdown("""
     h1 {
         color: #df4b00; /* Kubota Orange */
         font-family: 'sans-serif';
-    }
+    } 
     /* 🛠️ ဘေးဘောင်နေရာလွတ်များကို ကျဉ်းစေရန်နှင့် အကျယ်ချဲ့ရန် CSS အသစ် */
     .block-container {
         padding-top: 2rem;
