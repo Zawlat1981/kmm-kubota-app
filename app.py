@@ -559,13 +559,13 @@ elif menu_choice == "KMM Tractor AI Agent":
 
     with col_btn1:
         if st.button("📰 ข่าววันนี้", use_container_width=True):
-            suggested_query = "ယနေ့သတင်း"
+            suggested_query = "ข่าววันนี้ (ယနေ့သတင်း)"
     with col_btn2:
         if st.button("📅 ข่าวเมื่อวาน", use_container_width=True):
-            suggested_query = "မနေ့ကသတင်း"
+            suggested_query = "ข่าวเมื่อวาน (မနေ့ကသတင်း)"
     with col_btn3:
         if st.button("📊 รายงาน 1 สัปดาห์", use_container_width=True):
-            suggested_query = "ပြီးခဲ့တဲ့တစ်ပတ်စာ သတင်း Report ထုတ်ပေးပါ"
+            suggested_query = "รายงาน 1 สัปดาห์ที่ผ่านมา (ပြီးခဲ့တဲ့တစ်ပတ်စာ သတင်းများ)"
     with col_btn4:
         agent_brand_list = [
             "— เลือก —", "Kubota", "Yanmar", "Win-Shwe-Wah(2nd)",
