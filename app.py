@@ -169,7 +169,7 @@ def parse_news_sheet(df):
 
 
 def render_news_card(news):
-    """HTML Flexbox ကိုသုံး၍ စာနှင့်ပုံကို ဘေးချင်းယှဉ် (တစ်တန်းတည်း) ပြသမည်"""
+    """HTML Flexbox ကိုသုံး၍ ဖုန်းနှင့် ကွန်ပျူတာ မည်သည့် Screen တွင်မဆို စာနှင့်ပုံကို တစ်တန်းတည်း (ဘေးချင်းယှဉ်လျက်) အမြဲပြသမည်"""
     with st.container(border=True):
         st.markdown(
             f"<h3 style='color: #0066cc; margin: 0;'>🏢 {news['company']}</h3>",
@@ -185,20 +185,20 @@ def render_news_card(news):
         img_data = news.get('image_url', '').strip()
         img_list = [i.strip() for i in img_data.split(',') if i.strip().startswith('http')] if img_data else []
 
-        # HTML Flexbox ဖြင့် စာနှင့်ပုံကို ဘေးချင်းယှဉ်ပြရန်
         content_html = c_th.replace('\n', '<br>') if c_th else ""
         
         images_html = ""
         for img in img_list:
-            images_html += f"<div style='margin-bottom: 10px;'><img src='{img}' style='width: 180px; border-radius: 8px;'><br><a href='{img}' target='_blank' style='font-size: 12px;'>🔍 ပုံကိုကြည့်ရန်</a></div>"
+            images_html += f"<div style='margin-bottom: 8px;'><img src='{img}' style='width: 100%; max-width: 120px; height: auto; border-radius: 6px;'><br><a href='{img}' target='_blank' style='font-size: 11px;'>🔍 ပုံကြည့်ရန်</a></div>"
 
-        # ဘယ်ဘက် စာသား၊ ညာဘက် ပုံ တန်းစီမည့် Layout
+        # 🛠️ ဖုန်းဖြစ်စေ၊ ကွန်ပျူတာဖြစ်စေ စာနှင့်ပုံကို တစ်တန်းတည်း (Side-by-side) အမြဲပြမည့် Responsive Flexbox CSS
         flex_container = f"""
-        <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: nowrap;">
-            <div style="flex: 2; word-break: break-word;">
-                <b style="color: #333;">🇹🇭 Content (TH)</b><br>{content_html}
+        <div style="display: flex; gap: 15px; align-items: flex-start; flex-wrap: nowrap; width: 100%;">
+            <div style="flex: 7; min-width: 0; word-break: break-word; overflow-wrap: break-word;">
+                <b style="color: #333; font-size: 14px;">🇹🇭 Content (TH)</b><br>
+                <div style="font-size: 13px; line-height: 1.4;">{content_html}</div>
             </div>
-            <div style="flex: 1; text-align: center; min-width: 180px;">
+            <div style="flex: 3; min-width: 90px; max-width: 130px; text-align: center; flex-shrink: 0;">
                 {images_html}
             </div>
         </div>
