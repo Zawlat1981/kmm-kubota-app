@@ -5,7 +5,7 @@ import urllib.parse
 from openai import OpenAI
 
 # ========================================== 
-# ၁။ Page Config
+# ၁။ Page Config & CSS Styling
 # ==========================================
 st.set_page_config(page_title="KMM Kubota Price List", page_icon="🚜", layout="wide") 
 # Custom CSS ဖြင့် ဒီဇိုင်းဆန်းသစ်ခြင်း
@@ -20,11 +20,15 @@ st.markdown("""
         color: #df4b00; /* Kubota Orange */
         font-family: 'sans-serif';
     }
-    /* Card or container styling */
-    .stCard {
-        border-radius: 10px;
-        padding: 20px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    /* 🛠️ ဘေးဘောင်နေရာလွတ်များကို ကျဉ်းစေရန်နှင့် အကျယ်ချဲ့ရန် CSS အသစ် */
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+        padding-left: 3rem;
+        padding-right: 3rem;
+    }
+    div[data-testid="stVerticalBlock"] div[data-testid="stContainer"] {
+        max-width: 100% !important;
     }
     </style>
 """, unsafe_allow_html=True)
