@@ -584,24 +584,36 @@ elif menu_choice == "KMM Tractor AI Agent":
             df_tractor, df_attach = load_data(selected_brand) 
             
             if not df_tractor.empty:
-                for index, row in df_tractor.iterrows():
-                    img_col = 'Image_Link' if 'Image_Link' in row else 'image_url'
-                    if img_col in row and row[img_col]:
-                        st.image(row[img_col], use_container_width=True)
+                # Brand Selection လိုမျိုး မော်ဒယ်စာရင်း Selectbox ထည့်ပေးခြင်း
+                model_list = df_tractor.iloc[:, 0].astype(str).tolist()
+                model_list = [m for m in model_list if m not in ["0", "0.0", "nan", "Model"]]
+                
+                if model_list:
+                    selected_model = st.selectbox(
+                        f"เลือก Model",
+                        model_list,
+                        key=f"agent_model_{selected_brand}"
+                    )
                     
-                    model_col = 'Model' if 'Model' in row else 'model_name'
-                    price_col = 'Base Price' if 'Base Price' in row else 'price'
+                    t_info = df_tractor[df_tractor.iloc[:, 0].astype(str) == selected_model].iloc[0]
                     
-                    if model_col in row:
-                        st.write(f"**รุ่น (Model):** {row[model_col]}")
-                    if price_col in row:
-                        price_val = row[price_col]
+                    try:
+                        raw_p = str(t_info.iloc[1]).replace(',', '').strip()
+                        base_price = float(raw_p) if raw_p else 0.0
+                    except Exception:
+                        base_price = 0.0
+
+                    img_url = str(t_info.iloc[2]) if len(t_info) > 2 else ""
+                    
+                    # ပုံနှင့် စျေးနှုန်းပြသခြင်း
+                    if img_url and isinstance(img_url, str) and (img_url.startswith("http://") or img_url.startswith("https://")):
                         try:
-                            price_str = f"{int(price_val):,}"
-                        except:
-                            price_str = str(price_val)
-                        st.write(f"**ราคา (Price):** {price_str} บาท")
+                            st.image(img_url, width=150)
+                            st.markdown(f"[🔍 ပုံကိုကြည့်ရန်]({img_url})")
+                        except Exception as e:
+                            st.warning(f"ပုံ Loading အမှား: {e}")
                     
+                    st.markdown(f"### 💰 စက်ဈေးနှုန်း: **{base_price:,.0f}** MMK")
                     st.write("---")
 
     user_input = st.chat_input("You can access and read the news, as well as ask questions.")
