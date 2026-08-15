@@ -578,44 +578,46 @@ elif menu_choice == "KMM Tractor AI Agent":
             label_visibility="collapsed"
         )
         
-        if selected_brand != "— เลือก —":
-            st.markdown(f"### 🚜 {selected_brand} ၏ စျေးနှုန်းနှင့် ပုံများ")
+    # --- ပုံနှင့် ဈေးနှုန်းကို အကျယ်ပြသသည့်အပိုင်း (ကော်လံပြင်ပ) ---
+    if selected_brand != "— เลือก —":
+        st.write("---")
+        st.markdown(f"### 🚜 {selected_brand} ၏ စျေးနှုန်းနှင့် ပုံများ")
+        
+        df_tractor, df_attach = load_data(selected_brand) 
+        
+        if not df_tractor.empty:
+            model_list = df_tractor.iloc[:, 0].astype(str).tolist()
+            model_list = [m for m in model_list if m not in ["0", "0.0", "nan", "Model"]]
             
-            df_tractor, df_attach = load_data(selected_brand) 
-            
-            if not df_tractor.empty:
-                # Brand Selection လိုမျိုး မော်ဒယ်စာရင်း Selectbox ထည့်ပေးခြင်း
-                model_list = df_tractor.iloc[:, 0].astype(str).tolist()
-                model_list = [m for m in model_list if m not in ["0", "0.0", "nan", "Model"]]
+            if model_list:
+                selected_model = st.selectbox(
+                    f"เลือก Model ({selected_brand})",
+                    model_list,
+                    key=f"agent_model_{selected_brand}"
+                )
                 
-                if model_list:
-                    selected_model = st.selectbox(
-                        f"เลือก Model",
-                        model_list,
-                        key=f"agent_model_{selected_brand}"
-                    )
-                    
-                    t_info = df_tractor[df_tractor.iloc[:, 0].astype(str) == selected_model].iloc[0]
-                    
-                    try:
-                        raw_p = str(t_info.iloc[1]).replace(',', '').strip()
-                        base_price = float(raw_p) if raw_p else 0.0
-                    except Exception:
-                        base_price = 0.0
+                t_info = df_tractor[df_tractor.iloc[:, 0].astype(str) == selected_model].iloc[0]
+                
+                try:
+                    raw_p = str(t_info.iloc[1]).replace(',', '').strip()
+                    base_price = float(raw_p) if raw_p else 0.0
+                except Exception:
+                    base_price = 0.0
 
-                    img_url = str(t_info.iloc[2]) if len(t_info) > 2 else ""
-                    
-                    # ပုံနှင့် စျေးနှုန်းပြသခြင်း
+                img_url = str(t_info.iloc[2]) if len(t_info) > 2 else ""
+                
+                # ဈေးနှုန်းနှင့် ပုံကို ဘေးချင်းယှဉ်ပြရန်
+                c_price, c_img = st.columns([1, 1])
+                with c_price:
+                    st.markdown(f"### 💰 စက်ဈေးနှုန်း:")
+                    st.markdown(f"## **{base_price:,.0f}** MMK")
+                with c_img:
                     if img_url and isinstance(img_url, str) and (img_url.startswith("http://") or img_url.startswith("https://")):
-                        try:
-                            st.image(img_url, width=150)
-                            st.markdown(f"[🔍 ပုံကိုကြည့်ရန်]({img_url})")
-                        except Exception as e:
-                            st.warning(f"ပုံ Loading အမှား: {e}")
-                    
-                    st.markdown(f"### 💰 စက်ဈေးနှုန်း: **{base_price:,.0f}** MMK")
-                    st.write("---")
+                        st.image(img_url, width=250) # width ကို 250 ထိ တိုးပေးလိုက်ပါတယ်
+                        st.markdown(f"[🔍 ပုံကိုကြည့်ရန်]({img_url})")
+        st.write("---")
 
+    # --- Chat Input ပိုင်း ---
     user_input = st.chat_input("You can access and read the news, as well as ask questions.")
     user_query = suggested_query if suggested_query else user_input
 
