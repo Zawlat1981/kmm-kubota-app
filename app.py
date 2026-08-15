@@ -14,7 +14,7 @@ st.markdown("""
     /* Main background and font styling */
     .main {
         background-color: #f8f9fa;
-    }
+    } 
     /* Header styling */
     h1 {
         color: #df4b00; /* Kubota Orange */
