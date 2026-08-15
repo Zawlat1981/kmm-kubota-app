@@ -572,27 +572,37 @@ elif menu_choice == "KMM Tractor AI Agent":
             "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika", "Yamabisi", "DongFeng"
         ]
         
-        # ၁။ Selectbox အသစ် (Callback နှင့် key များကို ဖြုတ်ထားသည်)
         selected_brand = st.selectbox(
             "Brand Filter",
             options=agent_brand_list,
             label_visibility="collapsed"
         )
         
-        # ၂။ Brand တစ်ခုကို ရွေးလိုက်လျှင် Google Sheets မှ Data ဆွဲထုတ်ပြမည့် အပိုင်း
         if selected_brand != "— เลือก —":
-            st.markdown(f"### 🚜 {selected_brand} ၏ စျေးနှုန်းနှင့် အချက်အလက်များ")
+            st.markdown(f"### 🚜 {selected_brand} ၏ စျေးနှုန်းနှင့် ပုံများ")
             
-            # Brand Selection မှာ သုံးထားသည့် load_data function ဖြင့် ဒေတာခေါ်ယူရန်
-            # (သင့် ကုဒ်ထဲတွင် သုံးထားသည့် function အမည်အတိုင်း ထည့်ပါ ဥပမာ - load_data(selected_brand))
             df_tractor, df_attach = load_data(selected_brand) 
             
             if not df_tractor.empty:
-                st.dataframe(df_tractor)
-                
-            if not df_attach.empty:
-                for _, row in df_attach.iterrows():
-                    st.image(row['image_url'], caption=row['model_name'])
+                for index, row in df_tractor.iterrows():
+                    img_col = 'Image_Link' if 'Image_Link' in row else 'image_url'
+                    if img_col in row and row[img_col]:
+                        st.image(row[img_col], use_container_width=True)
+                    
+                    model_col = 'Model' if 'Model' in row else 'model_name'
+                    price_col = 'Base Price' if 'Base Price' in row else 'price'
+                    
+                    if model_col in row:
+                        st.write(f"**รุ่น (Model):** {row[model_col]}")
+                    if price_col in row:
+                        price_val = row[price_col]
+                        try:
+                            price_str = f"{int(price_val):,}"
+                        except:
+                            price_str = str(price_val)
+                        st.write(f"**ราคา (Price):** {price_str} บาท")
+                    
+                    st.write("---")
 
     user_input = st.chat_input("You can access and read the news, as well as ask questions.")
     user_query = suggested_query if suggested_query else user_input
