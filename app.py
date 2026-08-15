@@ -571,13 +571,28 @@ elif menu_choice == "KMM Tractor AI Agent":
             "— เลือก —", "Kubota", "Yanmar", "Win-Shwe-Wah(2nd)",
             "John-Deere", "New-Holland", "YTO", "Mahindra", "Sonalika", "Yamabisi", "DongFeng"
         ]
-        st.selectbox(
+        
+        # ၁။ Selectbox အသစ် (Callback နှင့် key များကို ဖြုတ်ထားသည်)
+        selected_brand = st.selectbox(
             "Brand Filter",
             options=agent_brand_list,
-            key="main_page_brand_filter",
-            label_visibility="collapsed",
-            on_change=handle_brand_change
+            label_visibility="collapsed"
         )
+        
+        # ၂။ Brand တစ်ခုကို ရွေးလိုက်လျှင် Google Sheets မှ Data ဆွဲထုတ်ပြမည့် အပိုင်း
+        if selected_brand != "— เลือก —":
+            st.markdown(f"### 🚜 {selected_brand} ၏ စျေးနှုန်းနှင့် အချက်အလက်များ")
+            
+            # Brand Selection မှာ သုံးထားသည့် load_data function ဖြင့် ဒေတာခေါ်ယူရန်
+            # (သင့် ကုဒ်ထဲတွင် သုံးထားသည့် function အမည်အတိုင်း ထည့်ပါ ဥပမာ - load_data(selected_brand))
+            df_tractor, df_attach = load_data(selected_brand) 
+            
+            if not df_tractor.empty:
+                st.dataframe(df_tractor)
+                
+            if not df_attach.empty:
+                for _, row in df_attach.iterrows():
+                    st.image(row['image_url'], caption=row['model_name'])
 
     user_input = st.chat_input("You can access and read the news, as well as ask questions.")
     user_query = suggested_query if suggested_query else user_input
